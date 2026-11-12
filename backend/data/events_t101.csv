@@ -1,0 +1,2 @@
+event_id,run_id,event_type,train_id,location,start_time,duration_min
+E1,T101_DEMO,STOPPAGE,T101,S_BC,10:03,15

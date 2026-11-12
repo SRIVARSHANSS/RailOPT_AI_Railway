@@ -1,0 +1,4 @@
+train_id,train_no,train_name,train_type,priority,runs_on
+T101,SIM-101,Express (simulated),EXPRESS,1,daily
+T202,SIM-202,Passenger (simulated),PASSENGER,2,daily
+T303,SIM-303,Freight (simulated),FREIGHT,3,daily

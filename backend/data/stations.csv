@@ -1,0 +1,5 @@
+station_code,station_name,km_from_start,platforms,is_junction
+A,Station A,0,3,yes
+B,Station B,22,2,no
+C,Station C,40,2,no
+D,Station D,65,3,yes

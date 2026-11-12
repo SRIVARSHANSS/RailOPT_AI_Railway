@@ -1,0 +1,5 @@
+section_id,from_station,to_station,length_km,tracks,min_run_min,min_headway_min,status
+S_AB,A,B,22,2,16,3,open
+S_BC,B,C,18,1,12,5,open
+S_BC_ALT,B,C,20,1,16,5,standby
+S_CD,C,D,25,2,18,3,open
