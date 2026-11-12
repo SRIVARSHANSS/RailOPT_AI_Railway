@@ -49,6 +49,10 @@ class Disruption:
     location: str           # section_id or station code
     start: int              # minutes after midnight
     duration: int           # minutes
+    # STOPPAGE only: minutes into the train's planned trip. Used only when the
+    # simulator runs with an rng and variability moved the train away from
+    # `start`: the stoppage is then applied at actual entry + offset_min.
+    offset_min: int | None = None
 
     @property
     def end(self) -> int:
@@ -249,7 +253,8 @@ def simulate(
         entry, track = _earliest_entry(sec, ready, run, track_free_at[sec.section_id],
                                        blocks.get(sec.section_id, []),
                                        holds.get((train_id, sec.section_id)))
-        stopped = _stoppage_minutes(train_id, sec, entry, entry + run, disruptions, result)
+        stopped = _stoppage_minutes(train_id, sec, entry, entry + run, disruptions, result,
+                                    shift_if_missed=rng is not None)
         exit_time = entry + run + stopped
         track_free_at[sec.section_id][track] = exit_time + sec.min_headway_min
 
@@ -324,7 +329,14 @@ def _earliest_entry(sec, ready, run, free_at, blocks, hold) -> tuple[int, int]:
         t = clash[1]
 
 
-def _stoppage_minutes(train_id, sec, entry, planned_exit, disruptions, result) -> int:
+def _stoppage_minutes(train_id, sec, entry, planned_exit, disruptions, result,
+                      shift_if_missed: bool = False) -> int:
+    """Minutes a train stands inside `sec` because of STOPPAGE events.
+
+    Deterministic runs: the stoppage applies only if the train is inside at
+    `start`. With variability (shift_if_missed) a stoppage that has an
+    offset_min and misses the train is applied at actual entry + offset_min.
+    """
     total = 0
     for d in disruptions:
         if d.event_type != "STOPPAGE" or d.train_id != train_id or d.location != sec.section_id:
@@ -333,6 +345,12 @@ def _stoppage_minutes(train_id, sec, entry, planned_exit, disruptions, result) -
             total += d.duration
             result.applied_events.append(
                 f"{d.event_id}: {train_id} stopped in {sec.section_id} at {format_time(d.start)} for {d.duration} min")
+        elif shift_if_missed and d.offset_min is not None:
+            at = entry + min(d.offset_min, planned_exit + total - entry - 1)
+            total += d.duration
+            result.applied_events.append(
+                f"{d.event_id}: {train_id} not in {sec.section_id} at {format_time(d.start)} after variability; "
+                f"stopped at {format_time(at)} (actual entry + {at - entry} min) for {d.duration} min")
         else:
             result.ignored_events.append(
                 f"{d.event_id}: {train_id} was not inside {sec.section_id} at {format_time(d.start)}")

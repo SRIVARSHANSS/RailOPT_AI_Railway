@@ -109,13 +109,16 @@ The simulator is deterministic unless it is given a random generator
     treated as known), plus 1-3 random disruptions (STOPPAGE, DELAY or
     TRACK_UNAVAILABLE), each 5-30 min. No platform events yet.
     - STOPPAGE: random train and one of its sections, starting inside its
-      planned trip. With variability the train may not be there at that
-      minute; the simulator then ignores it (counted in the dataset card).
+      planned trip; the event records that offset (`offset_min`). If random
+      variability means the train is not inside at that minute, the simulator
+      applies the stoppage at the train's actual entry + the same offset and
+      records it in `applied_events`. With `rng=None` the Phase 1 rule is
+      unchanged: a stoppage that misses the train is ignored.
     - DELAY: random train, at one of its stations, at its planned departure.
     - TRACK_UNAVAILABLE: random main section, start uniform in 06:00-14:00,
-      but never on a section from a stoppage's start until 30 min after it
-      ends. The model has no rule for a closure that begins while a stopped
-      train is stranded inside.
+      never on a section that has a stoppage in the same run. The model has
+      no rule for a closure that begins while a stopped train is stranded
+      inside, and a moved stoppage can land at any time.
 15. State time = the first disruption's start. Features use only what is known
     then: the timetable, starting delays and disruptions already started.
     Labels use everything plus the random variability, with no re-planning.

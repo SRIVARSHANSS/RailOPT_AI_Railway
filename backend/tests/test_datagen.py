@@ -98,6 +98,24 @@ def test_conflict_rate_on_200_runs_is_plausible(df200):
     assert 0.05 <= rate <= 0.60
 
 
+def test_1000_runs_have_zero_ignored_stoppages():
+    assert generate(1000, 42).attrs["ignored_stoppages"] == 0
+
+
+def test_missed_stoppage_moves_to_actual_entry_only_with_rng(full):
+    # placed 2 min into T303's planned S_CD trip (10:52), but T303 is held 20 min at A
+    events = [Disruption("E1", "DELAY", "T303", "A", t("10:10"), 20),
+              Disruption("E2", "STOPPAGE", "T303", "S_CD", t("10:54"), 10, offset_min=2)]
+    det = simulate(full, events)                               # rng=None: unchanged rule
+    assert det.occupancy("T303", "S_CD").stopped_min == 0
+    assert any("was not inside" in line for line in det.ignored_events)
+
+    rnd = simulate(full, events, rng=random.Random(0))
+    occ = rnd.occupancy("T303", "S_CD")
+    assert occ.stopped_min == 10
+    assert any("actual entry + 2 min" in line for line in rnd.applied_events)
+
+
 def test_200_runs_finish_in_under_30_seconds():
     started = time.perf_counter()
     generate(200, 99)

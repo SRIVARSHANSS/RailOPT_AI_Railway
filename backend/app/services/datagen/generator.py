@@ -39,7 +39,6 @@ DISRUPTIONS_PER_RUN = (1, 3)
 DISRUPTION_DURATION_MIN = (5, 30)
 STARTING_DELAY_MIN = (0, 5)
 NO_PRECEDING_GAP = 999          # headway_gap_min when no train is ahead on the section
-STOPPAGE_CLEAR_MARGIN_MIN = 30  # no closure on a section until 30 min after a stoppage there ends
 
 FEATURES = [
     "train_type", "priority", "current_delay_min", "time_to_section_min",
@@ -59,7 +58,8 @@ GENERATOR_RANGES = {
     "disruption_duration_min": list(DISRUPTION_DURATION_MIN),
     "starting_delay_min": list(STARTING_DELAY_MIN),
     "no_preceding_train_gap_value": NO_PRECEDING_GAP,
-    "closure_clear_of_stoppage_margin_min": STOPPAGE_CLEAR_MARGIN_MIN,
+    "closure_rule": "never on a section that has a stoppage in the same run",
+    "stoppage_rule": "if variability moves the train, applied at actual entry + planned offset",
 }
 
 
@@ -106,35 +106,31 @@ def sample_run(net: RailNetwork, run_id: str, rng: random.Random) -> RunSample:
             train_id = rng.choice(trains)
             trip = rng.choice([t for t in base.trips if t.train_id == train_id])
             start = rng.randint(trip.entry + 1, max(trip.entry + 1, trip.exit - 1))
-            drawn.append((start, kind, train_id, trip.section_id, duration))
+            drawn.append((start, kind, train_id, trip.section_id, duration, start - trip.entry))
         elif kind == "DELAY":
             train_id = rng.choice(trains)
             trip = rng.choice([t for t in base.trips if t.train_id == train_id])
             station = net.sections[trip.section_id].from_station
-            drawn.append((trip.entry, kind, train_id, station, duration))
+            drawn.append((trip.entry, kind, train_id, station, duration, None))
         else:
-            drawn.append((None, kind, None, rng.choice(open_sections), duration))
+            drawn.append((None, kind, None, None, duration, None))     # placed below
 
-    # Closures are drawn last so they can avoid a section while a stopped train
-    # may still be inside it: the model has no rule for a closure that starts
-    # with a stranded train in the section (see docs/ASSUMPTIONS.md).
-    stoppages = [(loc, start, start + dur + STOPPAGE_CLEAR_MARGIN_MIN)
-                 for start, kind, _t, loc, dur in drawn if kind == "STOPPAGE"]
-    for k, (start, kind, train, loc, dur) in enumerate(drawn):
-        if kind != "TRACK_UNAVAILABLE":
-            continue
-        for _ in range(50):
-            start = rng.randint(*SERVICE_DAY)
-            if not any(s_loc == loc and start < s_end and start + dur > s_start
-                       for s_loc, s_start, s_end in stoppages):
-                break
-        else:
-            raise RuntimeError(f"{run_id}: no closure slot on {loc} clear of stoppages")
-        drawn[k] = (start, kind, train, loc, dur)
+    # Closures are placed last, never on a section that has a stoppage in the same
+    # run: the model has no rule for a closure that starts while a stopped train
+    # is stranded inside, and variability can move a stoppage by any amount
+    # (see docs/ASSUMPTIONS.md). At most 2 stoppages + 1 closure per run and 3
+    # open sections, so a free section always exists.
+    stopped_sections = {loc for _s, kind, _t, loc, _d, _o in drawn if kind == "STOPPAGE"}
+    closable = [sid for sid in open_sections if sid not in stopped_sections]
+    for k, (_start, kind, train, _loc, dur, offset) in enumerate(drawn):
+        if kind == "TRACK_UNAVAILABLE":
+            drawn[k] = (rng.randint(*SERVICE_DAY), kind, train, rng.choice(closable), dur, offset)
 
     drawn.sort(key=lambda d: d[0])
-    disruptions = [Disruption(f"E{i}", kind, train, loc, start, dur)
-                   for i, (start, kind, train, loc, dur) in enumerate(drawn, start=1)]
+    # offset_min: how far into its planned trip a stoppage starts, so the simulator
+    # can re-place it if random variability moves the train
+    disruptions = [Disruption(f"E{i}", kind, train, loc, start, dur, offset_min=offset)
+                   for i, (start, kind, train, loc, dur, offset) in enumerate(drawn, start=1)]
     return RunSample(run_id, starting, disruptions)
 
 
