@@ -109,8 +109,18 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(fh))
 
 
-def load_network(data_dir: str | Path = DEFAULT_DATA_DIR) -> RailNetwork:
+# timetable name -> (trains file, schedule file). Stations and sections are shared.
+TIMETABLES = {
+    "reference": ("trains.csv", "schedule.csv"),                    # T101/T202/T303 scenario
+    "full_day": ("trains_full_day.csv", "schedule_full_day.csv"),   # 12 trains, 06:00-14:00
+}
+
+
+def load_network(data_dir: str | Path = DEFAULT_DATA_DIR, timetable: str = "reference") -> RailNetwork:
     data_dir = Path(data_dir)
+    if timetable not in TIMETABLES:
+        raise ValueError(f"Unknown timetable {timetable!r}; choose from {sorted(TIMETABLES)}")
+    trains_file, schedule_file = TIMETABLES[timetable]
 
     stations = {
         r["station_code"]: Station(
@@ -146,11 +156,11 @@ def load_network(data_dir: str | Path = DEFAULT_DATA_DIR) -> RailNetwork:
             priority=int(r["priority"]),
             runs_on=r["runs_on"],
         )
-        for r in _read_csv(data_dir / "trains.csv")
+        for r in _read_csv(data_dir / trains_file)
     }
 
     schedules: dict[str, list[StopTime]] = {}
-    for r in _read_csv(data_dir / "schedule.csv"):
+    for r in _read_csv(data_dir / schedule_file):
         schedules.setdefault(r["train_id"], []).append(
             StopTime(
                 station=r["station_code"],

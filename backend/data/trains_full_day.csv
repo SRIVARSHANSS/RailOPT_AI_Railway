@@ -1,0 +1,13 @@
+train_id,train_no,train_name,train_type,priority,runs_on
+T401,SIM-401,Morning Passenger 1 (simulated),PASSENGER,2,daily
+T501,SIM-501,Morning Freight 1 (simulated),FREIGHT,3,daily
+T102,SIM-102,Morning Express (simulated),EXPRESS,1,daily
+T402,SIM-402,Morning Passenger 2 (simulated),PASSENGER,2,daily
+T101,SIM-101,Express (simulated),EXPRESS,1,daily
+T202,SIM-202,Passenger (simulated),PASSENGER,2,daily
+T303,SIM-303,Freight (simulated),FREIGHT,3,daily
+T103,SIM-103,Midday Express (simulated),EXPRESS,1,daily
+T403,SIM-403,Midday Passenger 1 (simulated),PASSENGER,2,daily
+T502,SIM-502,Midday Freight 1 (simulated),FREIGHT,3,daily
+T404,SIM-404,Midday Passenger 2 (simulated),PASSENGER,2,daily
+T503,SIM-503,Afternoon Freight (simulated),FREIGHT,3,daily

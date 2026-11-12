@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import csv
 import heapq
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -154,6 +155,39 @@ def load_events(path: str | Path) -> list[Disruption]:
 
 
 # ---------------------------------------------------------------------------
+# Random variability (assumed ranges, documented in docs/ASSUMPTIONS.md)
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class Variability:
+    """How much slower than planned a train may run, drawn per section trip.
+
+    run_slowdown_max: train type -> maximum fractional slowdown of the
+        running time (0.05 = up to 5 % slower). Rounded to whole minutes, so
+        a train is never faster than planned and never below min_run_min.
+    dwell_overrun_max_min: at stations where the train has a timetabled stop,
+        it may leave 0..N whole minutes later than the dwell rule allows.
+        Trains passing a station without stopping get no overrun.
+    """
+    run_slowdown_max: tuple[tuple[str, float], ...] = (
+        ("EXPRESS", 0.05), ("PASSENGER", 0.10), ("FREIGHT", 0.20))
+    dwell_overrun_max_min: int = 3
+
+    def extra_run_minutes(self, rng: random.Random, train_type: str, run: int) -> int:
+        return round(run * rng.uniform(0.0, dict(self.run_slowdown_max)[train_type]))
+
+    def dwell_overrun_minutes(self, rng: random.Random, stop: StopTime) -> int:
+        dwell = (stop.sched_dep - stop.sched_arr) if stop.sched_arr is not None else 0
+        return rng.randint(0, self.dwell_overrun_max_min) if dwell > 0 else 0
+
+    def as_dict(self) -> dict:
+        return {"run_slowdown_max_fraction": dict(self.run_slowdown_max),
+                "dwell_overrun_max_min": self.dwell_overrun_max_min}
+
+
+DEFAULT_VARIABILITY = Variability()
+
+
+# ---------------------------------------------------------------------------
 # Simulation
 # ---------------------------------------------------------------------------
 def simulate(
@@ -161,6 +195,8 @@ def simulate(
     disruptions: list[Disruption] | None = None,
     route_overrides: dict[tuple[str, str], str] | None = None,
     holds: dict[tuple[str, str], int] | None = None,
+    rng: random.Random | None = None,
+    variability: Variability | None = None,
 ) -> SimResult:
     """Run the corridor once and return every train's timeline.
 
@@ -168,7 +204,12 @@ def simulate(
         over S_BC_ALT instead of S_BC (used by the reroute strategy later).
     holds: {(train_id, section_id): earliest_entry_minute} - a controller
         hold (used by the hold / resequence strategies later).
+    rng: if given, running times and dwells vary randomly (see Variability).
+        rng=None keeps the simulator fully deterministic, exactly as before.
+    variability: the random ranges; DEFAULT_VARIABILITY when rng is given.
     """
+    if rng is not None and variability is None:
+        variability = DEFAULT_VARIABILITY
     disruptions = list(disruptions or [])
     route_overrides = dict(route_overrides or {})
     holds = dict(holds or {})
@@ -203,6 +244,8 @@ def simulate(
         sec = _choose_section(net, train_id, here.station, nxt.station, route_overrides)
 
         run = _running_time(net, sec, here, nxt)
+        if rng is not None:
+            run += variability.extra_run_minutes(rng, net.trains[train_id].train_type, run)
         entry, track = _earliest_entry(sec, ready, run, track_free_at[sec.section_id],
                                        blocks.get(sec.section_id, []),
                                        holds.get((train_id, sec.section_id)))
@@ -216,6 +259,8 @@ def simulate(
 
         if i + 1 < len(stops) - 1:
             next_ready = next_departure(nxt, exit_time)
+            if rng is not None:
+                next_ready += variability.dwell_overrun_minutes(rng, nxt)
             next_ready = _apply_station_delay(next_ready, train_id, nxt.station, disruptions, result)
             heapq.heappush(queue, (next_ready, net.trains[train_id].priority, train_id, i + 1))
 

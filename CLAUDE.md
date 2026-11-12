@@ -53,7 +53,9 @@ Rail OPT/  (project root)
 ## How to work
 - Python 3.12 venv in backend/.venv (not 3.14: OR-Tools/XGBoost/SHAP support).
 - Run tests from backend/: `python -m pytest -q`. Demos: `python -m app.services.simulator.run_demo`,
-  `python -m app.services.conflicts.run_demo`.
+  `python -m app.services.conflicts.run_demo`. Data: `python -m app.services.datagen.generate --runs 3000 --seed 42`
+  (writes backend/data/generated/, gitignored). Timetables: `load_network()` = 3-train reference,
+  `load_network(timetable="full_day")` = 12 trains. Old tests use the reference; never change them.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.
 - Before a large change, explain the plan briefly and wait for approval.
@@ -62,8 +64,8 @@ Rail OPT/  (project root)
 ## Build status (update as you go)
 - [x] Phase 0: scope locked (corridor, trains, assumptions) - see docs/ASSUMPTIONS.md
 - [x] Phase 1: network model + simulator (custom event loop, 14 tests passing)
-- [ ] Phase 2: data generator
-- [x] Phase 3: conflict detector (rule-based, planned times; cascade via simulator; 24 tests passing)
+- [x] Phase 2: full-day timetable (12 trains), simulator variability (rng), training-data generator (app/services/datagen)
+- [x] Phase 3: conflict detector (rule-based, planned times; cascade via simulator). 34 tests passing
 - [ ] Phase 4: ML models + baselines
 - [ ] Phase 5: CP-SAT optimizer + baselines
 - [ ] Phase 6: what-if + re-optimization
