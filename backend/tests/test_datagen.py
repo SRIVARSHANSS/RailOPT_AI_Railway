@@ -11,7 +11,7 @@ import pytest
 
 from app.services.conflicts import detect_conflicts, project_plan
 from app.services.datagen import COLUMNS, generate, iter_runs
-from app.services.datagen.generator import FEATURES, LABELS
+from app.services.datagen.generator import BASELINES, FEATURES, LABELS
 from app.services.network import load_network
 from app.services.network import parse_time as t
 from app.services.simulator import DEFAULT_VARIABILITY, Disruption, find_violations, simulate
@@ -85,7 +85,7 @@ def test_same_seed_identical_different_seed_different():
 
 
 def test_columns_exactly_as_specified_and_no_nan(df200):
-    assert list(df200.columns) == COLUMNS == ["run_id", *FEATURES, *LABELS]
+    assert list(df200.columns) == COLUMNS == ["run_id", *FEATURES, *BASELINES, *LABELS]
     assert not df200.isna().any().any()
     assert (df200["time_to_section_min"] > 0).all()
     assert df200["run_id"].str.fullmatch(r"R\d{5}").all()

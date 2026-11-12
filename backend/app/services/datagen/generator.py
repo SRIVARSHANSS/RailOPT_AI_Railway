@@ -47,8 +47,9 @@ FEATURES = [
     "section_occupied_at_planned_entry", "trains_ahead_within_30min",
     "disruption_type", "disruption_duration_min", "hour_of_day", "rule_flags_conflict",
 ]
+BASELINES = ["baseline_projected_delay_min"]   # comparison only, never a model feature
 LABELS = ["label_conflict", "label_wait_min", "label_delay_min"]
-COLUMNS = ["run_id", *FEATURES, *LABELS]
+COLUMNS = ["run_id", *FEATURES, *BASELINES, *LABELS]
 
 GENERATOR_RANGES = {
     "timetable": TIMETABLE,
@@ -140,13 +141,23 @@ def simulate_run(net: RailNetwork, sample: RunSample, rng: random.Random) -> Sim
 
 
 # ---------------------------------------------------------------------------
-# rows for one run
+# features (known at state time) and rows for one run
 # ---------------------------------------------------------------------------
-def build_rows(net: RailNetwork, sample: RunSample, result: SimResult) -> list[dict]:
-    state_time = sample.state_time
-    plan = project_plan(net, state_time, sample.known_events)
+def plan_features(net: RailNetwork, state_time: int, known_events: list[Disruption],
+                  first: Disruption) -> list[dict]:
+    """Feature rows for every (train, section) the plan has the train entering
+    after `state_time`, using only what is known then. Usable on a live
+    scenario: no simulation outcome is needed.
+
+    Each row also carries `train_id` (for lookups; not a model feature) and
+    the non-ML baseline `baseline_projected_delay_min`: the deterministic
+    simulator (rng=None) run on the known events, i.e. what the rules plus
+    the simulator predict without ML. It is a comparison column only, never
+    a model feature.
+    """
+    plan = project_plan(net, state_time, known_events)
     flagged = {(c.later, c.section_id) for c in detect_conflicts(net, plan)}
-    first = sample.disruptions[0]
+    projection = simulate(net, known_events)            # rng=None: deterministic
 
     # planned delay of each trip = planned entry - timetabled departure from that section's start
     delay_at: dict[tuple[str, str], int] = {}
@@ -169,9 +180,8 @@ def build_rows(net: RailNetwork, sample: RunSample, result: SimResult) -> list[d
             train = net.trains[trip.train_id]
             prev = trips[k - 1] if k > 0 else None
             prev_train = net.trains[prev.train_id] if prev else None
-            actual = result.occupancy(trip.train_id, sid)
             rows.append({
-                "run_id": sample.run_id,
+                "train_id": trip.train_id,
                 "train_type": train.train_type,
                 "priority": train.priority,
                 "current_delay_min": delay_at[(trip.train_id, sid)],
@@ -189,10 +199,20 @@ def build_rows(net: RailNetwork, sample: RunSample, result: SimResult) -> list[d
                 "disruption_duration_min": first.duration,
                 "hour_of_day": trip.entry // 60,
                 "rule_flags_conflict": int((trip.train_id, sid) in flagged),
-                "label_conflict": int(actual.wait > 0),
-                "label_wait_min": actual.wait,
-                "label_delay_min": result.final_delay(trip.train_id),
+                "baseline_projected_delay_min": projection.final_delay(trip.train_id),
             })
+    return rows
+
+
+def build_rows(net: RailNetwork, sample: RunSample, result: SimResult) -> list[dict]:
+    """Feature rows for one run plus labels from the randomised outcome."""
+    rows = plan_features(net, sample.state_time, sample.known_events, sample.disruptions[0])
+    for row in rows:
+        actual = result.occupancy(row["train_id"], row["section_id"])
+        row["run_id"] = sample.run_id
+        row["label_conflict"] = int(actual.wait > 0)
+        row["label_wait_min"] = actual.wait
+        row["label_delay_min"] = result.final_delay(row["train_id"])
     return rows
 
 

@@ -56,6 +56,10 @@ Rail OPT/  (project root)
   `python -m app.services.conflicts.run_demo`. Data: `python -m app.services.datagen.generate --runs 3000 --seed 42`
   (writes backend/data/generated/, gitignored). Timetables: `load_network()` = 3-train reference,
   `load_network(timetable="full_day")` = 12 trains. Old tests use the reference; never change them.
+- ML: `python -m ml.train` (from backend/, ~3 min) writes ml/models/*.joblib (gitignored) and
+  ml/reports/{metrics.json,model_card.md,feature_importance.csv} (committed). metrics.json stores
+  SHA-256 of the dataset and model files; after regenerating data, retrain or test_ml fails.
+- 43 tests passing.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.
 - Before a large change, explain the plan briefly and wait for approval.
@@ -65,8 +69,8 @@ Rail OPT/  (project root)
 - [x] Phase 0: scope locked (corridor, trains, assumptions) - see docs/ASSUMPTIONS.md
 - [x] Phase 1: network model + simulator (custom event loop, 14 tests passing)
 - [x] Phase 2: full-day timetable (12 trains), simulator variability (rng), training-data generator (app/services/datagen)
-- [x] Phase 3: conflict detector (rule-based, planned times; cascade via simulator). 34 tests passing
-- [ ] Phase 4: ML models + baselines
+- [x] Phase 3: conflict detector (rule-based, planned times; cascade via simulator)
+- [x] Phase 4: ML models + baselines (backend/ml, app/services/predictor; see ml/reports/model_card.md)
 - [ ] Phase 5: CP-SAT optimizer + baselines
 - [ ] Phase 6: what-if + re-optimization
 - [ ] Phase 7: explainer

@@ -1,0 +1,413 @@
+{
+  "note": "SIMULATED data - sample corridor, synthetic disruptions, not real railway records",
+  "data": {
+    "csv": "training_rows.csv",
+    "rows": 68011,
+    "runs": 2945,
+    "runs_generated": 3000,
+    "split": {
+      "train": {
+        "runs": 2062,
+        "rows": 47862,
+        "first_run": "R00001",
+        "last_run": "R02103"
+      },
+      "val": {
+        "runs": 442,
+        "rows": 10324,
+        "first_run": "R02104",
+        "last_run": "R02554"
+      },
+      "test": {
+        "runs": 441,
+        "rows": 9825,
+        "first_run": "R02555",
+        "last_run": "R03000"
+      }
+    },
+    "split_method": "by run_id in run order: first 70 % train, next 15 % validation, last 15 % test"
+  },
+  "seed": 42,
+  "n_iter_per_model": 20,
+  "features": [
+    "train_type",
+    "priority",
+    "current_delay_min",
+    "time_to_section_min",
+    "section_id",
+    "section_tracks",
+    "headway_gap_min",
+    "preceding_train_type",
+    "preceding_train_priority",
+    "preceding_train_delay_min",
+    "section_occupied_at_planned_entry",
+    "trains_ahead_within_30min",
+    "disruption_type",
+    "disruption_duration_min",
+    "hour_of_day",
+    "rule_flags_conflict"
+  ],
+  "preprocessing": "one-hot categoricals, headway_gap_min capped at 120 then scaled, numerics scaled; fitted on train only",
+  "final_models_trained_on": "train split only",
+  "delay": {
+    "label": "label_delay_min",
+    "baselines": {
+      "carry_known_delay": {
+        "val": {
+          "mae": 12.903332041844246,
+          "rmse": 17.072162631713447,
+          "r2": -1.0506711451419264
+        },
+        "test": {
+          "mae": 12.64325699745547,
+          "rmse": 16.9085310536385,
+          "r2": -1.0400022609158968
+        }
+      },
+      "deterministic_projection": {
+        "val": {
+          "mae": 10.626307632700504,
+          "rmse": 14.52296475346996,
+          "r2": -0.48398499175440346
+        },
+        "test": {
+          "mae": 10.161221374045802,
+          "rmse": 13.942922543660787,
+          "r2": -0.3871598797050253
+        }
+      },
+      "linear_regression": {
+        "val": {
+          "mae": 7.715329082918612,
+          "rmse": 10.67376304601126,
+          "r2": 0.1984067401452282
+        },
+        "test": {
+          "mae": 7.508308375704427,
+          "rmse": 10.512794546051166,
+          "r2": 0.21140277624032888
+        }
+      }
+    },
+    "models": {
+      "random_forest": {
+        "params": {
+          "n_estimators": 200,
+          "min_samples_leaf": 10,
+          "max_features": 0.5,
+          "max_depth": 16
+        },
+        "configs_tried": 20,
+        "val": {
+          "mae": 7.109038690418552,
+          "rmse": 10.293097453205048,
+          "r2": 0.25456271511047324
+        },
+        "test": {
+          "mae": 6.894019435589974,
+          "rmse": 10.010409368508945,
+          "r2": 0.2849727951222878
+        }
+      },
+      "xgboost": {
+        "params": {
+          "subsample": 0.9,
+          "n_estimators": 200,
+          "min_child_weight": 1,
+          "max_depth": 6,
+          "learning_rate": 0.1,
+          "colsample_bytree": 0.7
+        },
+        "configs_tried": 20,
+        "val": {
+          "mae": 7.054621696472168,
+          "rmse": 10.292214527039624,
+          "r2": 0.25469058752059937
+        },
+        "test": {
+          "mae": 6.849635124206543,
+          "rmse": 10.004671150228715,
+          "r2": 0.2857922911643982
+        }
+      }
+    },
+    "best_model": "xgboost",
+    "selected_by": "lowest validation MAE"
+  },
+  "conflict": {
+    "label": "label_conflict",
+    "positive_rate": {
+      "train": 0.16480715390079811,
+      "val": 0.17125145292522279,
+      "test": 0.17333333333333334
+    },
+    "baselines": {
+      "rule_flags_conflict": {
+        "val": {
+          "precision": 0.7905282331511839,
+          "recall": 0.24547511312217193,
+          "f1": 0.37462235649546827,
+          "pr_auc": 0.32326849060512497,
+          "threshold": null
+        },
+        "test": {
+          "precision": 0.8081180811808119,
+          "recall": 0.2571931884908984,
+          "f1": 0.39020044543429844,
+          "pr_auc": 0.33659564663761726,
+          "threshold": null
+        }
+      },
+      "logistic_regression": {
+        "threshold": 0.7007373318434594,
+        "val": {
+          "precision": 0.5310861423220974,
+          "recall": 0.8020361990950227,
+          "f1": 0.6390265885534024,
+          "pr_auc": 0.6584060464090873,
+          "threshold": 0.7007373318434594
+        },
+        "test": {
+          "precision": 0.5468,
+          "recall": 0.8027011156782149,
+          "f1": 0.6504877468474899,
+          "pr_auc": 0.6777146603390248,
+          "threshold": 0.7007373318434594
+        }
+      }
+    },
+    "models": {
+      "random_forest": {
+        "params": {
+          "n_estimators": 100,
+          "min_samples_leaf": 10,
+          "max_features": 1.0,
+          "max_depth": 12
+        },
+        "configs_tried": 20,
+        "threshold": 0.6218386655460586,
+        "val": {
+          "precision": 0.5629717918156536,
+          "recall": 0.8014705882352942,
+          "f1": 0.6613768961493582,
+          "pr_auc": 0.7259764396317289,
+          "threshold": 0.6218386655460586
+        },
+        "test": {
+          "precision": 0.5934397928355633,
+          "recall": 0.8073987081620669,
+          "f1": 0.6840796019900498,
+          "pr_auc": 0.7558848408516967,
+          "threshold": 0.6218386655460586
+        }
+      },
+      "xgboost": {
+        "params": {
+          "subsample": 1.0,
+          "n_estimators": 200,
+          "min_child_weight": 5,
+          "max_depth": 8,
+          "learning_rate": 0.03,
+          "colsample_bytree": 0.9
+        },
+        "configs_tried": 20,
+        "threshold": 0.6328985095024109,
+        "val": {
+          "precision": 0.5595096876235667,
+          "recall": 0.8003393665158371,
+          "f1": 0.6585990225738888,
+          "pr_auc": 0.7261917739991265,
+          "threshold": 0.6328985095024109
+        },
+        "test": {
+          "precision": 0.5833333333333334,
+          "recall": 0.817968291250734,
+          "f1": 0.6810070887313615,
+          "pr_auc": 0.7576317641310175,
+          "threshold": 0.6328985095024109
+        }
+      }
+    },
+    "best_model": "xgboost",
+    "selected_by": "highest validation PR-AUC",
+    "operating_points": {
+      "recall_at_least_0.80": {
+        "rule": "best validation precision subject to validation recall >= 0.8",
+        "threshold": 0.6328985095024109,
+        "val": {
+          "precision": 0.5595096876235667,
+          "recall": 0.8003393665158371,
+          "f1": 0.6585990225738888,
+          "pr_auc": 0.7261917739991265,
+          "threshold": 0.6328985095024109
+        },
+        "test": {
+          "precision": 0.5833333333333334,
+          "recall": 0.817968291250734,
+          "f1": 0.6810070887313615,
+          "pr_auc": 0.7576317641310175,
+          "threshold": 0.6328985095024109
+        }
+      },
+      "equal_to_rule_precision": {
+        "rule": "best validation recall subject to validation precision >= the rule's validation precision",
+        "rule_val_precision": 0.7905282331511839,
+        "rule_val_recall": 0.24547511312217193,
+        "threshold": 0.871353030204773,
+        "val": {
+          "precision": 0.7921077959576516,
+          "recall": 0.4654977375565611,
+          "f1": 0.5863911649447809,
+          "pr_auc": 0.7261917739991265,
+          "threshold": 0.871353030204773
+        },
+        "test": {
+          "precision": 0.8021442495126706,
+          "recall": 0.48326482677627713,
+          "f1": 0.6031513374862587,
+          "pr_auc": 0.7576317641310175,
+          "threshold": 0.871353030204773
+        }
+      }
+    },
+    "ablation": {
+      "model": "xgboost",
+      "params": {
+        "subsample": 1.0,
+        "n_estimators": 200,
+        "min_child_weight": 5,
+        "max_depth": 8,
+        "learning_rate": 0.03,
+        "colsample_bytree": 0.9
+      },
+      "with_rule_flag": {
+        "recall_at_least_0.80": {
+          "threshold": 0.6328985095024109,
+          "val": {
+            "precision": 0.5595096876235667,
+            "recall": 0.8003393665158371,
+            "f1": 0.6585990225738888,
+            "pr_auc": 0.7261917739991265,
+            "threshold": 0.6328985095024109
+          },
+          "test": {
+            "precision": 0.5833333333333334,
+            "recall": 0.817968291250734,
+            "f1": 0.6810070887313615,
+            "pr_auc": 0.7576317641310175,
+            "threshold": 0.6328985095024109
+          }
+        },
+        "equal_to_rule_precision": {
+          "threshold": 0.871353030204773,
+          "val": {
+            "precision": 0.7921077959576516,
+            "recall": 0.4654977375565611,
+            "f1": 0.5863911649447809,
+            "pr_auc": 0.7261917739991265,
+            "threshold": 0.871353030204773
+          },
+          "test": {
+            "precision": 0.8021442495126706,
+            "recall": 0.48326482677627713,
+            "f1": 0.6031513374862587,
+            "pr_auc": 0.7576317641310175,
+            "threshold": 0.871353030204773
+          }
+        }
+      },
+      "without_rule_flag": {
+        "recall_at_least_0.80": {
+          "threshold": 0.6120823621749878,
+          "val": {
+            "precision": 0.5333584621183566,
+            "recall": 0.8003393665158371,
+            "f1": 0.6401266681746212,
+            "pr_auc": 0.7010250983083056,
+            "threshold": 0.6120823621749878
+          },
+          "test": {
+            "precision": 0.552829442026118,
+            "recall": 0.82031708749266,
+            "f1": 0.6605200945626477,
+            "pr_auc": 0.7321787846801553,
+            "threshold": 0.6120823621749878
+          }
+        },
+        "equal_to_rule_precision": {
+          "threshold": 0.8848568201065063,
+          "val": {
+            "precision": 0.7940841865756542,
+            "recall": 0.3947963800904977,
+            "f1": 0.5273894975443899,
+            "pr_auc": 0.7010250983083056,
+            "threshold": 0.8848568201065063
+          },
+          "test": {
+            "precision": 0.8027522935779816,
+            "recall": 0.41103934233705225,
+            "f1": 0.5436893203883495,
+            "pr_auc": 0.7321787846801553,
+            "threshold": 0.8848568201065063
+          }
+        }
+      }
+    }
+  },
+  "shap_global_importance": {
+    "delay": {
+      "time_to_section_min": 1.820467472076416,
+      "current_delay_min": 1.6699796915054321,
+      "disruption_duration_min": 1.0771654844284058,
+      "hour_of_day": 0.9571173191070557,
+      "disruption_type": 0.8414580225944519,
+      "train_type": 0.7032647728919983,
+      "preceding_train_delay_min": 0.3901824951171875,
+      "headway_gap_min": 0.38630473613739014,
+      "preceding_train_type": 0.33482739329338074,
+      "section_id": 0.28278520703315735,
+      "trains_ahead_within_30min": 0.19029411673545837,
+      "priority": 0.1758764684200287,
+      "rule_flags_conflict": 0.12303899973630905,
+      "preceding_train_priority": 0.10056901723146439,
+      "section_occupied_at_planned_entry": 0.0855599045753479,
+      "section_tracks": 0.010579835623502731
+    },
+    "conflict": {
+      "section_id": 1.6114064455032349,
+      "headway_gap_min": 0.37991058826446533,
+      "time_to_section_min": 0.30330461263656616,
+      "rule_flags_conflict": 0.23517441749572754,
+      "section_tracks": 0.22537736594676971,
+      "disruption_duration_min": 0.1447412371635437,
+      "current_delay_min": 0.13219469785690308,
+      "trains_ahead_within_30min": 0.08805885165929794,
+      "hour_of_day": 0.08202778548002243,
+      "disruption_type": 0.07644405961036682,
+      "preceding_train_type": 0.05773298442363739,
+      "preceding_train_delay_min": 0.05772083252668381,
+      "train_type": 0.029751356691122055,
+      "preceding_train_priority": 0.012701458297669888,
+      "section_occupied_at_planned_entry": 0.010926268063485622,
+      "priority": 0.0018738212529569864
+    }
+  },
+  "shap_rows": 2000,
+  "training_seconds": 154.6,
+  "hashes": {
+    "dataset_sha256": "a41c8f03fa1bd3d632d741625824f01e65ec4f5837acc6c8af314be3f270476e",
+    "models_sha256": {
+      "preprocess.joblib": "8b4cdb0c45e2e65ca58ba8ba2d22da9005754169099f54da6e30ce9e00947f31",
+      "delay_model.joblib": "afa35a710af85d6f94f863f4ef8b90acf69624ea634f7cfb53aac06012bb42d5",
+      "conflict_model.joblib": "5a7921180453fe049f8611e742cfc7bb0f5e63b367911d6f546399067c215901"
+    }
+  },
+  "small_data_check": {
+    "runs": 300,
+    "n_iter_per_model": 3,
+    "best_model": "xgboost",
+    "rule_val_precision": 0.8780487804878049,
+    "rule_val_recall": 0.2155688622754491,
+    "model_val_recall_at_rule_precision": 0.1497005988023952
+  }
+}

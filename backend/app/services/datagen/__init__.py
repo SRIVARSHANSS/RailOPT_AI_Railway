@@ -1,10 +1,12 @@
 from .generator import (
+    BASELINES,
     COLUMNS,
     FEATURES,
     LABELS,
     SIMULATED_NOTE,
     RunSample,
     build_rows,
+    plan_features,
     dataset_card,
     generate,
     iter_runs,
@@ -13,12 +15,14 @@ from .generator import (
 )
 
 __all__ = [
+    "BASELINES",
     "COLUMNS",
     "FEATURES",
     "LABELS",
     "SIMULATED_NOTE",
     "RunSample",
     "build_rows",
+    "plan_features",
     "dataset_card",
     "generate",
     "iter_runs",

@@ -14,7 +14,9 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] Phase 1: network model + event-driven simulator
 - [x] Phase 2: full-day timetable, random variability, synthetic training-data generator
 - [x] Phase 3: rule-based conflict detector (predicts conflicts from planned times)
-- 34 passing tests. Remaining phases: see `CLAUDE.md`
+- [x] Phase 4: delay and conflict models with baselines, SHAP explanations
+  (results: `backend/ml/reports/model_card.md`, all on SIMULATED data)
+- 43 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -33,6 +35,7 @@ python -m pytest -q                         # run all tests
 python -m app.services.simulator.run_demo   # T101 scenario, before and after
 python -m app.services.conflicts.run_demo   # predicted conflicts + knock-on delays
 python -m app.services.datagen.generate --runs 3000 --seed 42   # SIMULATED training rows -> data/generated/
+python -m ml.train                          # models -> ml/models/, reports -> ml/reports/ (~3 min)
 ```
 
 ## Layout
@@ -43,6 +46,8 @@ backend/
   app/services/simulator/   event-driven simulator + safety checks
   app/services/conflicts/   rule-based conflict detector + cascade estimate
   app/services/datagen/     synthetic training-data generator (simulated)
+  app/services/predictor/   loads the models; predict(features) with top SHAP drivers
+  ml/                       split, preprocessing, training, SHAP; reports/ holds metrics + model card
   data/                     corridor CSVs (reference + full-day timetable), T101 event file
   tests/                    pytest suite
 docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
