@@ -51,7 +51,9 @@ Rail OPT/  (project root)
   (event_type: STOPPAGE, DELAY, TRACK_UNAVAILABLE, PLATFORM_UNAVAILABLE)
 
 ## How to work
-- Run tests from backend/: `python -m pytest -q`. Demo: `python -m app.services.simulator.run_demo`.
+- Python 3.12 venv in backend/.venv (not 3.14: OR-Tools/XGBoost/SHAP support).
+- Run tests from backend/: `python -m pytest -q`. Demos: `python -m app.services.simulator.run_demo`,
+  `python -m app.services.conflicts.run_demo`.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.
 - Before a large change, explain the plan briefly and wait for approval.
@@ -61,7 +63,7 @@ Rail OPT/  (project root)
 - [x] Phase 0: scope locked (corridor, trains, assumptions) - see docs/ASSUMPTIONS.md
 - [x] Phase 1: network model + simulator (custom event loop, 14 tests passing)
 - [ ] Phase 2: data generator
-- [ ] Phase 3: conflict detector
+- [x] Phase 3: conflict detector (rule-based, planned times; cascade via simulator; 24 tests passing)
 - [ ] Phase 4: ML models + baselines
 - [ ] Phase 5: CP-SAT optimizer + baselines
 - [ ] Phase 6: what-if + re-optimization

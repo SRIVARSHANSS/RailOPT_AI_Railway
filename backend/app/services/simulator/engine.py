@@ -35,7 +35,7 @@ import heapq
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from app.services.network import RailNetwork, Section, format_time, parse_time
+from app.services.network import RailNetwork, Section, StopTime, format_time, parse_time
 
 EVENT_TYPES = {"STOPPAGE", "DELAY", "TRACK_UNAVAILABLE", "PLATFORM_UNAVAILABLE"}
 
@@ -173,12 +173,7 @@ def simulate(
     route_overrides = dict(route_overrides or {})
     holds = dict(holds or {})
     result = SimResult()
-
-    for d in disruptions:
-        if d.event_type not in EVENT_TYPES:
-            raise ValueError(f"Unknown event type {d.event_type}")
-        if d.event_type == "PLATFORM_UNAVAILABLE":
-            result.ignored_events.append(f"{d.event_id}: platform model not built yet")
+    validate_events(net, disruptions, result)
 
     # track_free_at[section_id] = list with one "free from" time per track
     track_free_at: dict[str, list[int]] = {
@@ -187,8 +182,6 @@ def simulate(
     blocks: dict[str, list[tuple[int, int]]] = {}
     for d in disruptions:
         if d.event_type == "TRACK_UNAVAILABLE":
-            if d.location not in net.sections:
-                raise ValueError(f"{d.event_id}: unknown section {d.location}")
             blocks.setdefault(d.location, []).append((d.start, d.end))
             result.applied_events.append(f"{d.event_id}: {d.location} closed {format_time(d.start)}-{format_time(d.end)}")
 
@@ -222,9 +215,7 @@ def simulate(
         calls[train_id][i + 1].arr = exit_time
 
         if i + 1 < len(stops) - 1:
-            # dwell: keep the timetabled stop length, never leave before schedule
-            dwell = (nxt.sched_dep - nxt.sched_arr) if nxt.sched_arr is not None else 0
-            next_ready = max(nxt.sched_dep, exit_time + dwell)
+            next_ready = next_departure(nxt, exit_time)
             next_ready = _apply_station_delay(next_ready, train_id, nxt.station, disruptions, result)
             heapq.heappush(queue, (next_ready, net.trains[train_id].priority, train_id, i + 1))
 
@@ -235,8 +226,25 @@ def simulate(
 
 
 # ---------------------------------------------------------------------------
-# helpers
+# helpers (also used by the Phase 3 conflict detector's planner)
 # ---------------------------------------------------------------------------
+def validate_events(net: RailNetwork, disruptions: list[Disruption], result: SimResult) -> None:
+    """Reject unknown event types and sections; note events not modelled yet."""
+    for d in disruptions:
+        if d.event_type not in EVENT_TYPES:
+            raise ValueError(f"Unknown event type {d.event_type}")
+        if d.event_type == "PLATFORM_UNAVAILABLE":
+            result.ignored_events.append(f"{d.event_id}: platform model not built yet")
+        if d.event_type == "TRACK_UNAVAILABLE" and d.location not in net.sections:
+            raise ValueError(f"{d.event_id}: unknown section {d.location}")
+
+
+def next_departure(nxt: StopTime, arrival: int) -> int:
+    """Dwell rule: keep the timetabled stop length, never leave before schedule."""
+    dwell = (nxt.sched_dep - nxt.sched_arr) if nxt.sched_arr is not None else 0
+    return max(nxt.sched_dep, arrival + dwell)
+
+
 def _choose_section(net, train_id, a, b, overrides) -> Section:
     sid = overrides.get((train_id, a))
     if sid:

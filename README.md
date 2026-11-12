@@ -11,14 +11,16 @@ and is not connected to Indian Railways systems. All results are simulated.
 ## Status
 
 - [x] Phase 0: scope and assumptions (`docs/ASSUMPTIONS.md`)
-- [x] Phase 1: network model + event-driven simulator, 14 passing tests
-- [ ] Phase 2 onwards: see `CLAUDE.md`
+- [x] Phase 1: network model + event-driven simulator
+- [ ] Phase 2: data generator
+- [x] Phase 3: rule-based conflict detector (predicts conflicts from planned times)
+- 24 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
 ```powershell
 cd backend
-python -m venv .venv
+py -3.12 -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -29,6 +31,7 @@ pip install -r requirements.txt
 cd backend
 python -m pytest -q                         # run all tests
 python -m app.services.simulator.run_demo   # T101 scenario, before and after
+python -m app.services.conflicts.run_demo   # predicted conflicts + knock-on delays
 ```
 
 ## Layout
@@ -37,6 +40,7 @@ python -m app.services.simulator.run_demo   # T101 scenario, before and after
 backend/
   app/services/network/     stations, sections, trains, timetable, graph
   app/services/simulator/   event-driven simulator + safety checks
+  app/services/conflicts/   rule-based conflict detector + cascade estimate
   data/                     corridor CSVs and the T101 event file
   tests/                    pytest suite
 docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
