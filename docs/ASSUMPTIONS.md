@@ -129,3 +129,72 @@ The simulator is deterministic unless it is given a random generator
     section (the train's known lateness, projected forward). `hour_of_day` is
     the hour of the planned entry.
 18. The Phase 4 train/test split is by `run_id`, never by random rows.
+
+## Phase 5: re-planning optimizer (assumptions)
+
+19. **Holds** (simulator): a held train requests its section only when the
+    hold ends; it books nothing earlier. Its wait is still counted from the
+    moment it was ready. Plans from the optimizer are replayed this way.
+20. **Dispatch** (simulator): `fcfs` (default, the "no re-planning" baseline)
+    books the next free slot as soon as a train is ready. `priority` (the
+    "priority dispatch" baseline) lets a blocked train wait without booking;
+    each time a track frees, the highest-priority waiting train enters first.
+    Neither mode pre-empts a train that has already entered.
+21. **History**: the optimizer takes everything entered at or before state
+    time from the no-re-planning simulation of the known events, and fixes
+    it. This includes trains inside a section at state time, with their
+    known stoppage.
+22. **Rolling horizon**: only trips that `project_plan` starts within 120 min
+    of state time are re-planned. For a train whose route goes beyond the
+    horizon, the objective uses its delay at the last station inside it. The
+    timetable has no recovery margins, so that delay carries on. Later trips
+    are not held; in the replay they run first come, first served.
+23. **Model**: integer minutes. Each re-planned trip is an interval
+    [entry, exit + headway (+ optional risk buffer)].
+    - Capacity: 1-track sections use NoOverlap; multi-track sections use
+      Cumulative with capacity = tracks.
+    - Entry rules: entry >= scheduled departure, >= previous exit + timetabled
+      dwell, and >= the end of a known DELAY at that station.
+    - Closures: a trip's [entry, exit) must not overlap a closure. The headway
+      tail may, which is the simulator's rule.
+    - Reroute: exactly one of S_BC / S_BC_ALT, with the alternate line's
+      longer running time.
+    - Planning window: 24 h after state time. No schedule within it means
+      INFEASIBLE.
+24. **Objective**: minimise sum(weight x arrival delay), with weights
+    EXPRESS 3, PASSENGER 2, FREIGHT 1, plus 1 weighted-minute per reroute
+    (`app/services/optimizer/config.py`).
+25. **Strategies**:
+    - HOLD: timetable order on every section, main line only.
+    - REROUTE: timetable order, alternate line allowed.
+    - RESEQUENCE: free order, main line only.
+    - COMBINED: free order + alternate line.
+    "Timetable order" = order of scheduled departure onto the section (ties
+    by priority), between trains that both use it.
+26. **Solver**: CP-SAT, 1 worker, fixed seed, 10 s limit, so results are
+    deterministic. A plan is called optimal only when CP-SAT returns OPTIMAL,
+    meaning optimal for that strategy's model. FEASIBLE is reported as "not
+    proven optimal".
+27. **Scoring**: every plan is replayed through the simulator (rng=None), and
+    all reported metrics come from the replay. The replay must have zero
+    capacity, headway, closure or early-departure violations.
+28. **ML risk buffers** (optional, off by default): +1 min headway on trips
+    the conflict model flags at its recall >= 0.80 threshold.
+
+### Reference result (simulated, from `python -m app.services.optimizer.run_demo`)
+
+T101 stops in B-C at 10:03 for 15 min, weights 3/2/1. All four strategies
+solved to OPTIMAL.
+
+| Plan | Weighted delay | Total delay | T101 / T202 / T303 | Action |
+| --- | --- | --- | --- | --- |
+| No re-planning | 88 | 43 | 15 / 15 / 13 | - |
+| Priority dispatch | 88 | 43 | 15 / 15 / 13 | - |
+| HOLD | 88 | 43 | 15 / 15 / 13 | hold T202 to 10:28, T303 to 10:47 |
+| RESEQUENCE | 88 | 43 | 15 / 15 / 13 | same holds (no better order exists) |
+| REROUTE | 53 | 19 | 15 / 4 / 0 | reroute T202 via S_BC_ALT |
+| COMBINED | 53 | 19 | 15 / 4 / 0 | reroute T202 via S_BC_ALT |
+
+On the full-day timetable the same event costs 124 weighted / 58 total
+without re-planning, because the knock-on reaches T103, T403 and T502.
+Rerouting T202 cuts that to 53 / 19.

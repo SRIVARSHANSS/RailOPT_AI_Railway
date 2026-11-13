@@ -59,7 +59,9 @@ Rail OPT/  (project root)
 - ML: `python -m ml.train` (from backend/, ~3 min) writes ml/models/*.joblib (gitignored) and
   ml/reports/{metrics.json,model_card.md,feature_importance.csv} (committed). metrics.json stores
   SHA-256 of the dataset and model files; after regenerating data, retrain or test_ml fails.
-- 43 tests passing.
+- Optimizer demo: `python -m app.services.optimizer.run_demo`. Call a plan optimal only when the
+  CP-SAT status is OPTIMAL; strategy D is named COMBINED for that reason. All metrics come from the replay.
+- 53 tests passing.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.
 - Before a large change, explain the plan briefly and wait for approval.
@@ -71,7 +73,7 @@ Rail OPT/  (project root)
 - [x] Phase 2: full-day timetable (12 trains), simulator variability (rng), training-data generator (app/services/datagen)
 - [x] Phase 3: conflict detector (rule-based, planned times; cascade via simulator)
 - [x] Phase 4: ML models + baselines (backend/ml, app/services/predictor; see ml/reports/model_card.md)
-- [ ] Phase 5: CP-SAT optimizer + baselines
+- [x] Phase 5: CP-SAT optimizer + baselines (app/services/optimizer; strategies replayed through the simulator)
 - [ ] Phase 6: what-if + re-optimization
 - [ ] Phase 7: explainer
 - [ ] Phase 8: FastAPI + PostgreSQL + auth
