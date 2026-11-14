@@ -36,7 +36,7 @@ over the poster once it can play through. Web files go in `public/media/`, raw s
 `media-src/` (gitignored).
 
 Current clip: a 13.5 s sunset railway-yard video supplied by the project owner (raw file in
-`media-src/login-train-window.mp4`, origin rawpixel via Pinterest - confirm the licence before
+`media-src/login-train-window.mp4`; original source unknown, Pinterest-style file name - confirm the licence before
 any public use). Web copy `public/media/login-railway-sunset.mp4`: audio removed, 0.6 s fade to
 dark at both ends so the loop does not jump, H.264 CRF 22, 1.06 MB, 736x414 (soft on very large
 screens). The login card is see-through glass (`.login-glass`: 42 % navy + 16 px blur). Its
