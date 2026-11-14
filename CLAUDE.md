@@ -69,6 +69,15 @@ Rail OPT/  (project root)
 - UI rule: an ml_watchlist item with resolved_by_plan = true is shown as "Risk resolved by accepted plan"
   (green, risk struck through), not as an active warning; keep showing ml_note.
 - 66 tests passing.
+- Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
+  Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
+  Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
+  motion durations/easings only from src/lib/motion.ts; animate transform/opacity only; honour
+  reduced motion. Every screen shows the SIMULATED badge. Never show invented numbers in the UI:
+  data comes from the API, gallery examples are labelled as examples. framer-motion is pinned with
+  npm overrides for motion-dom / motion-utils (12.18.1); keep them in step when upgrading.
+- Login media: src/config/media.ts (video optional; poster-only drift supported; CSS fallback).
+  Higgsfield: preflight get_cost, state credits and balance, wait for the user's go.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.
 - Before a large change, explain the plan briefly and wait for approval.
@@ -84,6 +93,6 @@ Rail OPT/  (project root)
 - [ ] Phase 6: what-if + re-optimization
 - [ ] Phase 7: explainer
 - [ ] Phase 8: FastAPI + PostgreSQL + auth
-- [ ] Phase 9: React frontend
+- [ ] Phase 9: React frontend - part 1 done (design system, app shell, login); part 2 = data pages
 - [ ] Phase 10: evaluation
 - [ ] Phase 11: Docker, README, demo script

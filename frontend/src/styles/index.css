@@ -1,0 +1,90 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* larger type on big screens and projectors */
+  html { font-size: 16px; }
+  @media (min-width: 1600px) { html { font-size: 17px; } }
+  @media (min-width: 1920px) { html { font-size: 18px; } }
+
+  body {
+    @apply bg-canvas-1 font-sans text-ink antialiased;
+    background-image: radial-gradient(120% 80% at 70% -10%, rgb(var(--c-canvas-2)) 0%, rgb(var(--c-canvas-1)) 45%, rgb(var(--c-canvas-0)) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 { @apply font-display tracking-tight; }
+
+  /* keyboard focus: always visible, two-tone ring readable on glass and video */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--c-canvas-0)), 0 0 0 4px rgb(var(--c-cyan));
+    border-radius: 0.75rem;
+  }
+
+  ::selection { background: rgb(var(--c-cyan) / 0.3); }
+}
+
+@layer components {
+  .glass {
+    position: relative;
+    background: linear-gradient(180deg, rgb(var(--c-surface) / 0.72), rgb(var(--c-surface) / 0.5));
+    border: 1px solid rgb(var(--c-line) / 0.14);
+    border-radius: var(--radius-panel);
+    backdrop-filter: blur(var(--blur-panel)) saturate(1.2);
+    -webkit-backdrop-filter: blur(var(--blur-panel)) saturate(1.2);
+    @apply shadow-panel;
+  }
+  /* inner glow along the top edge */
+  .glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 40%);
+  }
+  /* gradient border when something inside has keyboard focus */
+  .glass-focus:has(:focus-visible)::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(120deg, rgb(var(--c-cyan)), rgb(var(--c-violet)));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+/* ---- keyframes: transform / opacity only ---------------------------------------- */
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-160px, -160px, 0); } }
+@keyframes streak { from { transform: translateX(-30vw); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } to { transform: translateX(130vw); opacity: 0; } }
+@keyframes hero-drift { from { transform: scale(1) translate3d(0, 0, 0); } to { transform: scale(1.06) translate3d(-1.2%, -0.8%, 0); } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+
+.animate-shimmer { animation: shimmer 1.6s ease-in-out infinite; }
+.animate-drift { animation: drift 90s linear infinite; }
+.animate-streak { animation: streak 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.animate-hero-drift { animation: hero-drift 18s ease-in-out infinite alternate; }
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* reduced motion: final states, no loops */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-drift, .animate-streak, .animate-hero-drift, .animate-shimmer, .animate-pulse-dot { animation: none !important; }
+}

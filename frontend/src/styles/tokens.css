@@ -1,0 +1,34 @@
+/* "Midnight Signal" design tokens. Colours are "R G B" channels for Tailwind.
+   WCAG contrast, computed (worst case = on surface-raised #1A2846): ink 12.5:1,
+   ink-muted 6.6:1, ink-dim 4.8:1, every signal and train colour >= 5.3:1. All pass AA. */
+:root {
+  color-scheme: dark;
+
+  /* canvas: deep navy-black, never pure black */
+  --c-canvas-0: 5 9 18;      /* #050912 */
+  --c-canvas-1: 10 18 34;    /* #0A1222 */
+  --c-canvas-2: 16 27 50;    /* #101B32 */
+  --c-surface: 17 28 52;     /* glass panels (used with alpha) */
+  --c-surface-raised: 26 40 70;
+  --c-line: 148 178 220;     /* borders (used with alpha) */
+
+  /* text */
+  --c-ink: 232 238 248;      /* #E8EEF8 */
+  --c-ink-muted: 159 176 200;/* #9FB0C8 */
+  --c-ink-dim: 128 149 178;  /* #8095B2 */
+
+  /* signals: meaning, never decoration */
+  --c-green: 52 211 153;     /* on time */
+  --c-amber: 251 191 36;     /* warning */
+  --c-red: 248 113 113;      /* critical */
+  --c-cyan: 34 211 238;      /* AI / recommendation */
+  --c-violet: 167 139 250;   /* rare second accent */
+
+  /* train types (always shown with a text label, never colour alone) */
+  --c-express: 240 171 252;  /* orchid */
+  --c-passenger: 147 197 253;/* sky */
+  --c-freight: 253 186 116;  /* peach */
+
+  --radius-panel: 1rem;
+  --blur-panel: 18px;
+}

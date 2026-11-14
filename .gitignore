@@ -16,6 +16,7 @@ backend/data/generated/
 # Node / frontend
 node_modules/
 frontend/dist/
+frontend/media-src/
 
 # OS / editor
 .DS_Store

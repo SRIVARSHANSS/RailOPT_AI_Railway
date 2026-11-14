@@ -15,10 +15,11 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] Phase 2: full-day timetable, random variability, synthetic training-data generator
 - [x] Phase 3: rule-based conflict detector (predicts conflicts from planned times)
 - [x] Phase 4: delay and conflict models with baselines, SHAP explanations
+  (results: `backend/ml/reports/model_card.md`, all on SIMULATED data)
 - [x] Phase 5: CP-SAT re-planning (hold, reroute, resequence, combined) vs no-re-planning and
   priority-dispatch baselines; every plan is replayed through the simulator
-  (results: `backend/ml/reports/model_card.md`, all on SIMULATED data)
 - [x] Thin FastAPI layer for the T101 demo (in-memory scenario; Postgres + auth in Phase 8)
+- [x] Phase 9 part 1: design system "Midnight Signal", app shell, cinematic login (`frontend/`)
 - 66 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
@@ -41,6 +42,14 @@ python -m app.services.optimizer.run_demo   # strategy comparison for the T101 s
 uvicorn app.main:app --reload               # API on http://127.0.0.1:8000, docs at /docs
 python -m app.services.datagen.generate --runs 3000 --seed 42   # SIMULATED training rows -> data/generated/
 python -m ml.train                          # models -> ml/models/, reports -> ml/reports/ (~3 min)
+```
+
+Frontend (second terminal):
+
+```powershell
+cd frontend
+npm install
+npm run dev        # http://localhost:5173 - needs the API on port 8000
 ```
 
 ## Layout
