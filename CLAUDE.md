@@ -61,7 +61,12 @@ Rail OPT/  (project root)
   SHA-256 of the dataset and model files; after regenerating data, retrain or test_ml fails.
 - Optimizer demo: `python -m app.services.optimizer.run_demo`. Call a plan optimal only when the
   CP-SAT status is OPTIMAL; strategy D is named COMBINED for that reason. All metrics come from the replay.
-- 53 tests passing.
+- API (thin layer, Phase 8 adds Postgres + JWT): from backend/ `uvicorn app.main:app --reload`, docs at
+  http://127.0.0.1:8000/docs. Scenario state is in memory behind `app/core/store.py::ScenarioStore`;
+  view logic in `app/services/live.py`. Knowledge is time-aware: STOPPAGE/DELAY known only when
+  at >= start, TRACK_UNAVAILABLE known once posted; movement (/state, /timeline) uses all events.
+  Every response carries data_label = SIMULATED.
+- 65 tests passing.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.
 - Before a large change, explain the plan briefly and wait for approval.

@@ -27,6 +27,7 @@ from app.services.simulator.engine import (
     Occupancy,
     SimResult,
     _apply_station_delay,
+    _choose_section,
     _running_time,
     _stoppage_minutes,
     next_departure,
@@ -111,8 +112,15 @@ class CascadeReport:
 # 1. planned occupancies
 # ---------------------------------------------------------------------------
 def project_plan(net: RailNetwork, state_time: int,
-                 disruptions: list[Disruption] | None = None) -> Plan:
+                 disruptions: list[Disruption] | None = None,
+                 route_overrides: dict[tuple[str, str], str] | None = None,
+                 holds: dict[tuple[str, str], int] | None = None) -> Plan:
+    """route_overrides / holds: a controller plan already accepted (same format
+    as simulate()). Held trips plan to enter when the hold ends; rerouted trips
+    use the alternate section. Defaults: the plain timetable."""
     disruptions = list(disruptions or [])
+    route_overrides = dict(route_overrides or {})
+    holds = dict(holds or {})
     log = SimResult()                     # collects applied / ignored event notes
     validate_events(net, disruptions, log)
 
@@ -121,11 +129,12 @@ def project_plan(net: RailNetwork, state_time: int,
         ready = _apply_station_delay(stops[0].sched_dep, train_id, stops[0].station, disruptions, log)
         for i in range(len(stops) - 1):
             here, nxt = stops[i], stops[i + 1]
-            sec = net.primary_section(here.station, nxt.station)
+            sec = _choose_section(net, train_id, here.station, nxt.station, route_overrides)
             run = _running_time(net, sec, here, nxt)
-            stopped = _stoppage_minutes(train_id, sec, ready, ready + run, disruptions, log)
-            exit_time = ready + run + stopped
-            trips.append(Occupancy(train_id, sec.section_id, ready, ready, exit_time, stopped))
+            entry = max(ready, holds.get((train_id, sec.section_id), ready))
+            stopped = _stoppage_minutes(train_id, sec, entry, entry + run, disruptions, log)
+            exit_time = entry + run + stopped
+            trips.append(Occupancy(train_id, sec.section_id, ready, entry, exit_time, stopped))
             if i + 1 < len(stops) - 1:
                 ready = next_departure(nxt, exit_time)
                 ready = _apply_station_delay(ready, train_id, nxt.station, disruptions, log)

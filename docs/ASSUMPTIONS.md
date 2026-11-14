@@ -198,3 +198,25 @@ solved to OPTIMAL.
 On the full-day timetable the same event costs 124 weighted / 58 total
 without re-planning, because the knock-on reaches T103, T403 and T502.
 Rerouting T202 cuts that to 53 / 19.
+
+## API layer (assumptions)
+
+29. **Knowledge is time-aware**, using the same no-leakage rule as Phase 2.
+    STOPPAGE and DELAY events are surprises: known only from their start
+    time. TRACK_UNAVAILABLE is planned maintenance: known as soon as it is
+    posted. Detection, the ML predictor and the optimizer only see known
+    events. Train movement (`/state`, `/timeline`) uses every posted event.
+30. An **accepted recommendation** becomes the scenario's controller plan
+    (holds and reroutes). The detector plans with it, so a resolved conflict
+    disappears. The ML features still describe the timetable plan without it,
+    because the model was trained on runs with no re-planning; the API says
+    so in `ml_note`.
+31. **Train state at a clock time**:
+    - Status, from the simulated timeline: not started, at station, waiting
+      at signal (ready but not entered, including held trains), in section,
+      or arrived.
+    - Current delay, in a section: max(departure delay, clock − scheduled
+      arrival at the next station).
+    - Current delay, at a station or signal: max(arrival delay, clock −
+      scheduled departure).
+    - Average delay is taken over active trains.

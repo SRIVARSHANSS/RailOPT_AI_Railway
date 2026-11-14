@@ -18,7 +18,8 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] Phase 5: CP-SAT re-planning (hold, reroute, resequence, combined) vs no-re-planning and
   priority-dispatch baselines; every plan is replayed through the simulator
   (results: `backend/ml/reports/model_card.md`, all on SIMULATED data)
-- 53 passing tests. Remaining phases: see `CLAUDE.md`
+- [x] Thin FastAPI layer for the T101 demo (in-memory scenario; Postgres + auth in Phase 8)
+- 65 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -37,6 +38,7 @@ python -m pytest -q                         # run all tests
 python -m app.services.simulator.run_demo   # T101 scenario, before and after
 python -m app.services.conflicts.run_demo   # predicted conflicts + knock-on delays
 python -m app.services.optimizer.run_demo   # strategy comparison for the T101 scenario
+uvicorn app.main:app --reload               # API on http://127.0.0.1:8000, docs at /docs
 python -m app.services.datagen.generate --runs 3000 --seed 42   # SIMULATED training rows -> data/generated/
 python -m ml.train                          # models -> ml/models/, reports -> ml/reports/ (~3 min)
 ```
@@ -51,8 +53,29 @@ backend/
   app/services/datagen/     synthetic training-data generator (simulated)
   app/services/predictor/   loads the models; predict(features) with top SHAP drivers
   app/services/optimizer/   CP-SAT strategies + baselines, scored by simulator replay
+  app/services/live.py      train states, conflicts + ML, recommendation, timeline (plain Python)
+  app/api/, app/schemas/    FastAPI routes and Pydantic models; app/main.py; app/core/store.py
   ml/                       split, preprocessing, training, SHAP; reports/ holds metrics + model card
   data/                     corridor CSVs (reference + full-day timetable), T101 event file
   tests/                    pytest suite
 docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
 ```
+
+## API (first UI slice)
+
+| Method | Path | What it does |
+| --- | --- | --- |
+| GET | `/api/health` | liveness |
+| GET | `/api/network?timetable=reference\|full_day` | stations, sections, trains, schedule |
+| POST | `/api/scenario/reset` | start a fresh scenario on a timetable |
+| GET | `/api/scenario` | posted events, accepted plan, decision log |
+| POST | `/api/events` | add a validated STOPPAGE / DELAY / TRACK_UNAVAILABLE event |
+| GET | `/api/state?at=HH:MM` | every train's status, location, progress, delay + KPIs |
+| GET | `/api/conflicts?at=HH:MM` | detector conflicts + ML probability and top drivers, ML watchlist |
+| POST | `/api/optimize` | strategy comparison (replayed) + recommendation with explanation |
+| POST | `/api/recommendation/{id}/decision` | accept (applies holds / reroutes) or reject; both logged |
+| GET | `/api/timeline` | planned and actual occupancies for a time-distance chart |
+
+Detection, prediction and re-planning only see events known at `at`. A
+stoppage or delay is known once it starts; planned closures are known as soon
+as they are posted. All responses are labelled `"data_label": "SIMULATED"`.
