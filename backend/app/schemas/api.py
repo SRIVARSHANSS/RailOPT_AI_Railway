@@ -117,6 +117,7 @@ class TrainState(BaseModel):
     progress: float | None
     next_station: str | None
     current_delay_min: int
+    stopped: bool = Field(False, description="standing still inside the section during a stoppage")
 
 
 class Kpis(BaseModel):

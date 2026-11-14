@@ -16,8 +16,12 @@ STRATEGY_ORDER = {s.name: k for k, s in enumerate(STRATEGIES)}
 # ---------------------------------------------------------------------------
 # train states
 # ---------------------------------------------------------------------------
-def train_states(net: RailNetwork, result: SimResult, at: int) -> list[dict]:
+def train_states(net: RailNetwork, result: SimResult, at: int,
+                 disruptions: list[Disruption] | None = None) -> list[dict]:
     """Where every train is at `at` in a simulated timeline, and how late it is.
+
+    progress (in a section) is the share of the RUNNING time covered: minutes spent
+    standing in a STOPPAGE do not move the train. `stopped` is true during a stoppage.
 
     current_delay_min:
       in a section        max(departure delay, at - scheduled arrival at the next station)
@@ -42,9 +46,13 @@ def train_states(net: RailNetwork, result: SimResult, at: int) -> list[dict]:
                     state = _state(train, "waiting_at_signal", here.station, None, waiting_delay)
                 elif at < occ.exit:
                     delay = max(occ.entry - here.sched_dep, at - nxt.sched_arr, 0)
-                    state = _state(train, "in_section", occ.section_id,
-                                   round((at - occ.entry) / (occ.exit - occ.entry), 3), delay)
+                    windows = _stop_windows(occ, disruptions or [])
+                    stood = sum(max(0, min(at, e) - max(occ.entry, s)) for s, e in windows)
+                    run = max(1, occ.exit - occ.entry - occ.stopped_min)
+                    progress = min(1.0, max(0.0, (at - occ.entry - stood) / run))
+                    state = _state(train, "in_section", occ.section_id, round(progress, 3), delay)
                     state["next_station"] = nxt.station
+                    state["stopped"] = any(s <= at < e for s, e in windows)
                 if state is not None:
                     break
             if state is None:
@@ -56,7 +64,16 @@ def train_states(net: RailNetwork, result: SimResult, at: int) -> list[dict]:
 def _state(train, status, location, progress, delay) -> dict:
     return {"train_id": train.train_id, "train_type": train.train_type, "priority": train.priority,
             "status": status, "location": location, "progress": progress, "next_station": None,
-            "current_delay_min": int(delay)}
+            "current_delay_min": int(delay), "stopped": False}
+
+
+def _stop_windows(occ, disruptions: list[Disruption]) -> list[tuple[int, int]]:
+    """[start, end) of the stoppages the simulator applied to this trip (rng=None rule)."""
+    if not occ.stopped_min:
+        return []
+    return [(d.start, d.start + d.duration) for d in disruptions
+            if d.event_type == "STOPPAGE" and d.train_id == occ.train_id and d.location == occ.section_id
+            and occ.entry <= d.start < occ.exit]
 
 
 def kpis(states: list[dict], conflicts: int) -> dict:

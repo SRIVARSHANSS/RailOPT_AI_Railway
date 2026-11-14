@@ -12,11 +12,9 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 type SessionState = {
   role: Role | null
-  simClock: string // HH:MM, the scenario clock shown in the top bar
   sidebarCollapsed: boolean
   signIn: (role: Role) => void
   signOut: () => void
-  setSimClock: (hhmm: string) => void
   toggleSidebar: () => void
 }
 
@@ -41,11 +39,9 @@ export const useSession = create<SessionState>()(
   persist(
     (set) => ({
       role: null,
-      simClock: '10:03',
       sidebarCollapsed: false,
       signIn: (role) => set({ role }),
       signOut: () => set({ role: null }),
-      setSimClock: (simClock) => set({ simClock }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
     }),
     { name: 'railopt-session', storage: safeStorage },

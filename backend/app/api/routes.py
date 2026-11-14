@@ -135,7 +135,7 @@ def add_event(req: EventRequest, store: ScenarioStore = Depends(get_store)):
 def state(at: str = AtQuery, store: ScenarioStore = Depends(get_store)):
     t, net = _clock(at), store.network()
     known = store.known_events(t)
-    states = live.train_states(net, store.actual(), t)          # movement: every posted event
+    states = live.train_states(net, store.actual(), t, store.events)   # movement: every posted event
     plan = project_plan(net, t, known, store.route_overrides, store.holds)   # known events + accepted plan
     n_conflicts = len(detect_conflicts(net, plan))
     return StateOut(at=at, known_events=[e.event_id for e in known], trains=states,

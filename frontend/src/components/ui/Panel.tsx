@@ -13,7 +13,7 @@ export function Panel({ className, children, ...rest }: HTMLMotionProps<'section
 
 export function PanelTitle({ children, hint }: { children: React.ReactNode; hint?: React.ReactNode }) {
   return (
-    <div className="mb-4 flex items-baseline justify-between gap-3">
+    <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
       <h2 className="text-lg font-semibold text-ink">{children}</h2>
       {hint ? <span className="text-sm text-ink-dim">{hint}</span> : null}
     </div>

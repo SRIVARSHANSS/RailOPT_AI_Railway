@@ -68,7 +68,7 @@ Rail OPT/  (project root)
   Every response carries data_label = SIMULATED.
 - UI rule: an ml_watchlist item with resolved_by_plan = true is shown as "Risk resolved by accepted plan"
   (green, risk struck through), not as an active warning; keep showing ml_note.
-- 66 tests passing.
+- 67 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -76,6 +76,10 @@ Rail OPT/  (project root)
   reduced motion. Every screen shows the SIMULATED badge. Never show invented numbers in the UI:
   data comes from the API, gallery examples are labelled as examples. framer-motion is pinned with
   npm overrides for motion-dom / motion-utils (12.18.1); keep them in step when upgrading.
+- Console motion rules: trains glide only from the API state at minute m to m+1, sampled along the
+  SVG track (getPointAtLength) and through the station node on a section change; any clock jump
+  (scrub, reset, backwards) snaps. The UI never computes railway logic: positions, delays, `stopped`,
+  conflicts and plans all come from the API.
 - Login media: src/config/media.ts (video optional; poster-only drift supported; CSS fallback).
   Current clip is owner-supplied (licence to confirm before public use). The see-through login card
   only uses text-ink: contrast was measured over the clip's frames (worst 5.33:1); re-measure if it changes.
@@ -95,6 +99,7 @@ Rail OPT/  (project root)
 - [ ] Phase 6: what-if + re-optimization
 - [ ] Phase 7: explainer
 - [ ] Phase 8: FastAPI + PostgreSQL + auth
-- [ ] Phase 9: React frontend - part 1 done (design system, app shell, login); part 2 = data pages
+- [x] Phase 9: React frontend - design system, shell, login, Traffic Console, Disruptions, Strategies
+  (demo: docs/DEMO.md). Timeline page is still a placeholder.
 - [ ] Phase 10: evaluation
 - [ ] Phase 11: Docker, README, demo script

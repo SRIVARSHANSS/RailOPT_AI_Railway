@@ -29,7 +29,7 @@ export function Login() {
     window.setTimeout(() => setPhase('success'), reduce ? 0 : 450)
     window.setTimeout(() => {
       signIn(role)
-      navigate('/dashboard')
+      navigate('/console')
     }, reduce ? 0 : 900)
   }
 

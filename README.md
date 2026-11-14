@@ -20,7 +20,9 @@ and is not connected to Indian Railways systems. All results are simulated.
   priority-dispatch baselines; every plan is replayed through the simulator
 - [x] Thin FastAPI layer for the T101 demo (in-memory scenario; Postgres + auth in Phase 8)
 - [x] Phase 9 part 1: design system "Midnight Signal", app shell, cinematic login (`frontend/`)
-- 66 passing tests. Remaining phases: see `CLAUDE.md`
+- [x] Phase 9 part 2: Traffic Console (live corridor map), Disruption Panel, Strategy Comparison
+  - step-by-step demo with talking points: `docs/DEMO.md`
+- 67 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

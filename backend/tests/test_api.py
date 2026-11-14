@@ -172,3 +172,14 @@ def test_watchlist_risk_resolved_by_accepted_reroute(client):
     t303 = next(w for w in after["ml_watchlist"] if w["train_id"] == "T303")
     assert t303["resolved_by_plan"] is True and t303["plan_wait_min"] == 0
     assert "accepted plan" in after["ml_note"]
+
+
+def test_stopped_train_does_not_creep_forward(client):
+    client.post("/api/scenario/reset", json={"timetable": "reference"})
+    client.post("/api/events", json=STOPPAGE)                    # T101 stops in S_BC 10:03-10:18
+    t101 = lambda at: next(t for t in client.get("/api/state", params={"at": at}).json()["trains"] if t["train_id"] == "T101")
+    before, during, later, after = t101("10:00"), t101("10:03"), t101("10:15"), t101("10:20")
+    assert before["stopped"] is False and before["progress"] < during["progress"]
+    assert during["stopped"] is True and later["stopped"] is True
+    assert during["progress"] == later["progress"] == round(7 / 12, 3)   # 7 of 12 running minutes done
+    assert after["stopped"] is False and after["progress"] == 0.75        # moving again: 9 of 12

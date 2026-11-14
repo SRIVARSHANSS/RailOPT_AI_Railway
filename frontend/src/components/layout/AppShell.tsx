@@ -1,23 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ChevronsLeft, ChevronsRight, Clock, GitBranch, LayoutDashboard, LogOut, Palette, Route, ShieldAlert, SlidersHorizontal, TrainFront,
+  ChevronsLeft, ChevronsRight, Clock, LogOut, MonitorPlay, Palette, Route, Scale, TrainFront, Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
 import { api, type Health } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import { duration, page, spring } from '../../lib/motion'
+import { fmt } from '../../lib/time'
 import { ROLE_LABEL, useSession } from '../../store/session'
+import { useSim } from '../../store/sim'
 import { SimulatedBadge } from '../ui/Badges'
 import { Tooltip } from '../ui/Tooltip'
+import { ClockDriver } from './ClockDriver'
 
 const NAV = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/conflicts', label: 'Conflicts', icon: ShieldAlert },
-  { to: '/optimize', label: 'Optimize', icon: SlidersHorizontal },
+  { to: '/console', label: 'Traffic console', icon: MonitorPlay },
+  { to: '/disruptions', label: 'Disruptions', icon: Zap },
+  { to: '/strategies', label: 'Strategies', icon: Scale },
   { to: '/timeline', label: 'Timeline', icon: Route },
-  { to: '/scenario', label: 'Scenario', icon: GitBranch },
   { to: '/design', label: 'Design system', icon: Palette },
 ]
 
@@ -50,8 +52,10 @@ export function AppShell() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:rounded-lg focus:bg-canvas-2 focus:px-4 focus:py-2">
         Skip to content
       </a>
+      <ClockDriver />
       <Sidebar collapsed={collapsed} canExpand={wide} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* overflow-x clip: the page slide-in (x: 24px) must never widen the page on phones */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
         <TopBar />
         <AnimatePresence mode="wait">
           <motion.main key={pathname} id="main" variants={page} initial="initial" animate="enter" exit="exit"
@@ -113,7 +117,9 @@ function Sidebar({ collapsed, canExpand }: { collapsed: boolean; canExpand: bool
 }
 
 function TopBar() {
-  const { role, simClock, signOut } = useSession()
+  const { role, signOut } = useSession()
+  const simClock = fmt(useSim((s) => s.minute))
+  const playing = useSim((s) => s.playing)
   const navigate = useNavigate()
   const health = useQuery({
     queryKey: ['health'],
@@ -128,7 +134,8 @@ function TopBar() {
         <div className="flex items-center gap-2 rounded-xl border border-line/15 bg-canvas-0/50 px-2 py-1.5 sm:px-3" tabIndex={0}>
           <Clock className="hidden h-4 w-4 text-signal-cyan sm:block" aria-hidden />
           <span className="hidden text-xs uppercase tracking-wider text-ink-dim sm:inline">Sim</span>
-          <span className="font-mono text-lg font-semibold tabular text-ink" aria-label={`Simulation clock ${simClock}`}>{simClock}</span>
+          <span className="font-mono text-lg font-semibold tabular text-ink" aria-label={`Simulation clock ${simClock}, ${playing ? 'running' : 'paused'}`}>{simClock}</span>
+          {playing && <span className="h-1.5 w-1.5 rounded-full bg-signal-green animate-pulse-dot" aria-hidden />}
         </div>
       </Tooltip>
 

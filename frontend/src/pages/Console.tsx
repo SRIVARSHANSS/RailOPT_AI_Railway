@@ -1,0 +1,151 @@
+import { motion } from 'framer-motion'
+import { CircleSlash, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useConflictsAt, useNetwork, useScenario, useStateAt } from '../api/hooks'
+import type { Kpis, TrainState } from '../api/types'
+import { SignalBadge, TrainChip } from '../components/ui/Badges'
+import { EmptyState } from '../components/ui/EmptyState'
+import { Panel, PanelTitle } from '../components/ui/Panel'
+import { Skeleton, SkeletonRows } from '../components/ui/Skeleton'
+import { AlertsFeed } from '../features/console/AlertsFeed'
+import { ClockBar } from '../features/console/ClockBar'
+import { CorridorMap } from '../features/console/CorridorMap'
+import { KpiStrip } from '../features/console/KpiStrip'
+import { buildGeometry } from '../features/console/geometry'
+import { staggerContainer } from '../lib/motion'
+import { fmt, toMin } from '../lib/time'
+import { minuteMs, useConsole, useSim } from '../store/sim'
+
+const DEMO_START = 9 * 60 + 55
+
+const statusText: Record<TrainState['status'], string> = {
+  not_started: 'not started',
+  at_station: 'at station',
+  waiting_at_signal: 'waiting at signal',
+  in_section: 'running',
+  arrived: 'arrived',
+}
+
+export function Console() {
+  const scenario = useScenario()
+  const timetable = scenario.data?.timetable ?? 'reference'
+  const network = useNetwork(scenario.data ? timetable : undefined)
+  const { minute, playing, speed, minuteStartedAt, setRange } = useSim()
+  const { highlight, setHighlight } = useConsole()
+
+  const now = useStateAt(minute)
+  const nextQ = useStateAt(minute + 1, playing)
+  const next = playing && nextQ.data && !nextQ.isPlaceholderData ? nextQ.data : null
+  const conflicts = useConflictsAt(minute)
+
+  const geo = useMemo(() => (network.data ? buildGeometry(network.data) : null), [network.data])
+
+  // scrubber range: timetable first departure - 10 to last arrival + 10 (display only)
+  useEffect(() => {
+    if (!network.data) return
+    const times = network.data.schedule.flatMap((s) => [s.sched_dep, s.sched_arr]).filter(Boolean).map((t) => toMin(t as string))
+    setRange([Math.min(...times) - 10, Math.max(...times) + 10])
+  }, [network.data, setRange])
+
+  // KPI history for sparklines: the last 30 polled minutes, restarted on a backwards jump
+  const [history, setHistory] = useState<{ m: number; k: Kpis }[]>([])
+  useEffect(() => {
+    if (!now.data || now.isPlaceholderData) return
+    setHistory((h) => {
+      const last = h[h.length - 1]
+      if (last && minute <= last.m) return minute === last.m ? h : [{ m: minute, k: now.data.kpis }]
+      return [...h, { m: minute, k: now.data.kpis }].slice(-30)
+    })
+  }, [now.data, now.isPlaceholderData, minute])
+
+  const glideMs = next ? Math.max(0, minuteMs(speed) - (performance.now() - minuteStartedAt)) : 0
+  const offline = scenario.isError || now.isError
+
+  return (
+    <motion.div className="mx-auto max-w-[110rem] space-y-5" variants={staggerContainer()} initial="hidden" animate="show">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm uppercase tracking-[0.2em] text-signal-cyan">Traffic console</p>
+          <h1 className="text-3xl font-bold xl:text-4xl">Corridor A - B - C - D</h1>
+        </div>
+        <div className="flex items-center gap-2 text-sm text-ink-muted">
+          <SignalBadge tone="info">Timetable: {timetable === 'full_day' ? 'full day (12 trains)' : 'reference (3 trains)'}</SignalBadge>
+          {now.data && <SignalBadge tone="info">Known events: {now.data.known_events.length ? now.data.known_events.join(', ') : 'none'}</SignalBadge>}
+        </div>
+      </div>
+
+      <ClockBar resetTo={DEMO_START} />
+
+      {offline ? (
+        <Panel>
+          <EmptyState icon={<CircleSlash className="h-7 w-7" />} title="The API is not reachable">
+            Start it from the backend folder with <code className="font-mono text-ink">uvicorn app.main:app --reload</code>.
+          </EmptyState>
+        </Panel>
+      ) : (
+        <>
+          {now.data ? <KpiStrip kpis={now.data.kpis} history={history.map((h) => h.k)} /> : (
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4" role="status" aria-label="Loading KPIs">
+              {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+            </div>
+          )}
+
+          <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_26rem]">
+            <Panel className="p-4">
+              <PanelTitle hint={highlight ? (
+                <button onClick={() => setHighlight(null)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-ink hover:bg-white/5">
+                  <X className="h-4 w-4" aria-hidden /> Clear highlight
+                </button>
+              ) : `state at ${fmt(minute)} from the API`}>Corridor map</PanelTitle>
+              {geo && now.data ? (
+                <CorridorMap geo={geo} now={now.data} next={next} glideMs={glideMs} minute={minute} scenario={scenario.data} highlight={highlight} />
+              ) : (
+                <Skeleton className="aspect-[3/1] w-full rounded-2xl" />
+              )}
+              <Legend />
+              {now.data && (
+                <ul className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3" aria-label="Trains">
+                  {now.data.trains.map((t) => (
+                    <li key={t.train_id} className="flex items-center justify-between gap-2 rounded-xl border border-line/10 bg-canvas-0/40 px-3 py-2">
+                      <TrainChip id={t.train_id} type={t.train_type} />
+                      <span className="text-sm text-ink-muted">
+                        {t.stopped ? 'stopped in' : statusText[t.status]} {t.status === 'in_section' ? t.location : `at ${t.location}`}
+                      </span>
+                      <span className={t.current_delay_min > 0 ? 'font-mono text-sm font-semibold text-signal-red' : 'font-mono text-sm text-signal-green'}>
+                        {t.current_delay_min > 0 ? `+${t.current_delay_min} min` : 'on time'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+
+            <Panel className="p-4">
+              <PanelTitle hint={`known at ${fmt(minute)}`}>Live alerts</PanelTitle>
+              {conflicts.data || conflicts.isError ? (
+                conflicts.isError ? <p className="text-signal-red">Could not load conflicts.</p> : <AlertsFeed conflicts={conflicts.data} loading={conflicts.isFetching && !conflicts.data} />
+              ) : <SkeletonRows rows={3} label="Loading alerts" />}
+              {conflicts.data?.ml_note && <p className="mt-3 text-xs text-ink-dim">Model note: {conflicts.data.ml_note}</p>}
+            </Panel>
+          </div>
+        </>
+      )}
+    </motion.div>
+  )
+}
+
+function Legend() {
+  const item = (cls: string, label: string) => (
+    <span className="inline-flex items-center gap-2"><span className={`h-1.5 w-6 rounded-full ${cls}`} aria-hidden />{label}</span>
+  )
+  return (
+    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-muted">
+      {item('bg-line/40', 'free')}
+      {item('bg-signal-cyan', 'occupied')}
+      {item('bg-signal-amber', 'full')}
+      {item('bg-signal-red', 'closed')}
+      <span className="inline-flex items-center gap-2"><span className="h-3 w-3 rounded-full border-2 border-signal-red" aria-hidden />delayed train</span>
+      <span className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-signal-red" aria-hidden />red signal: waiting</span>
+    </div>
+  )
+}

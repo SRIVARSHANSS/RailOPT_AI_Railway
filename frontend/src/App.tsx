@@ -8,7 +8,9 @@ import { AppLoader } from './components/ui/AppLoader'
 import { BackgroundGrid } from './components/ui/BackgroundGrid'
 import { Toaster } from './components/ui/Toaster'
 import { TooltipProvider } from './components/ui/Tooltip'
-import { Dashboard } from './pages/Dashboard'
+import { Console } from './pages/Console'
+import { Disruptions } from './pages/Disruptions'
+import { Strategies } from './pages/Strategies'
 import { Login } from './pages/Login'
 import { Placeholder } from './pages/Placeholder'
 import { useSession } from './store/session'
@@ -35,14 +37,13 @@ export default function App() {
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route element={<RequireRole><AppShell /></RequireRole>}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/conflicts" element={<Placeholder title="Conflicts" what="Detector conflicts with ML probability, top drivers and the watchlist." />} />
-                  <Route path="/optimize" element={<Placeholder title="Optimize" what="Strategy comparison, recommendation and accept / reject." />} />
+                  <Route path="/console" element={<Console />} />
+                  <Route path="/disruptions" element={<Disruptions />} />
+                  <Route path="/strategies" element={<Strategies />} />
                   <Route path="/timeline" element={<Placeholder title="Timeline" what="Planned vs actual time-distance chart." />} />
-                  <Route path="/scenario" element={<Placeholder title="Scenario" what="Reset the scenario and post events." />} />
                   <Route path="/design" element={<DesignSystem />} />
                 </Route>
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/console" replace />} />
               </Routes>
             </Suspense>
             <Toaster />

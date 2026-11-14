@@ -223,3 +223,5 @@ Rerouting T202 cuts that to 53 / 19.
     - Current delay, at a station or signal: max(arrival delay, clock −
       scheduled departure).
     - Average delay is taken over active trains.
+    - Progress in a section is the share of *running* time covered: minutes standing
+      in a stoppage do not move the train, and `stopped` is true while it stands.

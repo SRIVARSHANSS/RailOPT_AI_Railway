@@ -85,6 +85,15 @@
 @keyframes hero-drift { from { transform: scale(1) translate3d(0, 0, 0); } to { transform: scale(1.06) translate3d(-1.2%, -0.8%, 0); } }
 @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
 
+@keyframes ring-pulse { 0% { transform: scale(0.8); opacity: 0.9; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes node-pulse { 0%, 100% { transform: scale(0.85); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
+@keyframes heartbeat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.18); } 28% { transform: scale(1); } 42% { transform: scale(1.12); } 70% { transform: scale(1); } }
+@keyframes breathe { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+
+.animate-ring-pulse { animation: ring-pulse 1.4s ease-out infinite; }
+.animate-node-pulse { animation: node-pulse 3.2s ease-in-out infinite; }
+.animate-heartbeat { animation: heartbeat 1.3s ease-in-out infinite; }
+.animate-breathe { animation: breathe 1.8s ease-in-out infinite; }
 .animate-shimmer { animation: shimmer 1.6s ease-in-out infinite; }
 .animate-drift { animation: drift 90s linear infinite; }
 .animate-streak { animation: streak 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
@@ -99,5 +108,6 @@
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-drift, .animate-streak, .animate-hero-drift, .animate-shimmer, .animate-pulse-dot { animation: none !important; }
+  .animate-drift, .animate-streak, .animate-hero-drift, .animate-shimmer, .animate-pulse-dot,
+  .animate-ring-pulse, .animate-node-pulse, .animate-heartbeat, .animate-breathe { animation: none !important; }
 }
