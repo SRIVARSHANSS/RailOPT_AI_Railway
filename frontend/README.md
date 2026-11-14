@@ -34,3 +34,13 @@ With a poster image only, it drifts slowly (scale 1 -> 1.06 + slight pan over 18
 reduced motion). With a video, it plays only on wide screens without reduced motion, fading in
 over the poster once it can play through. Web files go in `public/media/`, raw sources in
 `media-src/` (gitignored).
+
+Current clip: a 13.5 s sunset railway-yard video supplied by the project owner (raw file in
+`media-src/login-train-window.mp4`, origin rawpixel via Pinterest - confirm the licence before
+any public use). Web copy `public/media/login-railway-sunset.mp4`: audio removed, 0.6 s fade to
+dark at both ends so the loop does not jump, H.264 CRF 22, 1.06 MB, 736x414 (soft on very large
+screens). The login card is see-through glass (`.login-glass`: 42 % navy + 16 px blur). Its
+text contrast was measured over every frame of this clip at 1366x768: worst case 5.33:1 (AA)
+with `text-ink`; `text-ink-muted` would need a 56 % tint, so the login card uses `text-ink` only.
+If the clip changes, re-measure.
+

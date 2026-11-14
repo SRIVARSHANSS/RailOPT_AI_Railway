@@ -77,6 +77,8 @@ Rail OPT/  (project root)
   data comes from the API, gallery examples are labelled as examples. framer-motion is pinned with
   npm overrides for motion-dom / motion-utils (12.18.1); keep them in step when upgrading.
 - Login media: src/config/media.ts (video optional; poster-only drift supported; CSS fallback).
+  Current clip is owner-supplied (licence to confirm before public use). The see-through login card
+  only uses text-ink: contrast was measured over the clip's frames (worst 5.33:1); re-measure if it changes.
   Higgsfield: preflight get_cost, state credits and balance, wait for the user's go.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.

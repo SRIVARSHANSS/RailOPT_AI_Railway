@@ -37,9 +37,11 @@ export function LoginHero() {
           onCanPlayThrough={() => setVideoReady(true)}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${videoReady ? 'opacity-100' : 'opacity-0'}`} />
       )}
-      {/* scrim: strong on the left where the card sits, plus an overall darkening */}
-      <div className="absolute inset-0 bg-gradient-to-r from-canvas-0/95 via-canvas-0/70 to-canvas-0/30" />
-      <div className="absolute inset-0 bg-gradient-to-t from-canvas-0/90 via-transparent to-canvas-0/40" />
+      {/* light scrim so the video stays visible; the frosted card does the rest.
+          Measured over every frame of the login clip: with the card tint
+          (.login-glass, 42 % navy + 16 px blur) every login text passes AA over every frame. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-canvas-0/55 via-canvas-0/35 to-canvas-0/15" />
+      <div className="absolute inset-0 bg-gradient-to-t from-canvas-0/55 via-transparent to-canvas-0/25" />
     </div>
   )
 }

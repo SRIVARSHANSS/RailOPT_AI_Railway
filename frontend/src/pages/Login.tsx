@@ -38,9 +38,9 @@ export function Login() {
       <LoginHero />
       <main className="mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10 lg:px-12">
         <motion.div variants={staggerContainer(0.08)} initial="hidden" animate="show"
-          className="glass glass-focus grid w-full max-w-4xl overflow-hidden !bg-canvas-0/70 lg:grid-cols-[1.05fr_1fr]">
+          className="login-glass glass-focus grid w-full max-w-4xl overflow-hidden lg:grid-cols-[1.05fr_1fr]">
           {/* brand side */}
-          <div className="relative border-b border-line/10 p-8 lg:border-b-0 lg:border-r lg:p-10">
+          <div className="relative border-b border-white/10 p-8 lg:border-b-0 lg:border-r lg:border-white/10 lg:p-10">
             <motion.div variants={fadeUp} className="flex items-center gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-signal-cyan to-signal-violet text-canvas-0 shadow-glow">
                 <TrainFront className="h-6 w-6" aria-hidden />
@@ -50,10 +50,10 @@ export function Login() {
             <motion.h1 variants={fadeUp} className="mt-8 text-5xl font-bold leading-[1.05] xl:text-6xl">
               RailOpt <span className="bg-gradient-to-r from-signal-cyan to-signal-violet bg-clip-text text-transparent">AI</span>
             </motion.h1>
-            <motion.p variants={fadeUp} className="mt-4 text-lg text-ink-muted">
+            <motion.p variants={fadeUp} className="mt-4 text-lg text-ink">
               Predict conflicts, compare re-planning strategies and explain every recommendation, so the controller can decide faster.
             </motion.p>
-            <motion.ul variants={fadeUp} className="mt-8 space-y-2.5 text-[0.95rem] text-ink-muted">
+            <motion.ul variants={fadeUp} className="mt-8 space-y-2.5 text-[0.95rem] text-ink">
               {['Predict - detect - simulate - optimize - explain', 'Every plan replayed and checked before you see it', 'Decision support only: you stay in control'].map((t) => (
                 <li key={t} className="flex items-start gap-2.5"><Check className="mt-0.5 h-4 w-4 shrink-0 text-signal-green" aria-hidden />{t}</li>
               ))}
@@ -63,7 +63,7 @@ export function Login() {
           {/* role picker */}
           <div className="p-8 lg:p-10">
             <motion.h2 variants={fadeUp} id="role-label" className="text-xl font-semibold">Choose a role</motion.h2>
-            <motion.p variants={fadeUp} className="mt-1 text-sm text-ink-muted">Demo login - real authentication arrives in Phase 8.</motion.p>
+            <motion.p variants={fadeUp} className="mt-1 text-sm text-ink">Demo login - real authentication arrives in Phase 8.</motion.p>
             <RadioGroup.Root value={role} onValueChange={(v) => setRole(v as Role)} aria-labelledby="role-label" className="mt-6 space-y-3">
               {ROLES.map((r) => {
                 const active = role === r.value
@@ -73,13 +73,13 @@ export function Login() {
                       // ARIA radio pattern: arrow-key focus also selects
                       onFocus={(e) => e.currentTarget.matches(':focus-visible') && setRole(r.value)}
                       className={cn('group relative flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-colors',
-                        active ? 'border-signal-cyan/60 bg-signal-cyan/10' : 'border-line/15 bg-white/[0.02] hover:border-line/30 hover:bg-white/[0.05]')}>
+                        active ? 'border-signal-cyan/60 bg-signal-cyan/10' : 'border-white/15 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.05]')}>
                       {active && <motion.span layoutId="role-glow" transition={spring.snappy} aria-hidden
                         className="absolute inset-0 rounded-2xl shadow-[0_0_0_1px_rgb(var(--c-cyan)/0.5),0_10px_40px_-12px_rgb(var(--c-cyan)/0.6)]" />}
-                      <span className={cn('relative grid h-10 w-10 shrink-0 place-items-center rounded-xl', active ? 'bg-signal-cyan text-canvas-0' : 'bg-surface-raised text-ink-muted')}>{r.icon}</span>
+                      <span className={cn('relative grid h-10 w-10 shrink-0 place-items-center rounded-xl', active ? 'bg-signal-cyan text-canvas-0' : 'bg-canvas-0/50 text-ink')}>{r.icon}</span>
                       <span className="relative min-w-0 flex-1">
                         <span className="block font-semibold">{r.title}</span>
-                        <span className="mt-0.5 block text-sm text-ink-muted">{r.text}</span>
+                        <span className="mt-0.5 block text-sm text-ink">{r.text}</span>
                       </span>
                       <span aria-hidden className={cn('relative mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full border', active ? 'border-signal-cyan bg-signal-cyan' : 'border-line/40')}>
                         <RadioGroup.Indicator asChild>

@@ -62,6 +62,19 @@
     mask-composite: exclude;
   }
 
+  /* see-through login card over the video. Measured over every frame of the login clip
+     (1366x768, page scrim + this layer): worst-case ink text contrast 5.33:1 (AA). Only use
+     text-ink on it; ink-muted would need a 56 % tint. */
+  .login-glass {
+    position: relative;
+    background: rgb(var(--c-canvas-0) / 0.42);
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 1.5rem;
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.08) inset, 0 30px 80px -30px rgb(0 0 0 / 0.75);
+  }
+
   .tabular { font-variant-numeric: tabular-nums; }
 }
 
