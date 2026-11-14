@@ -19,7 +19,7 @@ and is not connected to Indian Railways systems. All results are simulated.
   priority-dispatch baselines; every plan is replayed through the simulator
   (results: `backend/ml/reports/model_card.md`, all on SIMULATED data)
 - [x] Thin FastAPI layer for the T101 demo (in-memory scenario; Postgres + auth in Phase 8)
-- 65 passing tests. Remaining phases: see `CLAUDE.md`
+- 66 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

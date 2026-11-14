@@ -153,3 +153,22 @@ def test_conflicts_work_without_models(client):
     body = labelled(client.get("/api/conflicts", params={"at": "10:03"}))
     assert body["conflicts"][0]["prediction"] is None
     assert "models not found" in body["ml_note"]
+
+
+def test_watchlist_risk_resolved_by_accepted_reroute(client):
+    client.post("/api/scenario/reset", json={"timetable": "reference"})
+    client.post("/api/events", json=STOPPAGE)
+    before = labelled(client.get("/api/conflicts", params={"at": "10:03"}))
+    if before["ml_note"] and "models not found" in before["ml_note"]:
+        pytest.skip("trained models needed for the ML watchlist")
+    t303 = next(w for w in before["ml_watchlist"] if w["train_id"] == "T303")
+    assert t303["resolved_by_plan"] is False and t303["plan_wait_min"] is None
+
+    rec = client.post("/api/optimize", json={"at": "10:03"}).json()["recommendation"]
+    assert rec["strategy"] == "REROUTE"
+    client.post(f"/api/recommendation/{rec['recommendation_id']}/decision", json={"decision": "accept"})
+
+    after = labelled(client.get("/api/conflicts", params={"at": "10:03"}))
+    t303 = next(w for w in after["ml_watchlist"] if w["train_id"] == "T303")
+    assert t303["resolved_by_plan"] is True and t303["plan_wait_min"] == 0
+    assert "accepted plan" in after["ml_note"]

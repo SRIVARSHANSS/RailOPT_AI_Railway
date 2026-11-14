@@ -66,7 +66,9 @@ Rail OPT/  (project root)
   view logic in `app/services/live.py`. Knowledge is time-aware: STOPPAGE/DELAY known only when
   at >= start, TRACK_UNAVAILABLE known once posted; movement (/state, /timeline) uses all events.
   Every response carries data_label = SIMULATED.
-- 65 tests passing.
+- UI rule: an ml_watchlist item with resolved_by_plan = true is shown as "Risk resolved by accepted plan"
+  (green, risk struck through), not as an active warning; keep showing ml_note.
+- 66 tests passing.
 - Work one phase at a time. Write pytest tests with each module and run them before moving on.
 - Keep services as plain Python, independent of FastAPI, so they can be tested directly.
 - Before a large change, explain the plan briefly and wait for approval.

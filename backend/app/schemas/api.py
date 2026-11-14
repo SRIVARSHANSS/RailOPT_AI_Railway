@@ -166,6 +166,10 @@ class WatchItem(Prediction):
     train_id: str
     section_id: str
     time_to_section_min: int
+    resolved_by_plan: bool = Field(
+        False, description="an accepted plan is in force and, in its deterministic replay on the known "
+                           "events, this train does not wait before this trip (UI: 'Risk resolved by accepted plan')")
+    plan_wait_min: int | None = Field(None, description="wait before this trip in that replay; null without a plan")
 
 
 class ConflictsOut(Labelled):

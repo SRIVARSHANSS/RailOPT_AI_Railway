@@ -114,7 +114,21 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
             watchlist.append({"train_id": key[0], "section_id": key[1],
                               "time_to_section_min": row["time_to_section_min"],
                               **prediction(key)})
-    watchlist.sort(key=lambda w: -w["conflict_probability"])
+    # with an accepted plan: replay it on the known events (rng=None) and mark the
+    # risks it removes, i.e. the train does not wait before that B-C / A-B / ... trip
+    plan_replay = (simulate(net, known, route_overrides=route_overrides, holds=holds)
+                   if (route_overrides or holds) else None)
+    for item in watchlist:
+        item["resolved_by_plan"] = False
+        item["plan_wait_min"] = None
+        if plan_replay is not None:
+            sec = net.sections[item["section_id"]]
+            trip = next(o for o in plan_replay.occupancies if o.train_id == item["train_id"]
+                        and (net.sections[o.section_id].from_station, net.sections[o.section_id].to_station)
+                        == (sec.from_station, sec.to_station))
+            item["plan_wait_min"] = trip.wait
+            item["resolved_by_plan"] = trip.wait == 0
+    watchlist.sort(key=lambda w: (w["resolved_by_plan"], -w["conflict_probability"]))
     if ml_note is None and (route_overrides or holds):
         ml_note = ("an accepted plan is in force; the model's features describe the timetable plan "
                    "without it (it was trained on runs with no re-planning), so its flags may be outdated")

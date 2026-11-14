@@ -211,6 +211,9 @@ Rerouting T202 cuts that to 53 / 19.
     disappears. The ML features still describe the timetable plan without it,
     because the model was trained on runs with no re-planning; the API says
     so in `ml_note`.
+    A watchlist item is marked `resolved_by_plan` when, in a deterministic
+    replay (rng=None) of the accepted plan on the known events, that train
+    does not wait before the flagged trip (same stations, either line).
 31. **Train state at a clock time**:
     - Status, from the simulated timeline: not started, at station, waiting
       at signal (ready but not entered, including held trains), in section,
