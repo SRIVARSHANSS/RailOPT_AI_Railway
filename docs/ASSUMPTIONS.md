@@ -363,3 +363,38 @@ REAL and SIMULATED never mix: real files live in `backend/data/real/` and carry
 56. **runs_on** is DERIVED from the records: a DG weekday counts when the train was recorded on
     at least half of that weekday's dates in September. Missing train-days are counted against
     this, so the missing share is a lower bound.
+
+## REAL data Step 2: delay model validation (pre-registered before any training)
+
+Written and committed before the first model was fitted. Every result below is reported,
+including any where ML does not help. Data label REAL; the SIMULATED Phase 4 models are not
+changed and were never trained on real data.
+
+57. **DG km** stays 433.02 (DERIVED, about +-4 km; published timetables give DG-MDU = 62 km).
+    Not used as a feature, so it does not affect Step 2.
+58. **Task**: predict the arrival delay at MDU (minutes, signed from clock times) from what is
+    known when the train departs DG: DG departure delay, DG arrival delay, upstream (last
+    recorded pre-DG station) departure delay, train type, terminates_at_MDU, scheduled DG
+    departure hour (sin/cos), day of week (DG date), and the train's mean past MDU delay.
+59. **Train identity**: no one-hot of train numbers. `train_mean_past_delay` = mean MDU arrival
+    delay of that train in the TRAINING dates only. For training rows it is leave-one-out
+    (the row's own target excluded); trains with no other training run get the training-set
+    mean. Test rows use the full training mean of their train.
+60. **Split by DG date**: train = DG dates up to 2024-09-22, test = 2024-09-23 onwards (the
+    last week of September plus the 1-2 Oct arrivals of journeys started on 29-30 Sept).
+61. **Rows**: main analysis excludes the 39 runs flagged in the Step 1 audit (MDU exactly on
+    time after DG departure >= 10 min late), from both train and test. Sensitivity S1 keeps
+    them. Sensitivity S2 = main rows with every delay (target and delay features) capped at
+    180 min. Note: the S1 flag is defined from the target, so the main analysis removes cases
+    where the carry baseline would fail; S1 shows the effect.
+62. **Methods, fixed, no tuning** (small data, no validation split):
+    - B0 carry: predicted MDU delay = DG departure delay.
+    - B1 linear regression (OLS) on the features of 58 (one-hot train type and weekday).
+    - RF: RandomForestRegressor(n_estimators=500, min_samples_leaf=5, random_state=0).
+    - XGB: XGBRegressor(n_estimators=300, max_depth=3, learning_rate=0.05, subsample=0.8,
+      colsample_bytree=0.8, random_state=0, n_jobs=1).
+63. **Metrics** on the test set: MAE, RMSE, R2, median absolute error; overall, terminating at
+    MDU, through. 95% percentile bootstrap CIs over test rows (10,000 resamples, seed 2024).
+    Comparison vs B0: paired bootstrap CI of the MAE difference (model - carry); "better"
+    only when the whole CI is below 0. A train-clustered bootstrap of the same difference is
+    reported as a check (rows of one train are correlated).
