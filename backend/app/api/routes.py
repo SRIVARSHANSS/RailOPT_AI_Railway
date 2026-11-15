@@ -11,8 +11,10 @@ from app.schemas.api import (
     DecisionRequest,
     EventCreated,
     EventOut,
+    EvaluationOut,
     EventRequest,
     Health,
+    ModelOut,
     NetworkOut,
     OptimizeOut,
     OptimizeRequest,
@@ -24,7 +26,7 @@ from app.schemas.api import (
     Timetable,
     TimelineOut,
 )
-from app.services import live
+from app.services import live, results
 from app.services.conflicts import detect_conflicts, project_plan
 from app.services.network import RailNetwork, format_time, parse_time
 from app.services.simulator import simulate
@@ -252,3 +254,15 @@ def timeline(store: ScenarioStore = Depends(get_store)):
                        applied_recommendation=store.applied_recommendation,
                        previous_plan=next((d["replaces"] for d in reversed(store.decision_log) if d["decision"] == "accept"), None)
                        if store.applied_recommendation else None)
+
+
+@router.get("/evaluation", response_model=EvaluationOut)
+def evaluation():
+    """Stored Phase 10/10b evaluation (eval/reports), hash-checked. Nothing is recomputed."""
+    return EvaluationOut(**results.evaluation_view())
+
+
+@router.get("/model", response_model=ModelOut)
+def model():
+    """Stored ML metrics and SHAP importance (ml/reports), hash-checked against the model files."""
+    return ModelOut(**results.model_view())

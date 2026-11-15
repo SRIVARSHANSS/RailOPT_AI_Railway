@@ -2492,9 +2492,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 200,
-      "solve_s_mean": 0.014016393499914556,
-      "solve_s_p95": 0.024448630010738263,
-      "solve_s_max": 0.045440900008543395,
+      "solve_s_mean": 0.012929333499996573,
+      "solve_s_p95": 0.022043160006433027,
+      "solve_s_max": 0.12549130000115838,
       "risk_buffers_total": 0,
       "decision_points_with_buffers": 0
     },
@@ -2504,9 +2504,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 388,
-      "solve_s_mean": 0.014098304123913247,
-      "solve_s_p95": 0.024625035006465616,
-      "solve_s_max": 0.03169329999946058,
+      "solve_s_mean": 0.0124166520620269,
+      "solve_s_p95": 0.021781664998707123,
+      "solve_s_max": 0.04532239999389276,
       "risk_buffers_total": 0,
       "decision_points_with_buffers": 0
     },
@@ -2516,9 +2516,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 388,
-      "solve_s_mean": 0.014593645360890282,
-      "solve_s_p95": 0.02650239999857149,
-      "solve_s_max": 0.03525139999692328,
+      "solve_s_mean": 0.012660812371492641,
+      "solve_s_p95": 0.02265895999444183,
+      "solve_s_max": 0.03796950000105426,
       "risk_buffers_total": 1874,
       "decision_points_with_buffers": 348
     },
@@ -2528,9 +2528,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 388,
-      "solve_s_mean": 0.01464639613419122,
-      "solve_s_p95": 0.02706371500462409,
-      "solve_s_max": 0.03737590000673663,
+      "solve_s_mean": 0.012675064690652623,
+      "solve_s_p95": 0.022887439995975,
+      "solve_s_max": 0.031707800008007325,
       "risk_buffers_total": 1874,
       "decision_points_with_buffers": 348
     },
@@ -2540,9 +2540,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 388,
-      "solve_s_mean": 0.014848464175396581,
-      "solve_s_p95": 0.02712963000303716,
-      "solve_s_max": 0.042400599995744415,
+      "solve_s_mean": 0.01281376340141167,
+      "solve_s_p95": 0.023916999994253275,
+      "solve_s_max": 0.04212050000205636,
       "risk_buffers_total": 1874,
       "decision_points_with_buffers": 348
     },
@@ -2552,9 +2552,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 388,
-      "solve_s_mean": 0.014831054896575617,
-      "solve_s_p95": 0.026783145000808865,
-      "solve_s_max": 0.03831730000092648,
+      "solve_s_mean": 0.012740446134145161,
+      "solve_s_p95": 0.02383577000509831,
+      "solve_s_max": 0.03184589999727905,
       "risk_buffers_total": 2834,
       "decision_points_with_buffers": 366
     },
@@ -2564,9 +2564,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 643,
-      "solve_s_mean": 0.01376047713875236,
-      "solve_s_p95": 0.02420756999781588,
-      "solve_s_max": 0.041780400002608076,
+      "solve_s_mean": 0.011910356764977112,
+      "solve_s_p95": 0.021348099994065704,
+      "solve_s_max": 0.05412290000822395,
       "risk_buffers_total": 0,
       "decision_points_with_buffers": 0
     }
@@ -2613,5 +2613,14 @@
   },
   "violations": 0,
   "replays_checked": 10800,
-  "runtime_s": 323.21338910001214
+  "runtime_s": 290.4873864999972,
+  "provenance": {
+    "results_csv_sha256": "2657ea0cb0038e43d6c5cd334b2a9330470f3880810bc97ee201c9d9a977488d",
+    "models_sha256": {
+      "preprocess.joblib": "8b4cdb0c45e2e65ca58ba8ba2d22da9005754169099f54da6e30ce9e00947f31",
+      "delay_model.joblib": "afa35a710af85d6f94f863f4ef8b90acf69624ea634f7cfb53aac06012bb42d5",
+      "conflict_model.joblib": "5a7921180453fe049f8611e742cfc7bb0f5e63b367911d6f546399067c215901"
+    },
+    "command": "python -m eval.run_eval --scenarios 200 --seed 2026"
+  }
 }

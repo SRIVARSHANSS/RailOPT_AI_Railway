@@ -103,3 +103,81 @@ export type Timeline = Labelled & {
   applied_recommendation: string | null
   previous_plan: string | null
 }
+
+// ---- GET /api/evaluation, GET /api/model (stored results, read-only) ----
+export type ResultStatus = 'ok' | 'outdated' | 'missing'
+export type Ci = [number, number]
+export type Desc = { mean: number; mean_ci: Ci; median: number; median_ci: Ci }
+export type Paired = {
+  n: number; wins: number; ties: number; losses: number
+  mean_diff: number; mean_diff_ci: Ci; median_diff: number; wilcoxon_p: number; significant: boolean
+}
+export type EvalSettingName = 'deterministic' | 'robustness'
+export type EvalSetting = {
+  methods: Record<string, Record<string, Desc>>
+  paired_vs_no_replanning: Record<string, Record<string, Paired>>
+  ml_ablation: Record<string, Paired>
+  dynamic_vs_single_shot: Record<string, Paired>
+  variants_vs_dynamic: Record<string, Record<string, Paired>>
+}
+export type SolverStat = {
+  solves: number; optimal: number; feasible: number; other: number; plans_adopted: number
+  solve_s_mean: number; solve_s_p95: number; solve_s_max: number
+}
+export type EvalSummary = {
+  label: string
+  config: { scenarios: number; seed: number; timetable: string; replays: number; bootstrap: number; closure_notice_min: number; methods: Record<string, string> }
+  settings: Record<EvalSettingName, EvalSetting>
+  solver: Record<string, SolverStat>
+  single_shot_guarantee: { optimal_single_shots: number; worse_on_events_known_at_solve: string[]; worse_on_full_replay: string[]; note: string }
+  scenarios: { trains: number; training_runs: number; training_seed: number; overlap_with_training: number | null; disruptions_total: number; per_scenario: Record<string, number>; types: Record<string, number> }
+  violations: number
+  replays_checked: number
+  runtime_s: number
+}
+export type DistMethod = {
+  n: number; mean: number; q1: number; median: number; q3: number; whisker_low: number; whisker_high: number
+  min: number; max: number; improved: number; unchanged: number; worse: number; histogram: number[]
+}
+export type Conclusion = { text: string; variants: string[]; preregistered: string[]; improved: string[]; significantly_worse: string[]; reference: string }
+export type SolverTotal = { solves: number; optimal: number; feasible: number; solve_s_mean: number; solve_s_max: number }
+export type Evaluation = Labelled & {
+  status: ResultStatus; reasons: string[]; command: string
+  summary: EvalSummary | null
+  distribution: Record<EvalSettingName, { edges: number[]; methods: Record<string, DistMethod> }> | null
+  conclusion: Conclusion | null
+  solver_totals: { phase10: SolverTotal; variants_10b: SolverTotal } | null
+}
+
+export type RegScores = { mae: number; rmse: number; r2: number }
+export type ClsScores = { precision: number; recall: number; f1: number; pr_auc: number; threshold: number | null }
+export type ModelMetrics = {
+  note: string
+  data: { rows: number; runs: number; runs_generated: number; split_method: string; split: Record<'train' | 'val' | 'test', { runs: number; rows: number; first_run: string; last_run: string }> }
+  seed: number
+  delay: { baselines: Record<string, { val: RegScores; test: RegScores }>; models: Record<string, { val: RegScores; test: RegScores }>; best_model: string; selected_by: string }
+  conflict: {
+    positive_rate: Record<'train' | 'val' | 'test', number>
+    baselines: Record<string, { val: ClsScores; test: ClsScores }>
+    models: Record<string, { val: ClsScores; test: ClsScores }>
+    best_model: string; selected_by: string
+    operating_points: {
+      'recall_at_least_0.80': { rule: string; threshold: number; val: ClsScores; test: ClsScores }
+      equal_to_rule_precision: { rule: string; rule_val_precision: number; rule_val_recall: number; threshold: number; val: ClsScores; test: ClsScores }
+    }
+    ablation: { model: string; with_rule_flag: Record<string, { threshold: number; val: ClsScores; test: ClsScores }>; without_rule_flag: Record<string, { threshold: number; val: ClsScores; test: ClsScores }> }
+  }
+  shap_rows: number
+  small_data_check: { runs: number; n_iter_per_model: number; best_model: string; rule_val_precision: number; rule_val_recall: number; model_val_recall_at_rule_precision: number }
+}
+export type ModelResults = Labelled & {
+  status: ResultStatus; reasons: string[]; command: string
+  metrics: ModelMetrics | null
+  feature_importance: { model: 'delay' | 'conflict'; feature: string; mean_abs_shap: number }[]
+  dataset_check: string | null
+  evaluation: {
+    status: ResultStatus
+    conclusion: Conclusion | null
+    settings: Record<EvalSettingName, { variants_vs_dynamic: Record<string, Record<string, Paired>>; methods: Record<string, Desc> }>
+  } | null
+}

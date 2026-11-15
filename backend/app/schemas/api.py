@@ -323,3 +323,27 @@ class TimelineOut(Labelled):
     closures: list[ClosureBlock] = Field(default_factory=list)
     applied_recommendation: str | None
     previous_plan: str | None = Field(None, description="plan the accepted one replaced (before_plan basis)")
+
+
+# ---- stored results (Analytics, Model Insights): read-only --------------------------------
+ResultStatus = Literal["ok", "outdated", "missing"]
+
+
+class EvaluationOut(Labelled):
+    status: ResultStatus = Field(description="outdated = the results CSV or model files changed since the run")
+    reasons: list[str]
+    command: str = Field(description="command that regenerates the results")
+    summary: dict[str, Any] | None = Field(description="eval/reports/eval_summary.json as written by the run")
+    distribution: dict[str, Any] | None = Field(description="per-scenario reduction vs no re-planning, summarised from eval_results.csv")
+    conclusion: dict[str, Any] | None = Field(description="plain ML-integration finding, derived from the summary")
+    solver_totals: dict[str, Any] | None
+
+
+class ModelOut(Labelled):
+    status: ResultStatus
+    reasons: list[str]
+    command: str
+    metrics: dict[str, Any] | None = Field(description="ml/reports/metrics.json as written by training")
+    feature_importance: list[dict[str, Any]]
+    dataset_check: str | None
+    evaluation: dict[str, Any] | None = Field(description="Phase 10/10b finding about ML risk in the optimizer")

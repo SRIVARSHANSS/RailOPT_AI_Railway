@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  ChevronsLeft, ChevronsRight, Clock, FlaskConical, LogOut, MonitorPlay, Palette, Route, Scale, TrainFront, Zap,
+  BarChart3, BrainCircuit, ChevronsLeft, ChevronsRight, Clock, FlaskConical, LogOut, MonitorPlay, Palette, Route, Scale, TrainFront, Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
@@ -22,6 +22,8 @@ const NAV = [
   { to: '/strategies', label: 'Strategies', icon: Scale },
   { to: '/whatif', label: 'What-if studio', icon: FlaskConical },
   { to: '/timeline', label: 'Timeline', icon: Route },
+  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { to: '/model', label: 'Model insights', icon: BrainCircuit },
   { to: '/design', label: 'Design system', icon: Palette },
 ]
 

@@ -29,7 +29,9 @@ and is not connected to Indian Railways systems. All results are simulated.
   bootstrap CIs and paired tests (`backend/eval/reports/eval_report.md`, generated from the JSON)
   - Phase 10b: pre-registered ML integration variants (bigger and probability-scaled buffers,
     ML-triggered early re-planning), reported under "ML integration variants"
-- 85 passing tests. Remaining phases: see `CLAUDE.md`
+- [x] Analytics and Model Insights pages: the stored evaluation and ML metrics through `GET /api/evaluation`
+  and `GET /api/model`, hash-checked ("Outdated - rerun" when the result files or models changed)
+- 89 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -103,6 +105,8 @@ docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
 | GET | `/api/conflicts?at=HH:MM` | detector conflicts + ML probability and top drivers, ML watchlist |
 | POST | `/api/optimize` | strategy comparison (replayed) + recommendation with explanation |
 | POST | `/api/recommendation/{id}/decision` | accept (applies holds / reroutes) or reject; both logged |
+| GET | `/api/evaluation` | stored Phase 10/10b evaluation (eval/reports), hash-checked; status ok / outdated / missing |
+| GET | `/api/model` | stored ML metrics + SHAP importance (ml/reports), hash-checked against the model files |
 | GET | `/api/timeline` | planned, actual and before-plan trips (stops, waits, delays) + closures for the time-distance chart |
 | POST | `/api/whatif` | HYPOTHETICAL: 1-3 events on a copy of the scenario, compared with the current one |
 

@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { fmt } from '../lib/time'
 import { useConsole } from '../store/sim'
 import type {
-  ConflictsAt, DecisionResult, EventType, Network, OptimizeResult, Scenario, StateAt, Timeline, Timetable, WhatIfResult,
+  ConflictsAt, DecisionResult, Evaluation, EventType, ModelResults, Network, OptimizeResult, Scenario, StateAt, Timeline, Timetable, WhatIfResult,
 } from './types'
 
 export const qk = {
@@ -46,6 +46,13 @@ export const useConflictsAt = (minute: number) =>
 
 export const useTimeline = () =>
   useQuery({ queryKey: qk.timeline, queryFn: () => api<Timeline>('/api/timeline'), retry: false })
+
+/** Stored results (read-only files on the server): fetched once per visit. */
+export const useEvaluation = () =>
+  useQuery({ queryKey: ['evaluation'], queryFn: () => api<Evaluation>('/api/evaluation'), retry: false, staleTime: 60_000 })
+
+export const useModelResults = () =>
+  useQuery({ queryKey: ['model'], queryFn: () => api<ModelResults>('/api/model'), retry: false, staleTime: 60_000 })
 
 /** Anything that changes the scenario invalidates every time-based view. */
 function useInvalidateScenario() {

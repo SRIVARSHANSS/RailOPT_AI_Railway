@@ -106,6 +106,14 @@ def main(argv: list[str] | None = None) -> None:
     rows, summary = run(a.scenarios, a.seed, a.replays, progress=True)
     a.out.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(a.out / "eval_results.csv", index=False)
+    # provenance: the API shows "outdated - rerun" when the CSV or the models no longer match
+    from ml.train import MODEL_FILES, sha256_file
+    from app.services.predictor.predictor import DEFAULT_MODEL_DIR
+    summary["provenance"] = {
+        "results_csv_sha256": sha256_file(a.out / "eval_results.csv"),
+        "models_sha256": {name: sha256_file(DEFAULT_MODEL_DIR / name) for name in MODEL_FILES},
+        "command": f"python -m eval.run_eval --scenarios {a.scenarios} --seed {a.seed}",
+    }
     write_summary(summary, a.out / "eval_summary.json")
     summary = json.loads((a.out / "eval_summary.json").read_text(encoding="utf-8"))   # the report reads the JSON
     write_report(summary, a.out / "eval_report.md")

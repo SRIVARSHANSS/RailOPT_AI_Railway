@@ -12,7 +12,7 @@
 - Settings: **deterministic** (one replay, no randomness) and **robustness** (5 seeded replays per scenario under the Phase 2 running-time and dwell variability, same seeds for every method, plans fixed in advance; a scenario's value is the mean of its replays).
 - Statistics: mean and median with 10000-resample bootstrap 95% CIs over scenarios; paired comparisons per scenario (diff = method - reference, negative = better); a difference is significant when the CI of the mean difference excludes 0 (Wilcoxon p shown for reference).
 - Every replay was checked for violations (headway, capacity, minimum running time, closures, early departures): **0 violations in 10800 replays**.
-- Runtime: 323 s.
+- Runtime: 290 s.
 
 ## Results - deterministic
 
@@ -123,13 +123,13 @@ Defined in docs/ASSUMPTIONS.md (43-46) before any run. Same scenarios, settings 
 
 | Method | Solves | OPTIMAL | FEASIBLE | other | Plans adopted | Solve time mean / p95 / max (s) |
 |---|---|---|---|---|---|---|
-| RailOpt single-shot | 200 | 200 | 0 | 0 | 200 | 0.014 / 0.024 / 0.045 |
-| RailOpt dynamic | 388 | 388 | 0 | 0 | 388 | 0.014 / 0.025 / 0.032 |
-| RailOpt dynamic + ML | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.035 |
-| A: dynamic + ML, 2-min buffers | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.037 |
-| A: dynamic + ML, 3-min buffers | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.042 |
-| B: dynamic + ML, round(3p)-min buffers | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.038 |
-| C: dynamic + ML-triggered re-planning | 643 | 643 | 0 | 0 | 643 | 0.014 / 0.024 / 0.042 |
+| RailOpt single-shot | 200 | 200 | 0 | 0 | 200 | 0.013 / 0.022 / 0.125 |
+| RailOpt dynamic | 388 | 388 | 0 | 0 | 388 | 0.012 / 0.022 / 0.045 |
+| RailOpt dynamic + ML | 388 | 388 | 0 | 0 | 388 | 0.013 / 0.023 / 0.038 |
+| A: dynamic + ML, 2-min buffers | 388 | 388 | 0 | 0 | 388 | 0.013 / 0.023 / 0.032 |
+| A: dynamic + ML, 3-min buffers | 388 | 388 | 0 | 0 | 388 | 0.013 / 0.024 / 0.042 |
+| B: dynamic + ML, round(3p)-min buffers | 388 | 388 | 0 | 0 | 388 | 0.013 / 0.024 / 0.032 |
+| C: dynamic + ML-triggered re-planning | 643 | 643 | 0 | 0 | 643 | 0.012 / 0.021 / 0.054 |
 
 Solve time is wall time of one CP-SAT call including model building (1 worker, 10 s limit).
 

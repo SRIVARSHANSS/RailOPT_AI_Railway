@@ -129,3 +129,23 @@ Numbers below are from the simulator replay (tests/test_phase6.py prints them).
 17. **What-if (optional).** *What-if studio*: add a hypothetical *Delay* for **T303 at B, 10:34,
     20 min**, *Run what-if*: the current scenario next to the hypothetical one, with the
     HYPOTHETICAL badge. Nothing in the live scenario changes.
+
+## Optional: the results (Analytics and Model Insights)
+
+18. **Analytics.** Open *Analytics*. Everything here is read from the stored evaluation
+    (`eval/reports/eval_summary.json`), checked against the files it was computed from.
+    - Point out the setup tiles (scenarios, disruptions, 0 overlap with the training data, 0 violations)
+      and the bar chart with 95% CI whiskers; switch *Deterministic* / *Robustness*.
+    - Talking point: dynamic re-planning beats no re-planning on most scenarios and is never claimed
+      "optimal" beyond what CP-SAT proved (the solver panel shows the OPTIMAL count).
+    - Read the purple conclusion under *ML integration variants* out loud: the ML gives early
+      warning, but feeding its risk into the optimizer did not improve plans. That is a result,
+      not a failure, and the variants were pre-registered.
+    - The *Limits* box: simulated, plans frozen in the robustness replays, holds count as waits.
+19. **Model Insights.** Open *Model insights*: baselines vs models, the equal-precision
+    head-to-head (model recall vs the rule's at the same precision), the ablation without the rule
+    flag, global SHAP importance, and the note that with 10% of the data the model did not beat
+    the rule.
+    - If either page shows **Outdated - rerun**, a result file or model changed since the run:
+      run the command it names (from `backend/`) before presenting.
+

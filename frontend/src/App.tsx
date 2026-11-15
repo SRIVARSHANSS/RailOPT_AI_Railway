@@ -15,6 +15,8 @@ import { WhatIf } from './pages/WhatIf'
 import { Login } from './pages/Login'
 import { useSession } from './store/session'
 
+const Analytics = lazy(() => import('./pages/Analytics').then((m) => ({ default: m.Analytics })))
+const ModelInsights = lazy(() => import('./pages/ModelInsights').then((m) => ({ default: m.ModelInsights })))
 const Timeline = lazy(() => import('./pages/Timeline').then((m) => ({ default: m.Timeline })))
 const DesignSystem = lazy(() => import('./pages/DesignSystem').then((m) => ({ default: m.DesignSystem })))
 
@@ -43,6 +45,8 @@ export default function App() {
                   <Route path="/strategies" element={<Strategies />} />
                   <Route path="/whatif" element={<WhatIf />} />
                   <Route path="/timeline" element={<Timeline />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/model" element={<ModelInsights />} />
                   <Route path="/design" element={<DesignSystem />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/console" replace />} />
