@@ -56,6 +56,16 @@ npm install
 npm run dev        # http://localhost:5173 - needs the API on port 8000
 ```
 
+### Dependency audit (frontend)
+
+`npm audit` (after the non-force `npm audit fix`) still lists 9 moderate advisories:
+
+- **react-router / react-router-dom 6.30.6** (runtime): open redirect via a backslash path in
+  `<Link>` / `useNavigate`, and an SSR hydration issue. Both are fixed only in React Router v7;
+  the upgrade is deferred. Exposure here is low: the app only navigates to its own fixed internal
+  routes (no user- or URL-supplied redirect targets) and does no server-side rendering.
+- **typescript-eslint 8.72.2 and its minimatch** (dev only, linting): no fixed release published yet.
+
 ## Layout
 
 ```

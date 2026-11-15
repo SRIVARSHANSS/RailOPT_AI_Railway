@@ -117,7 +117,13 @@ Rail OPT/  (project root)
 - [x] Phase 6: what-if (POST /api/whatif, What-If Studio) + re-optimization on top of an accepted plan
 - [ ] Phase 7: explainer
 - [ ] Phase 8: FastAPI + PostgreSQL + auth
-- [x] Phase 9: React frontend - design system, shell, login, Traffic Console, Disruptions, Strategies,
-  What-if, Timeline (time-distance chart) (demo: docs/DEMO.md).
+- [~] Phase 9: React frontend, 12 planned pages (project build guide); demo: docs/DEMO.md
+  - [x] 1 Login  - [x] 2 Traffic Console  - [x] 3 Time-Distance Chart (/timeline)
+  - [x] 4 Disruption Panel  - [~] 5 Conflicts and Alerts (partial: lives in the console alert feed,
+    no page of its own)  - [x] 6 Strategy Comparison  - [x] 7 What-If Studio
+  - [ ] 8 Analytics  - [ ] 9 Model Insights (ML metrics vs baselines, SHAP drivers)
+  - [ ] 10 Network and Train Management (admin CRUD, CSV import)  - [ ] 11 Reports (CSV/PDF export)
+  - [ ] 12 User Management (admin)
+  - The Design system gallery (/design) is a dev page, not one of the 12.
 - [ ] Phase 10: evaluation
 - [ ] Phase 11: Docker, README, demo script
