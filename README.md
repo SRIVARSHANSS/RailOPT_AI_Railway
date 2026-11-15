@@ -22,7 +22,8 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] Phase 9 part 1: design system "Midnight Signal", app shell, cinematic login (`frontend/`)
 - [x] Phase 9 part 2: Traffic Console (live corridor map), Disruption Panel, Strategy Comparison
   - step-by-step demo with talking points: `docs/DEMO.md`
-- 67 passing tests. Remaining phases: see `CLAUDE.md`
+- [x] Phase 6: what-if studio (HYPOTHETICAL copy) and re-optimization on top of an accepted plan
+- 72 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -41,7 +42,7 @@ python -m pytest -q                         # run all tests
 python -m app.services.simulator.run_demo   # T101 scenario, before and after
 python -m app.services.conflicts.run_demo   # predicted conflicts + knock-on delays
 python -m app.services.optimizer.run_demo   # strategy comparison for the T101 scenario
-uvicorn app.main:app --reload               # API on http://127.0.0.1:8000, docs at /docs
+uvicorn app.main:app                        # API on http://127.0.0.1:8000, docs at /docs (demos: no --reload)
 python -m app.services.datagen.generate --runs 3000 --seed 42   # SIMULATED training rows -> data/generated/
 python -m ml.train                          # models -> ml/models/, reports -> ml/reports/ (~3 min)
 ```
@@ -86,6 +87,7 @@ docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
 | POST | `/api/optimize` | strategy comparison (replayed) + recommendation with explanation |
 | POST | `/api/recommendation/{id}/decision` | accept (applies holds / reroutes) or reject; both logged |
 | GET | `/api/timeline` | planned and actual occupancies for a time-distance chart |
+| POST | `/api/whatif` | HYPOTHETICAL: 1-3 events on a copy of the scenario, compared with the current one |
 
 Detection, prediction and re-planning only see events known at `at`. A
 stoppage or delay is known once it starts; planned closures are known as soon

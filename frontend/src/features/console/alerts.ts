@@ -1,4 +1,4 @@
-import type { ConflictsAt, OptimizeResult } from '../../api/types'
+import type { ConflictsAt, OptimizeResult, PlanStatus } from '../../api/types'
 
 export type Alert = {
   key: string
@@ -11,8 +11,17 @@ export type Alert = {
 }
 
 /** Alerts built only from API fields: detector conflicts, ML watchlist, last optimizer run. */
-export function buildAlerts(c: ConflictsAt | undefined, opt: OptimizeResult | null, decided: Record<string, string>): Alert[] {
+export function buildAlerts(c: ConflictsAt | undefined, opt: OptimizeResult | null, decided: Record<string, string>,
+                            plan?: PlanStatus): Alert[] {
   const out: Alert[] = []
+  if (plan?.stale) {
+    out.push({
+      key: `stale-${plan.applied}-${plan.new_events.join('-')}`, level: 'RECOMMENDATION',
+      title: 'New event - re-plan suggested',
+      detail: `${plan.new_events.join(', ')} became known after accepted plan ${plan.applied}. Re-optimize from the current state.`,
+      section_id: null, trains: [],
+    })
+  }
   const rec = opt?.recommendation
   if (rec && !decided[rec.recommendation_id]) {
     out.push({

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { BrainCircuit, CircleCheck, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import type { ConflictsAt } from '../../api/types'
+import type { ConflictsAt, PlanStatus } from '../../api/types'
 import { buildAlerts } from './alerts'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { cn } from '../../lib/cn'
@@ -15,10 +15,10 @@ const style = {
   RESOLVED: { box: 'border-signal-green/40 bg-signal-green/10', text: 'text-signal-green', icon: CircleCheck },
 } as const
 
-export function AlertsFeed({ conflicts, loading }: { conflicts: ConflictsAt | undefined; loading: boolean }) {
+export function AlertsFeed({ conflicts, loading, plan }: { conflicts: ConflictsAt | undefined; loading: boolean; plan?: PlanStatus }) {
   const { highlight, setHighlight, optimize, decided } = useConsole()
   const navigate = useNavigate()
-  const alerts = buildAlerts(conflicts, optimize, decided)
+  const alerts = buildAlerts(conflicts, optimize, decided, plan)
 
   if (!loading && alerts.length === 0) {
     return <EmptyState icon={<CircleCheck className="h-7 w-7" />} title="No alerts">No conflict is known at this time.</EmptyState>

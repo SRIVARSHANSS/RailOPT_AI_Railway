@@ -3,7 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { api } from '../lib/api'
 import { fmt } from '../lib/time'
 import type {
-  ConflictsAt, DecisionResult, EventType, Network, OptimizeResult, Scenario, StateAt, Timetable,
+  ConflictsAt, DecisionResult, EventType, Network, OptimizeResult, Scenario, StateAt, Timetable, WhatIfResult,
 } from './types'
 
 export const qk = {
@@ -83,3 +83,10 @@ export function useDecide() {
     onSuccess: invalidate,
   })
 }
+
+/** HYPOTHETICAL: computed on a copy of the scenario by the API; nothing live changes. */
+export const useWhatIf = () =>
+  useMutation({
+    mutationFn: ({ minute, events }: { minute: number; events: NewEvent[] }) =>
+      api<WhatIfResult>('/api/whatif', { method: 'POST', body: JSON.stringify({ at: fmt(minute), events }) }),
+  })

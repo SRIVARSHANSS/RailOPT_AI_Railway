@@ -41,7 +41,7 @@ export function buildGeometry(net: Network): Geometry {
       ...sec, lanes, alternate,
       // single-track labels sit below the line near the far end, clear of train labels
       labelX: !alternate && sec.tracks === 1 ? a.x + (b.x - a.x) * 0.84 : (a.x + b.x) / 2,
-      labelY: alternate ? a.y + 122 : sec.tracks > 1 ? a.y - 36 : a.y + 34,
+      labelY: alternate ? a.y + 122 : sec.tracks > 1 ? a.y - 56 : a.y + 34,
     }
   }
   return { stations, sections }

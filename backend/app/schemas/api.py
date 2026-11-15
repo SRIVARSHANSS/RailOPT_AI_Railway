@@ -31,6 +31,12 @@ class OptimizeRequest(BaseModel):
     at: str = Field(pattern=HHMM, examples=["10:03"])
 
 
+class WhatIfRequest(BaseModel):
+    at: str = Field(pattern=HHMM, examples=["10:20"])
+    events: list[EventRequest] = Field(min_length=1, max_length=3,
+                                       description="hypothetical events, all treated as known at `at`")
+
+
 class DecisionRequest(BaseModel):
     decision: Literal["accept", "reject"]
 
@@ -99,10 +105,18 @@ class EventCreated(Labelled):
     events: list[EventOut]
 
 
+class PlanStatus(BaseModel):
+    applied: str | None = Field(description="accepted recommendation in force, if any")
+    stale: bool = Field(description="an event is known now that the accepted plan did not know")
+    new_events: list[str]
+    basis_at: int | None = Field(description="clock time (minutes) the accepted plan was computed for")
+
+
 class ScenarioOut(Labelled):
     timetable: str
     events: list[EventOut]
     applied_recommendation: str | None
+    plan: PlanStatus
     holds: list[dict[str, Any]]
     route_overrides: list[dict[str, Any]]
     decision_log: list[dict[str, Any]]
@@ -132,6 +146,7 @@ class StateOut(Labelled):
     known_events: list[str]
     trains: list[TrainState]
     kpis: Kpis
+    plan: PlanStatus
 
 
 class Driver(BaseModel):
@@ -205,8 +220,7 @@ class Explanation(BaseModel):
     note: str
 
 
-class RecommendationOut(BaseModel):
-    recommendation_id: str
+class RecommendationBase(BaseModel):
     strategy: str
     status: str
     actions: list[str]
@@ -216,11 +230,34 @@ class RecommendationOut(BaseModel):
     explanation: Explanation
 
 
+class RecommendationOut(RecommendationBase):
+    recommendation_id: str
+
+
 class OptimizeOut(Labelled):
     at: str
     known_events: list[str]
     results: list[StrategyRow]
     recommendation: RecommendationOut | None
+    replanning_from: str | None = Field(None, description="accepted plan this run re-plans on top of")
+
+
+class WhatIfSide(BaseModel):
+    known_events: list[str]
+    conflicts: list[ConflictOut]
+    ml_watchlist: list[WatchItem]
+    ml_note: str | None
+    results: list[StrategyRow]
+    recommendation: RecommendationBase | None = Field(description="not stored: a what-if cannot be accepted")
+
+
+class WhatIfOut(Labelled):
+    scenario_label: Literal["HYPOTHETICAL"] = "HYPOTHETICAL"
+    at: str
+    hypothetical_events: list[EventOut]
+    current: WhatIfSide
+    hypothetical: WhatIfSide
+    note: str = "HYPOTHETICAL and SIMULATED: computed on a copy; the live scenario is unchanged."
 
 
 class DecisionOut(Labelled):

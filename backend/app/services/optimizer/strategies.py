@@ -62,13 +62,19 @@ def _score(net, res: StrategyResult, replay: SimResult, known) -> StrategyResult
     return res
 
 
-def run_baseline(net: RailNetwork, known: list[Disruption], dispatch: str) -> StrategyResult:
+def run_baseline(net: RailNetwork, known: list[Disruption], dispatch: str,
+                 base_holds: dict | None = None, base_overrides: dict | None = None) -> StrategyResult:
+    """With an accepted plan, the baseline keeps that plan (no NEW re-planning)."""
     name = {"fcfs": "NO_REPLANNING", "priority": "PRIORITY_DISPATCH"}[dispatch]
-    return _score(net, StrategyResult(name, "baseline", "BASELINE"), simulate(net, known, dispatch=dispatch), known)
+    res = StrategyResult(name, "baseline", "BASELINE",
+                         message="keeps the accepted plan, no new re-planning" if (base_holds or base_overrides) else "")
+    replay = simulate(net, known, route_overrides=base_overrides, holds=base_holds, dispatch=dispatch)
+    return _score(net, res, replay, known)
 
 
 def run_strategy(net: RailNetwork, state_time: int, known: list[Disruption], strategy: str,
                  risk_buffers: dict | None = None, **solve_kwargs) -> StrategyResult:
+    """solve_kwargs may carry base_holds / base_overrides (the accepted plan)."""
     sol = solve(net, state_time, known, strategy, risk_buffers=risk_buffers, **solve_kwargs)
     res = StrategyResult(strategy, "strategy", sol.status, sol.solve_seconds, sol.objective, sol.message,
                          solve=sol)
@@ -102,9 +108,15 @@ def describe_actions(net: RailNetwork, sol: SolveResult, replay: SimResult) -> l
 
 
 def compare(net: RailNetwork, state_time: int, known: list[Disruption],
-            risk_buffers: dict | None = None, **solve_kwargs) -> list[StrategyResult]:
-    """Both baselines and all four strategies, each scored on its replay."""
-    results = [run_baseline(net, known, "fcfs"), run_baseline(net, known, "priority")]
+            risk_buffers: dict | None = None, base_holds: dict | None = None,
+            base_overrides: dict | None = None, **solve_kwargs) -> list[StrategyResult]:
+    """Both baselines and all four strategies, each scored on its replay.
+
+    With an accepted plan (base_*), trips already started stay as that plan made them;
+    the baselines carry the plan on, the strategies re-plan the future."""
+    solve_kwargs.update(base_holds=base_holds, base_overrides=base_overrides)
+    results = [run_baseline(net, known, "fcfs", base_holds, base_overrides),
+               run_baseline(net, known, "priority", base_holds, base_overrides)]
     results += [run_strategy(net, state_time, known, s.name, risk_buffers, **solve_kwargs) for s in STRATEGIES]
     return results
 

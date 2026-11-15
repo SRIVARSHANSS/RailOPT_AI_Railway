@@ -61,14 +61,20 @@ Rail OPT/  (project root)
   SHA-256 of the dataset and model files; after regenerating data, retrain or test_ml fails.
 - Optimizer demo: `python -m app.services.optimizer.run_demo`. Call a plan optimal only when the
   CP-SAT status is OPTIMAL; strategy D is named COMBINED for that reason. All metrics come from the replay.
-- API (thin layer, Phase 8 adds Postgres + JWT): from backend/ `uvicorn app.main:app --reload`, docs at
+- API (thin layer, Phase 8 adds Postgres + JWT): from backend/ `uvicorn app.main:app` (dev: --reload), docs at
   http://127.0.0.1:8000/docs. Scenario state is in memory behind `app/core/store.py::ScenarioStore`;
   view logic in `app/services/live.py`. Knowledge is time-aware: STOPPAGE/DELAY known only when
   at >= start, TRACK_UNAVAILABLE known once posted; movement (/state, /timeline) uses all events.
   Every response carries data_label = SIMULATED.
 - UI rule: an ml_watchlist item with resolved_by_plan = true is shown as "Risk resolved by accepted plan"
   (green, risk struck through), not as an active warning; keep showing ml_note.
-- 67 tests passing.
+- Phase 6 rules: an accepted plan goes stale when an event is known that its optimizer run did not
+  know (plan block in /api/state and /api/scenario). /api/optimize re-plans on top of the accepted
+  plan: started trips fixed, baselines = keep the current plan. /api/whatif works on a copy (all
+  hypothetical events known at `at`), labelled HYPOTHETICAL; never touch the live store from it.
+  A TRACK_UNAVAILABLE that would start while a train is inside the section is rejected (422 with
+  the clear time). For demos run the API without --reload (the Windows watcher can stall).
+- 72 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -96,7 +102,7 @@ Rail OPT/  (project root)
 - [x] Phase 3: conflict detector (rule-based, planned times; cascade via simulator)
 - [x] Phase 4: ML models + baselines (backend/ml, app/services/predictor; see ml/reports/model_card.md)
 - [x] Phase 5: CP-SAT optimizer + baselines (app/services/optimizer; strategies replayed through the simulator)
-- [ ] Phase 6: what-if + re-optimization
+- [x] Phase 6: what-if (POST /api/whatif, What-If Studio) + re-optimization on top of an accepted plan
 - [ ] Phase 7: explainer
 - [ ] Phase 8: FastAPI + PostgreSQL + auth
 - [x] Phase 9: React frontend - design system, shell, login, Traffic Console, Disruptions, Strategies

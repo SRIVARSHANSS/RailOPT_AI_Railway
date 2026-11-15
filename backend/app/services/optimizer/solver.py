@@ -76,7 +76,8 @@ class SolveResult:
     status: str                       # OPTIMAL | FEASIBLE | INFEASIBLE | MODEL_INVALID | UNKNOWN
     solve_seconds: float
     objective: int | None = None
-    trips: list[PlannedTrip] = field(default_factory=list)
+    trips: list[PlannedTrip] = field(default_factory=list)       # decided by the solver
+    fixed: list[PlannedTrip] = field(default_factory=list)       # already started at state time
     message: str = ""
 
     @property
@@ -85,12 +86,14 @@ class SolveResult:
 
     @property
     def holds(self) -> dict[tuple[str, str], int]:
-        return {(t.train_id, t.section_id): t.entry for t in self.trips}
+        """Controller plan for the replay: started trips at their recorded entry, plus the decisions."""
+        return {(t.train_id, t.section_id): t.entry for t in self.fixed + self.trips}
 
     @property
     def route_overrides(self) -> dict[tuple[str, str], str]:
+        """Reroutes already under way (from an accepted plan) plus new ones."""
         return {(t.train_id, self._from_station[t.section_id]): t.section_id
-                for t in self.trips if t.rerouted}
+                for t in self.fixed + self.trips if t.rerouted}
 
     _from_station: dict[str, str] = field(default_factory=dict, repr=False)
 
@@ -99,13 +102,19 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
           strategy: str | StrategySpec,
           risk_buffers: dict[tuple[str, str], int] | None = None,
           horizon_min: int = config.HORIZON_MIN,
-          time_limit_s: float = config.TIME_LIMIT_S) -> SolveResult:
+          time_limit_s: float = config.TIME_LIMIT_S,
+          base_holds: dict[tuple[str, str], int] | None = None,
+          base_overrides: dict[tuple[str, str], str] | None = None) -> SolveResult:
+    """base_holds / base_overrides: the plan currently accepted. History (every trip
+    started at state time, e.g. a reroute in progress) is simulated WITH it and fixed;
+    only future trips are decided again."""
     spec = STRATEGY_BY_NAME[strategy] if isinstance(strategy, str) else strategy
     known = list(known_events or [])
     risk_buffers = dict(risk_buffers or {})
     started = time.perf_counter()
 
-    history: SimResult = simulate(net, known)               # no re-planning, deterministic
+    history: SimResult = simulate(net, known, route_overrides=base_overrides, holds=base_holds)
+    fixed: list[PlannedTrip] = []
     plan = project_plan(net, state_time, known)
     lo, hi = state_time, state_time + config.PLANNING_WINDOW_MIN
     closures = [d for d in known if d.event_type == "TRACK_UNAVAILABLE"]
@@ -132,6 +141,8 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
                 if end > state_time:
                     iv = m.NewIntervalVar(actual.entry, end - actual.entry, end, f"fixed_{train_id}_{i}")
                     by_section.setdefault(sec.section_id, []).append((iv, None, actual.entry, None))
+                fixed.append(PlannedTrip(train_id, i, sec.section_id, actual.entry, actual.exit,
+                                         sec.section_id != primary.section_id))
                 prev_exit = actual.exit
                 continue
             if plan.trip(train_id, primary.section_id).entry > state_time + horizon_min:
@@ -212,7 +223,7 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
     solver.parameters.random_seed = config.RANDOM_SEED
     code = solver.Solve(m)
     status = STATUS_NAMES.get(code, str(code))
-    result = SolveResult(spec.name, status, round(time.perf_counter() - started, 3),
+    result = SolveResult(spec.name, status, round(time.perf_counter() - started, 3), fixed=fixed,
                          _from_station={s.section_id: s.from_station for s in net.sections.values()})
 
     if status not in ("OPTIMAL", "FEASIBLE"):

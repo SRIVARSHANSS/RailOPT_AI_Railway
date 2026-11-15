@@ -155,15 +155,18 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
 # ---------------------------------------------------------------------------
 # optimisation + recommendation
 # ---------------------------------------------------------------------------
-def optimize_view(net: RailNetwork, at: int, known: list[Disruption]) -> dict:
-    results = compare(net, at, known)
+def optimize_view(net: RailNetwork, at: int, known: list[Disruption],
+                  base_holds: dict | None = None, base_overrides: dict | None = None) -> dict:
+    """Compare strategies at `at`. With an accepted plan (base_*), started trips stay as that
+    plan made them and the baselines keep it; the strategies re-plan the future."""
+    results = compare(net, at, known, base_holds=base_holds or None, base_overrides=base_overrides or None)
     rows = [_result_row(r) for r in results]
     base = next(r for r in results if r.name == "NO_REPLANNING")
     candidates = [r for r in results if r.kind == "strategy" and r.replay is not None]
     rec = None
     if candidates:
         best = min(candidates, key=lambda r: (r.weighted_delay, len(r.actions), STRATEGY_ORDER[r.name]))
-        conflicts = detect_conflicts(net, project_plan(net, at, known))
+        conflicts = detect_conflicts(net, project_plan(net, at, known, base_overrides, base_holds))
         rec = {"strategy": best.name, "status": best.status, "actions": best.actions,
                "weighted_delay": best.weighted_delay, "total_delay": best.total_delay,
                "delays": best.delays,
@@ -195,7 +198,8 @@ def explain(net: RailNetwork, best, base, conflicts) -> dict:
     else:
         reason = "No conflict is detected from the known events at this time."
     late = ", ".join(f"{t} {d} min" for t, d in base.delays.items() if d) or "no train late"
-    counterfactual = (f"Without re-planning: weighted delay {base.weighted_delay}, "
+    lead = "Keeping the accepted plan" if base.message.startswith("keeps") else "Without re-planning"
+    counterfactual = (f"{lead}: weighted delay {base.weighted_delay}, "
                       f"total delay {base.total_delay} min ({late}).")
     d_total = best.total_delay - base.total_delay
     d_weighted = best.weighted_delay - base.weighted_delay
@@ -203,7 +207,7 @@ def explain(net: RailNetwork, best, base, conflicts) -> dict:
         impact = (f"{best.name}: weighted delay {best.weighted_delay} ({d_weighted:+d}), "
                   f"total delay {best.total_delay} min ({d_total:+d} min).")
     else:
-        impact = f"No strategy improves on no re-planning (weighted delay {best.weighted_delay})."
+        impact = f"No strategy improves on {lead.lower()} (weighted delay {best.weighted_delay})."
     solver = (f"CP-SAT status {best.status}: proven optimal for the {best.name} model."
               if best.status == "OPTIMAL" else
               f"CP-SAT status {best.status}: feasible, not proven optimal.")
@@ -232,3 +236,24 @@ def timeline_rows(net: RailNetwork, result: SimResult) -> list[dict]:
 def planned_timeline(net: RailNetwork) -> list[dict]:
     """The timetable as occupancies (no disruptions: the normal day is conflict-free)."""
     return timeline_rows(net, simulate(net))
+
+
+# ---------------------------------------------------------------------------
+# closures on occupied sections
+# ---------------------------------------------------------------------------
+def closure_conflict(timeline: SimResult, section_id: str, start: int) -> str | None:
+    """A closure may not start while a train is inside the section (the model cannot strand
+    a train). Returns a clear message with the first start after the section clears, or None."""
+    def inside(t: int):
+        return [o for o in timeline.occupancies if o.section_id == section_id and o.entry < t < o.exit]
+
+    occupants = inside(start)
+    if not occupants:
+        return None
+    clear = start
+    while inside(clear):
+        clear = max(o.exit for o in inside(clear))
+    names = " and ".join(sorted(o.train_id for o in occupants))
+    verb = "is" if len(occupants) == 1 else "are"
+    return (f"{names} {verb} inside {section_id} at {format_time(start)}; closing an occupied section "
+            f"isn't modelled - choose a start after it clears ({format_time(clear)})")

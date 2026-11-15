@@ -10,8 +10,11 @@ Terminal 1 (API):
 ```powershell
 cd backend
 .venv\Scripts\activate
-uvicorn app.main:app --reload
+uvicorn app.main:app
 ```
+
+For demos start the API **without `--reload`**: on Windows the reload watcher can stall
+and keep serving old code. Use `--reload` only while developing.
 
 Terminal 2 (UI):
 
@@ -24,17 +27,16 @@ Open **http://localhost:5173** (exactly this address: the API allows it for CORS
 
 Notes before presenting:
 - The API keeps the scenario in memory: restarting it clears events and decisions.
-- The sim clock and the last optimizer result live in the browser tab: a page refresh
-  sets the clock back to 09:55 and clears the comparison (the API scenario stays).
-- If the API was edited while running and stops answering with new fields, restart it
-  (on Windows the `--reload` watcher occasionally stalls).
+- The sim clock, its speed and the last optimizer result are kept in the browser tab
+  (sessionStorage): a page refresh keeps them; the clock always comes back paused.
+- **Demo reset** (Disruptions -> Scenario) does everything in one click: reference timetable,
+  no events, no plan, session state cleared, clock at 09:55.
 
 ## Steps
 
 1. **Login.** Pick *Controller*, then *Enter control room*. Point out the
    "demo login - real auth in Phase 8" line and the permanent SIMULATED badge.
-2. **Reset.** Open *Disruptions*, choose *Reference (3 trains)*, *Reset scenario*,
-   confirm. The clock goes to **09:55**.
+2. **Reset.** Open *Disruptions* and click **Demo reset**. The clock goes to **09:55**.
 3. **Console at 09:55.** Open *Traffic console*. T101 is at B, T202 runs on the
    double-track A-B, T303 has not started. KPIs: 0 conflicts.
 4. **Inject the event.** Open *Disruptions*, click *Inject event* on the card
@@ -73,3 +75,28 @@ Notes before presenting:
 
 Optional: repeat step 6-7 and press *Reject* instead: a calm dismissal, the plan is
 unchanged and the rejection is logged in the event history.
+
+## Optional second act: a new event after the accepted plan
+
+Continue straight after step 8 (T202 is on the alternate line, plan R1 accepted).
+
+10. **Play to 10:33** (60x, or scrub). Under R1, T202 departs C at 10:33.
+11. **Inject the delay.** *Disruptions* -> *Custom event* -> *Delay*: train **T202**, station
+    **C**, start **10:33**, **5 min**, *Add event*. It becomes event E2.
+    - Talking point: try a *Track closure* on **S_CD at 10:45** first. The form refuses it
+      inline: "T202 is inside S_CD at 10:45; closing an occupied section isn't modelled -
+      choose a start after it clears (11:16)". The model never strands a train.
+12. **Stale plan.** Back on the *Traffic console* at 10:33: a glowing banner "New event since
+    your accepted plan - Re-optimize" and a cyan alert "New event - re-plan suggested"
+    (E2 became known after R1).
+13. **Re-optimize.** Click *Re-optimize* -> *Run optimizer at 10:33*. A note says the run
+    re-plans from the current state on top of R1: trips already started (T202 on S_BC_ALT)
+    stay as R1 made them; the baselines now mean "keep the current plan".
+    - Simulated result on the reference timetable: every strategy ties at weighted 63
+      (T101 +15, T202 +9, T303 on time); the recommendation says no strategy improves on
+      keeping the accepted plan. Say so plainly: the system does not invent an improvement.
+14. **Accept.** Accept R2: the banner disappears, S_BC_ALT is still T202's route, and the
+    event history shows "R2 accepted" (the API logs that it replaced R1).
+15. **What-if (optional).** Open *What-if studio*, add a hypothetical *Delay* for **T303 at B,
+    10:34, 20 min**, *Run what-if at 10:33*: current weighted 63 next to hypothetical 83, with
+    the HYPOTHETICAL badge. Nothing in the live scenario changes.

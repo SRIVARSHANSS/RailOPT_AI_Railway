@@ -1,22 +1,23 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
-  CircleCheck, CircleSlash, CircleX, Clock4, Construction, History, OctagonPause, RotateCcw, Zap,
+  CircleCheck, CircleSlash, CircleX, Clock4, Construction, History, OctagonPause, RotateCcw, Sparkles, Zap,
 } from 'lucide-react'
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useAddEvent, useNetwork, useResetScenario, useScenario, type NewEvent } from '../api/hooks'
-import type { EventType, Network, Scenario, Timetable } from '../api/types'
+import type { Network, Scenario, Timetable } from '../api/types'
 import { SignalBadge } from '../components/ui/Badges'
 import { Button } from '../components/ui/Button'
 import { Dialog } from '../components/ui/Dialog'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Panel, PanelTitle } from '../components/ui/Panel'
 import { SkeletonRows } from '../components/ui/Skeleton'
-import { TabPanel, Tabs } from '../components/ui/Tabs'
 import { ApiError } from '../lib/api'
 import { cn } from '../lib/cn'
-import { duration, ease, fadeUp, staggerContainer } from '../lib/motion'
+import { ease, fadeUp, staggerContainer } from '../lib/motion'
+import { EventFields } from '../features/events/EventFields'
+import { inputCls } from '../features/events/inputCls'
 import { fmt } from '../lib/time'
-import { useConsole, useSim } from '../store/sim'
+import { DEMO_START, useConsole, useSim } from '../store/sim'
 import { toast } from '../store/toast'
 
 const PRESET: NewEvent = { event_type: 'STOPPAGE', train_id: 'T101', location: 'S_BC', start_time: '10:03', duration_min: 15 }
@@ -130,101 +131,24 @@ function MiniCorridor({ fired }: { fired: number }) {
   )
 }
 
-// ---- custom event form ------------------------------------------------------------------------
-const TAB_ITEMS = [
-  { value: 'STOPPAGE', label: 'Stoppage' },
-  { value: 'DELAY', label: 'Delay' },
-  { value: 'TRACK_UNAVAILABLE', label: 'Track closure' },
-  { value: 'PLATFORM_UNAVAILABLE', label: 'Platform', disabled: true, hint: 'not modelled yet' },
-]
-
+// ---- custom event form (shared fields with the What-If Studio) -----------------------------------
 function EventForm({ network }: { network: Network | undefined }) {
   const add = useAddEvent()
-  const [type, setType] = useState<EventType>('STOPPAGE')
-  const [train, setTrain] = useState('T202')
-  const [location, setLocation] = useState('')
-  const [start, setStart] = useState('10:10')
-  const [dur, setDur] = useState(5)
-  const [error, setError] = useState<string | null>(null)
-  const [ok, setOk] = useState(false)
-
-  const needsTrain = type === 'STOPPAGE' || type === 'DELAY'
-  const locations = !network ? [] : type === 'DELAY'
-    ? network.stations.map((s) => ({ v: s.code, l: `${s.code} - ${s.name}` }))
-    : network.sections.map((s) => ({ v: s.section_id, l: `${s.section_id} (${s.from_station}-${s.to_station})` }))
-  const loc = locations.some((o) => o.v === location) ? location : locations[0]?.v ?? ''
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    add.mutate(
-      { event_type: type, train_id: needsTrain ? train : null, location: loc, start_time: start, duration_min: dur },
-      {
-        onSuccess: (r) => {
-          setOk(true)
-          window.setTimeout(() => setOk(false), 1400)
-          toast({ tone: type === 'TRACK_UNAVAILABLE' ? 'warning' : 'critical', title: `Event ${r.event.event_id} added`, description: `Known from ${r.event.known_from === 'posting' ? 'now (planned closure)' : r.event.known_from}.` })
-        },
-        onError: (err) => setError(err instanceof ApiError ? err.message : 'Request failed'),
-      },
-    )
+  const post = async (ev: NewEvent): Promise<string | null> => {
+    try {
+      const r = await add.mutateAsync(ev)
+      toast({ tone: ev.event_type === 'TRACK_UNAVAILABLE' ? 'warning' : 'critical', title: `Event ${r.event.event_id} added`,
+        description: `Known from ${r.event.known_from === 'posting' ? 'now (planned closure)' : r.event.known_from}.` })
+      return null
+    } catch (err) {
+      return err instanceof ApiError ? err.message : 'Request failed'
+    }
   }
-
   return (
     <Panel>
       <PanelTitle hint="validated by the API">Custom event</PanelTitle>
-      {!network ? <SkeletonRows rows={3} label="Loading network" /> : (
-        <Tabs value={type} onValueChange={(v) => { setType(v as EventType); setError(null) }} label="Event type" items={TAB_ITEMS}>
-          {TAB_ITEMS.filter((t) => !t.disabled).map((t) => (
-            <TabPanel key={t.value} value={t.value}>
-              <motion.form key={t.value} onSubmit={submit} className="grid gap-4 sm:grid-cols-2"
-                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: duration.base, ease: ease.out }}>
-                {needsTrain && (
-                  <Field label="Train">
-                    <select value={train} onChange={(e) => setTrain(e.target.value)} className={inputCls}>
-                      {network.trains.map((tr) => <option key={tr.train_id} value={tr.train_id}>{tr.train_id} - {tr.train_type.toLowerCase()}</option>)}
-                    </select>
-                  </Field>
-                )}
-                <Field label={type === 'DELAY' ? 'Station' : 'Section'}>
-                  <select value={loc} onChange={(e) => setLocation(e.target.value)} className={inputCls}>
-                    {locations.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
-                  </select>
-                </Field>
-                <Field label="Start time (sim)">
-                  <input type="text" inputMode="numeric" pattern="([01]\d|2[0-3]):[0-5]\d" value={start} onChange={(e) => setStart(e.target.value)}
-                    className={cn(inputCls, 'font-mono')} aria-describedby="start-help" required />
-                  <span id="start-help" className="text-xs text-ink-dim">HH:MM</span>
-                </Field>
-                <Field label="Duration (min)">
-                  <input type="number" min={1} max={600} value={dur} onChange={(e) => setDur(Number(e.target.value))} className={cn(inputCls, 'font-mono')} required />
-                </Field>
-                <div className="sm:col-span-2">
-                  <AnimatePresence>
-                    {error && (
-                      <motion.p role="alert" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className="mb-3 rounded-xl border border-signal-red/40 bg-signal-red/10 px-3 py-2 text-sm text-signal-red">{error}</motion.p>
-                    )}
-                  </AnimatePresence>
-                  <Button type="submit" variant="primary" loading={add.isPending} success={ok}>{ok ? 'Added' : 'Add event'}</Button>
-                </div>
-              </motion.form>
-            </TabPanel>
-          ))}
-        </Tabs>
-      )}
+      <EventFields network={network} onSubmit={post} submitLabel="Add event" doneLabel="Added" idPrefix="live" />
     </Panel>
-  )
-}
-
-const inputCls = 'h-11 w-full rounded-xl border border-line/20 bg-canvas-0/60 px-3 text-ink'
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5 text-sm text-ink-muted">
-      {label}
-      {children}
-    </label>
   )
 }
 
@@ -232,17 +156,33 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
   const reset = useResetScenario()
   const { setMinute, setPlaying } = useSim()
-  const { setOptimize, setHighlight } = useConsole()
+  const clearConsole = useConsole((s) => s.clear)
   const [open, setOpen] = useState(false)
   const [choice, setChoice] = useState<Timetable>('reference')
+  const [demoDone, setDemoDone] = useState(false)
+
+  const clearSession = () => {
+    setPlaying(false)
+    setMinute(DEMO_START)
+    clearConsole()
+  }
+
+  /** One click before a demo: reference timetable, no events, clean session, clock 09:55. */
+  const demoReset = () =>
+    reset.mutate('reference', {
+      onSuccess: () => {
+        clearSession()
+        setDemoDone(true)
+        window.setTimeout(() => setDemoDone(false), 1600)
+        toast({ tone: 'success', title: 'Demo reset', description: 'Reference timetable, no events, no plan, clock at 09:55.' })
+      },
+      onError: () => toast({ tone: 'warning', title: 'Reset failed', description: 'Is the API running on port 8000?' }),
+    })
 
   const confirm = () =>
     reset.mutate(choice, {
       onSuccess: () => {
-        setPlaying(false)
-        setMinute(9 * 60 + 55)
-        setOptimize(null)
-        setHighlight(null)
+        clearSession()
         setOpen(false)
         toast({ tone: 'success', title: 'Scenario reset', description: `${choice === 'full_day' ? 'Full-day' : 'Reference'} timetable, no events, clock at 09:55.` })
       },
@@ -252,7 +192,14 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
     <Panel>
       <PanelTitle hint={timetable ? `current: ${timetable === 'full_day' ? 'full day' : 'reference'}` : undefined}>Scenario</PanelTitle>
       <p className="text-ink-muted">Start over: clears events, the accepted plan and the decision log.</p>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-4">
+        <Button variant="primary" size="lg" icon={<Sparkles className="h-5 w-5" aria-hidden />} onClick={demoReset}
+          loading={reset.isPending && !open} success={demoDone}>
+          {demoDone ? 'Ready at 09:55' : 'Demo reset'}
+        </Button>
+        <p className="mt-2 text-sm text-ink-muted">Reference timetable, clears session state, clock to 09:55, in one click.</p>
+      </div>
+      <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-line/10 pt-5">
         <select value={choice} onChange={(e) => setChoice(e.target.value as Timetable)} aria-label="Timetable" className={cn(inputCls, 'w-auto')}>
           <option value="reference">Reference (3 trains)</option>
           <option value="full_day">Full day (12 trains)</option>

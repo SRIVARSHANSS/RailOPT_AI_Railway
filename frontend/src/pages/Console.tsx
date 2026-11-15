@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
-import { CircleSlash, X } from 'lucide-react'
+import { ArrowRight, CircleSlash, RefreshCcw, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { useConflictsAt, useNetwork, useScenario, useStateAt } from '../api/hooks'
 import type { Kpis, TrainState } from '../api/types'
@@ -14,9 +15,8 @@ import { KpiStrip } from '../features/console/KpiStrip'
 import { buildGeometry } from '../features/console/geometry'
 import { staggerContainer } from '../lib/motion'
 import { fmt, toMin } from '../lib/time'
-import { minuteMs, useConsole, useSim } from '../store/sim'
+import { DEMO_START, minuteMs, useConsole, useSim } from '../store/sim'
 
-const DEMO_START = 9 * 60 + 55
 
 const statusText: Record<TrainState['status'], string> = {
   not_started: 'not started',
@@ -76,6 +76,20 @@ export function Console() {
 
       <ClockBar resetTo={DEMO_START} />
 
+      {now.data?.plan.stale && (
+        <motion.div role="status" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="glass flex flex-wrap items-center gap-4 px-5 py-4 shadow-[0_0_0_1.5px_rgb(var(--c-cyan)),0_14px_50px_-14px_rgb(var(--c-cyan)/0.75)]">
+          <RefreshCcw className="h-6 w-6 shrink-0 text-signal-cyan animate-breathe" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-lg font-semibold">New event since your accepted plan</p>
+            <p className="text-sm text-ink">{now.data.plan.new_events.join(', ')} became known after plan {now.data.plan.applied}. Re-plan from the current state: trips already started stay as they are.</p>
+          </div>
+          <Link to="/strategies" className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-signal-cyan to-sky-400 px-4 font-semibold text-canvas-0 hover:shadow-glow">
+            Re-optimize <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </motion.div>
+      )}
+
       {offline ? (
         <Panel>
           <EmptyState icon={<CircleSlash className="h-7 w-7" />} title="The API is not reachable">
@@ -123,7 +137,7 @@ export function Console() {
             <Panel className="p-4">
               <PanelTitle hint={`known at ${fmt(minute)}`}>Live alerts</PanelTitle>
               {conflicts.data || conflicts.isError ? (
-                conflicts.isError ? <p className="text-signal-red">Could not load conflicts.</p> : <AlertsFeed conflicts={conflicts.data} loading={conflicts.isFetching && !conflicts.data} />
+                conflicts.isError ? <p className="text-signal-red">Could not load conflicts.</p> : <AlertsFeed conflicts={conflicts.data} loading={conflicts.isFetching && !conflicts.data} plan={now.data?.plan} />
               ) : <SkeletonRows rows={3} label="Loading alerts" />}
               {conflicts.data?.ml_note && <p className="mt-3 text-xs text-ink-dim">Model note: {conflicts.data.ml_note}</p>}
             </Panel>

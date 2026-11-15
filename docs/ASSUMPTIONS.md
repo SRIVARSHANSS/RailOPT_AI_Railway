@@ -225,3 +225,38 @@ Rerouting T202 cuts that to 53 / 19.
     - Average delay is taken over active trains.
     - Progress in a section is the share of *running* time covered: minutes standing
       in a stoppage do not move the train, and `stopped` is true while it stands.
+
+## Phase 6: what-if and re-optimization (assumptions)
+
+32. **Stale plan**: an accepted plan remembers the events its optimizer run knew. It becomes
+    stale at clock time `at` when an event is known then that the run did not know (a
+    surprise that has since started, or anything posted after the run).
+33. **Re-planning from the current state**: the optimizer simulates history with the
+    accepted plan, fixes every trip started at state time (an accepted reroute in progress
+    stays on its line), and decides only future trips in the 120-min horizon. Replays apply
+    the started trips at their recorded times plus the new decisions. With an accepted plan
+    the baselines mean "keep the current plan" (no new re-planning).
+34. **Accepting a new plan** replaces the old one; the decision log records which plan it
+    replaced.
+35. **What-if**: hypothetical events are applied to a copy of the scenario (events + accepted
+    plan) and all count as known at `at` (the point of a what-if is to assume they happen).
+    The result is labelled HYPOTHETICAL and SIMULATED and its recommendation cannot be
+    accepted. The live scenario is never modified (tested byte for byte).
+36. **Closing an occupied section is not modelled**: a TRACK_UNAVAILABLE (posted or
+    hypothetical) is rejected if, in the scenario's current timeline, a train is inside the
+    section at the closure's start (entered before it, leaves after it). The message gives
+    the first start after the section is clear (checked repeatedly, since another train may
+    already be inside when the first leaves).
+
+### Three-event re-optimization (simulated, reference timetable, from tests/test_phase6.py)
+
+| Step | Re-optimized at | Recommended | Weighted (T101 / T202 / T303) |
+| --- | --- | --- | --- |
+| T101 stoppage 10:03, 15 min | 10:03 | REROUTE (accepted) | 53 (15 / 4 / 0) |
+| T202 +5 min at C (10:33) | 10:33 | HOLD, no action: nothing improves on the plan | 63 (15 / 9 / 0) |
+| S_CD closure | 10:40 | HOLD, no action | 63 (15 / 9 / 0) |
+
+All CP-SAT statuses OPTIMAL, zero violations in every replay, started trips unchanged.
+S_CD is occupied without a gap from 10:25 to 11:16 (T101, then the delayed T202, then T303),
+so a closure at 11:00 was rejected ("T303 is inside S_CD at 11:00 ... clears (11:16)") and the
+first legal start, 11:16, affects no train.

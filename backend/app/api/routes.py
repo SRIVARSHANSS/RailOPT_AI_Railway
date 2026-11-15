@@ -19,6 +19,8 @@ from app.schemas.api import (
     ResetRequest,
     ScenarioOut,
     StateOut,
+    WhatIfOut,
+    WhatIfRequest,
     Timetable,
     TimelineOut,
 )
@@ -75,6 +77,16 @@ def _validate_event(net: RailNetwork, req: EventRequest) -> None:
         bad(f"PLATFORM_UNAVAILABLE location must be a station; known: {sorted(net.stations)}")
 
 
+def _check_closure(store: ScenarioStore, req: EventRequest) -> None:
+    """Reject a closure that would start while a train is inside the section (per the
+    scenario's current timeline, accepted plan included)."""
+    if req.event_type != "TRACK_UNAVAILABLE":
+        return
+    msg = live.closure_conflict(store.actual(), req.location, parse_time(req.start_time))
+    if msg:
+        raise HTTPException(status_code=422, detail=msg)
+
+
 def _clock(at: str) -> int:
     return parse_time(at)
 
@@ -107,15 +119,17 @@ def network(timetable: Timetable = "reference", store: ScenarioStore = Depends(g
 @router.post("/scenario/reset", response_model=ScenarioOut)
 def reset(req: ResetRequest, store: ScenarioStore = Depends(get_store)):
     store.reset(req.timetable)
-    return scenario(store)
+    return scenario(at=None, store=store)
 
 
 @router.get("/scenario", response_model=ScenarioOut)
-def scenario(store: ScenarioStore = Depends(get_store)):
+def scenario(at: str | None = Query(None, pattern=HHMM, description="clock for the stale-plan check; omit = all posted events"),
+             store: ScenarioStore = Depends(get_store)):
     return ScenarioOut(
         timetable=store.timetable,
         events=[_event_out(e) for e in store.events],
         applied_recommendation=store.applied_recommendation,
+        plan=store.plan_status(_clock(at) if at else None),
         holds=[{"train_id": t, "section_id": s, "until": format_time(v)} for (t, s), v in store.holds.items()],
         route_overrides=[{"train_id": t, "from_station": a, "section_id": s}
                          for (t, a), s in store.route_overrides.items()],
@@ -127,6 +141,7 @@ def scenario(store: ScenarioStore = Depends(get_store)):
 def add_event(req: EventRequest, store: ScenarioStore = Depends(get_store)):
     net = store.network()
     _validate_event(net, req)
+    _check_closure(store, req)
     event = store.add_event(req.event_type, req.train_id, req.location, parse_time(req.start_time), req.duration_min)
     return EventCreated(event=_event_out(event), events=[_event_out(e) for e in store.events])
 
@@ -139,7 +154,7 @@ def state(at: str = AtQuery, store: ScenarioStore = Depends(get_store)):
     plan = project_plan(net, t, known, store.route_overrides, store.holds)   # known events + accepted plan
     n_conflicts = len(detect_conflicts(net, plan))
     return StateOut(at=at, known_events=[e.event_id for e in known], trains=states,
-                    kpis=live.kpis(states, n_conflicts))
+                    kpis=live.kpis(states, n_conflicts), plan=store.plan_status(t))
 
 
 @router.get("/conflicts", response_model=ConflictsOut)
@@ -156,15 +171,51 @@ def conflicts(at: str = AtQuery, store: ScenarioStore = Depends(get_store),
 def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
     t, net = _clock(req.at), store.network()
     known = store.known_events(t)
-    view = live.optimize_view(net, t, known)
+    # re-plan from the CURRENT state: the accepted plan (if any) shapes history
+    view = live.optimize_view(net, t, known, store.holds, store.route_overrides)
     rec_out = None
     rec = view["recommendation"]
     if rec is not None:
         holds, overrides = rec.pop("_holds"), rec.pop("_route_overrides")
-        stored = store.add_recommendation(t, rec["strategy"], holds, overrides, rec)
+        stored = store.add_recommendation(t, rec["strategy"], holds, overrides, rec,
+                                          known_event_ids=[e.event_id for e in known])
         rec_out = {"recommendation_id": stored.rec_id, **rec}
     return OptimizeOut(at=req.at, known_events=[e.event_id for e in known],
-                       results=view["results"], recommendation=rec_out)
+                       results=view["results"], recommendation=rec_out,
+                       replanning_from=store.applied_recommendation)
+
+
+@router.post("/whatif", response_model=WhatIfOut)
+def whatif(req: WhatIfRequest, store: ScenarioStore = Depends(get_store),
+           predictor=Depends(get_predictor_or_none)):
+    """HYPOTHETICAL: apply events to a COPY of the scenario (events + accepted plan) and
+    compare it with the current one. The live store is never touched."""
+    t, net = _clock(req.at), store.network()
+    copy = store.copy_for_whatif()
+    added = []
+    for n, ev in enumerate(req.events, start=1):
+        try:
+            _validate_event(net, ev)
+            _check_closure(copy, ev)
+        except HTTPException as exc:
+            raise HTTPException(status_code=exc.status_code, detail=f"Hypothetical event {n}: {exc.detail}")
+        added.append(copy.add_event(ev.event_type, ev.train_id, ev.location, parse_time(ev.start_time),
+                                    ev.duration_min, prefix="H"))
+
+    def side(scn: ScenarioStore, known: list) -> dict:
+        cv = live.conflicts_view(net, t, known, predictor, scn.route_overrides, scn.holds)
+        ov = live.optimize_view(net, t, known, scn.holds, scn.route_overrides)
+        rec = ov["recommendation"]
+        if rec is not None:
+            rec = {k: v for k, v in rec.items() if not k.startswith("_")}
+        return {"known_events": [e.event_id for e in known], "conflicts": cv["conflicts"],
+                "ml_watchlist": cv["ml_watchlist"], "ml_note": cv["ml_note"],
+                "results": ov["results"], "recommendation": rec}
+
+    current_known = store.known_events(t)
+    hypothetical_known = current_known + added          # hypothetical events count as known at `at`
+    return WhatIfOut(at=req.at, hypothetical_events=[_event_out(e) for e in added],
+                     current=side(store, current_known), hypothetical=side(copy, hypothetical_known))
 
 
 @router.post("/recommendation/{rec_id}/decision", response_model=DecisionOut)

@@ -73,7 +73,20 @@ export function Strategies() {
           </EmptyState>
         </Panel>
       ) : (
-        <Results result={optimize} />
+        <>
+          {optimize.replanning_from && (
+            <Panel className="border-signal-cyan/40">
+              <div className="flex flex-wrap items-center gap-3">
+                <SignalBadge tone="ai">Re-planning</SignalBadge>
+                <p className="min-w-0 flex-1 text-ink">
+                  From the current state on top of accepted plan <span className="font-mono">{optimize.replanning_from}</span>:
+                  trips already started stay as that plan made them; the baselines keep it, the strategies re-plan the rest.
+                </p>
+              </div>
+            </Panel>
+          )}
+          <Results result={optimize} />
+        </>
       )}
     </motion.div>
   )
@@ -107,7 +120,7 @@ function StrategyCard({ row, recommended, maxDelay }: { row: StrategyRow; recomm
     <motion.article variants={fadeUp}
       className={cn('glass relative p-5', recommended && 'shadow-[0_0_0_1.5px_rgb(var(--c-cyan)),0_18px_50px_-18px_rgb(var(--c-cyan)/0.7)]')}>
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-lg font-semibold">{LABEL[row.name] ?? row.name}</h3>
+        <h3 className="text-lg font-semibold">{LABEL[row.name] ?? row.name}{row.message.startsWith('keeps') && <span className="block text-sm font-normal text-ink-muted">keeps the accepted plan</span>}</h3>
         {recommended ? <SignalBadge tone="ai">Recommended</SignalBadge> : <StatusBadge status={row.status} />}
       </div>
       {recommended && <div className="mt-2"><StatusBadge status={row.status} /></div>}
@@ -190,7 +203,7 @@ function RecommendationCard({ rec, base }: { rec: Recommendation; base: Strategy
 
       {/* animated comparison: no re-planning -> recommended, weighted delay */}
       <div className="mt-5 space-y-3" aria-label={`Weighted delay ${baseW} without re-planning, ${rec.weighted_delay} with ${rec.strategy}`}>
-        {[{ label: 'No re-planning', v: baseW, cls: 'bg-signal-amber' }, { label: LABEL[rec.strategy] ?? rec.strategy, v: rec.weighted_delay, cls: 'bg-signal-cyan' }].map((b, i) => (
+        {[{ label: base.message.startsWith('keeps') ? 'Keep current plan' : 'No re-planning', v: baseW, cls: 'bg-signal-amber' }, { label: LABEL[rec.strategy] ?? rec.strategy, v: rec.weighted_delay, cls: 'bg-signal-cyan' }].map((b, i) => (
           <div key={b.label} className="grid grid-cols-[9rem_1fr_4rem] items-center gap-3">
             <span className="text-sm text-ink-muted">{b.label}</span>
             <div className="h-4 overflow-hidden rounded-full bg-white/[0.06]">

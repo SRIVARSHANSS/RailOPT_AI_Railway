@@ -18,10 +18,12 @@ export type ScenarioEvent = {
   start_time: string; duration_min: number; known_from: string
 }
 export type DecisionLogEntry = { recommendation_id: string; decision: 'accept' | 'reject'; strategy: string; at: number; logged_at_utc: string }
+export type PlanStatus = { applied: string | null; stale: boolean; new_events: string[]; basis_at: number | null }
 export type Scenario = Labelled & {
   timetable: Timetable
   events: ScenarioEvent[]
   applied_recommendation: string | null
+  plan: PlanStatus
   holds: { train_id: string; section_id: string; until: string }[]
   route_overrides: { train_id: string; from_station: string; section_id: string }[]
   decision_log: DecisionLogEntry[]
@@ -34,7 +36,7 @@ export type TrainState = {
   stopped: boolean
 }
 export type Kpis = { active_trains: number; delayed_trains: number; conflicts: number; avg_delay_min: number }
-export type StateAt = Labelled & { at: string; known_events: string[]; trains: TrainState[]; kpis: Kpis }
+export type StateAt = Labelled & { at: string; known_events: string[]; trains: TrainState[]; kpis: Kpis; plan: PlanStatus }
 
 export type Driver = { feature: string; value: unknown; shap: number; direction: 'raises' | 'lowers' }
 export type Prediction = { conflict_probability: number; flagged: boolean; threshold: number; top_drivers: Driver[] }
@@ -63,5 +65,15 @@ export type Recommendation = {
   recommendation_id: string; strategy: string; status: string; actions: string[]
   weighted_delay: number; total_delay: number; delays: Record<string, number>; explanation: Explanation
 }
-export type OptimizeResult = Labelled & { at: string; known_events: string[]; results: StrategyRow[]; recommendation: Recommendation | null }
+export type OptimizeResult = Labelled & { at: string; known_events: string[]; results: StrategyRow[]; recommendation: Recommendation | null; replanning_from: string | null }
+
+export type WhatIfRecommendation = Omit<Recommendation, 'recommendation_id'>
+export type WhatIfSide = {
+  known_events: string[]; conflicts: Conflict[]; ml_watchlist: WatchItem[]; ml_note: string | null
+  results: StrategyRow[]; recommendation: WhatIfRecommendation | null
+}
+export type WhatIfResult = Labelled & {
+  scenario_label: 'HYPOTHETICAL'; at: string; hypothetical_events: ScenarioEvent[]
+  current: WhatIfSide; hypothetical: WhatIfSide; note: string
+}
 export type DecisionResult = Labelled & { recommendation_id: string; decision: string; applied_recommendation: string | null; decision_log: DecisionLogEntry[] }
