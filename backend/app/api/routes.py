@@ -162,7 +162,8 @@ def conflicts(at: str = AtQuery, store: ScenarioStore = Depends(get_store),
               predictor=Depends(get_predictor_or_none)):
     t, net = _clock(at), store.network()
     known = store.known_events(t)
-    view = live.conflicts_view(net, t, known, predictor, store.route_overrides, store.holds)
+    view = live.conflicts_view(net, t, known, predictor, store.route_overrides, store.holds,
+                               store.previous_overrides, store.previous_holds)
     return ConflictsOut(at=at, known_events=[e.event_id for e in known], conflicts=view["conflicts"],
                         ml_watchlist=view["ml_watchlist"], ml_note=view["ml_note"])
 
@@ -203,7 +204,8 @@ def whatif(req: WhatIfRequest, store: ScenarioStore = Depends(get_store),
                                     ev.duration_min, prefix="H"))
 
     def side(scn: ScenarioStore, known: list) -> dict:
-        cv = live.conflicts_view(net, t, known, predictor, scn.route_overrides, scn.holds)
+        cv = live.conflicts_view(net, t, known, predictor, scn.route_overrides, scn.holds,
+                                 scn.previous_overrides, scn.previous_holds)
         ov = live.optimize_view(net, t, known, scn.holds, scn.route_overrides)
         rec = ov["recommendation"]
         if rec is not None:

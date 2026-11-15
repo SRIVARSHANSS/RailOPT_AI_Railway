@@ -155,7 +155,7 @@ function SideCard({ title, side, maxDelay, hypothetical }: { title: string; side
   const base = side.results.find((r) => r.name === 'NO_REPLANNING')
   const rec = side.recommendation
   const recRow = rec ? side.results.find((r) => r.name === rec.strategy) : undefined
-  const flags = side.ml_watchlist.filter((w) => !w.resolved_by_plan).length
+  const flags = side.ml_watchlist.filter((w) => !w.resolved_by_plan && !w.reduced_by_plan).length
   return (
     <div className={cn('glass p-5', hypothetical && 'shadow-[0_0_0_1.5px_rgb(var(--c-violet)),0_18px_50px_-18px_rgb(var(--c-violet)/0.6)]')}>
       <div className="flex flex-wrap items-center justify-between gap-2">

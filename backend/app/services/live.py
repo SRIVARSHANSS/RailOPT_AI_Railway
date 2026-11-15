@@ -89,7 +89,8 @@ def kpis(states: list[dict], conflicts: int) -> dict:
 # conflicts + ML
 # ---------------------------------------------------------------------------
 def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor=None,
-                   route_overrides: dict | None = None, holds: dict | None = None) -> dict:
+                   route_overrides: dict | None = None, holds: dict | None = None,
+                   previous_overrides: dict | None = None, previous_holds: dict | None = None) -> dict:
     """Detector on the plan (timetable + known events + any accepted controller plan).
 
     ML features describe the unchanged timetable plan, as in training."""
@@ -131,21 +132,32 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
             watchlist.append({"train_id": key[0], "section_id": key[1],
                               "time_to_section_min": row["time_to_section_min"],
                               **prediction(key)})
-    # with an accepted plan: replay it on the known events (rng=None) and mark the
-    # risks it removes, i.e. the train does not wait before that B-C / A-B / ... trip
-    plan_replay = (simulate(net, known, route_overrides=route_overrides, holds=holds)
-                   if (route_overrides or holds) else None)
+    # with an accepted plan: replay it on the known events (rng=None) and compare the train's
+    # wait before that B-C / A-B / ... trip with the plan it replaced (or no plan if none).
+    # wait 0 in the plan -> resolved; lower but not 0 -> reduced.
+    has_plan = bool(route_overrides or holds)
+    plan_replay = simulate(net, known, route_overrides=route_overrides, holds=holds) if has_plan else None
+    base_replay = (simulate(net, known, route_overrides=previous_overrides or None, holds=previous_holds or None)
+                   if has_plan else None)
+
+    def wait_before(replay, item) -> int:
+        sec = net.sections[item["section_id"]]
+        trip = next(o for o in replay.occupancies if o.train_id == item["train_id"]
+                    and (net.sections[o.section_id].from_station, net.sections[o.section_id].to_station)
+                    == (sec.from_station, sec.to_station))
+        return trip.wait
+
     for item in watchlist:
         item["resolved_by_plan"] = False
+        item["reduced_by_plan"] = False
         item["plan_wait_min"] = None
-        if plan_replay is not None:
-            sec = net.sections[item["section_id"]]
-            trip = next(o for o in plan_replay.occupancies if o.train_id == item["train_id"]
-                        and (net.sections[o.section_id].from_station, net.sections[o.section_id].to_station)
-                        == (sec.from_station, sec.to_station))
-            item["plan_wait_min"] = trip.wait
-            item["resolved_by_plan"] = trip.wait == 0
-    watchlist.sort(key=lambda w: (w["resolved_by_plan"], -w["conflict_probability"]))
+        item["baseline_wait_min"] = None
+        if has_plan:
+            item["plan_wait_min"] = wait_before(plan_replay, item)
+            item["baseline_wait_min"] = wait_before(base_replay, item)
+            item["resolved_by_plan"] = item["plan_wait_min"] == 0
+            item["reduced_by_plan"] = 0 < item["plan_wait_min"] < item["baseline_wait_min"]
+    watchlist.sort(key=lambda w: (w["resolved_by_plan"], w["reduced_by_plan"], -w["conflict_probability"]))
     if ml_note is None and (route_overrides or holds):
         ml_note = ("an accepted plan is in force; the model's features describe the timetable plan "
                    "without it (it was trained on runs with no re-planning), so its flags may be outdated")

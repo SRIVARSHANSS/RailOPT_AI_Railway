@@ -186,6 +186,10 @@ class WatchItem(Prediction):
         False, description="an accepted plan is in force and, in its deterministic replay on the known "
                            "events, this train does not wait before this trip (UI: 'Risk resolved by accepted plan')")
     plan_wait_min: int | None = Field(None, description="wait before this trip in that replay; null without a plan")
+    reduced_by_plan: bool = Field(
+        False, description="the accepted plan lowers this train's wait before the trip, but not to zero "
+                           "(UI: 'Risk reduced by plan (baseline -> plan min wait)')")
+    baseline_wait_min: int | None = Field(None, description="wait in a replay of the plan the current one replaced (no plan if none)")
 
 
 class ConflictsOut(Labelled):

@@ -103,9 +103,9 @@ Numbers below are from the simulator replay (tests/test_phase6.py prints them).
     - Read *Why*: "T303 is planned to enter S_BC at 10:34 while it is closed (E2) until 10:50."
 14. **Accept.** *Accept plan* (R2): check, burst, back to the console. S_BC_ALT is now the
     planned route for **T202, T303**; the banner and the CRITICAL alert are gone.
-    - If asked about the amber "AI watch: T303 on S_BC" that stays: in the accepted plan T303
-      still waits 2 minutes at B for T202 to clear, so the risk is reduced, not removed - the
-      "resolved" mark is only given when the plan's replay shows zero wait.
+    - The AI watch on T303 turns calm cyan: **"Risk reduced by plan (16 -> 2 min wait)"**.
+      Talking point: under R1 T303 would have waited 16 minutes at B; under R2 it waits 2 for
+      T202 to clear. Reduced, not removed - "resolved" (green) is only shown at zero wait.
 15. **Play on (60x).** S_BC turns red "CLOSED" at 10:30. T303 reaches B at 10:34, waits two
     minutes at the red signal, and at **10:36** glides onto the curved alternate line behind
     T202, reaching C at 10:58. Simulated end state: T101 +15, T202 +4, T303 +6.

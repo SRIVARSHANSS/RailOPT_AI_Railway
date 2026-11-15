@@ -67,14 +67,16 @@ Rail OPT/  (project root)
   at >= start, TRACK_UNAVAILABLE known once posted; movement (/state, /timeline) uses all events.
   Every response carries data_label = SIMULATED.
 - UI rule: an ml_watchlist item with resolved_by_plan = true is shown as "Risk resolved by accepted plan"
-  (green, risk struck through), not as an active warning; keep showing ml_note.
+  (green, risk struck through); with reduced_by_plan = true (wait lowered but not to zero, compared with
+  the plan it replaced) as "Risk reduced by plan (X -> Y min wait)" in calm cyan. Neither is an active
+  warning; keep showing ml_note.
 - Phase 6 rules: an accepted plan goes stale when an event is known that its optimizer run did not
   know (plan block in /api/state and /api/scenario). /api/optimize re-plans on top of the accepted
   plan: started trips fixed, baselines = keep the current plan. /api/whatif works on a copy (all
   hypothetical events known at `at`), labelled HYPOTHETICAL; never touch the live store from it.
   A TRACK_UNAVAILABLE that would start while a train is inside the section is rejected (422 with
   the clear time). For demos run the API without --reload (the Windows watcher can stall).
-- 73 tests passing.
+- 74 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;

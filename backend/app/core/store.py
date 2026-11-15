@@ -50,6 +50,8 @@ class ScenarioStore:
     applied_recommendation: str | None = None
     plan_basis_at: int | None = None              # clock time the accepted plan was computed for
     plan_basis_events: list[str] = field(default_factory=list)  # events it knew about
+    previous_holds: dict[tuple[str, str], int] = field(default_factory=dict)       # plan the current one replaced
+    previous_overrides: dict[tuple[str, str], str] = field(default_factory=dict)
     recommendations: dict[str, Recommendation] = field(default_factory=dict)
     decision_log: list[dict] = field(default_factory=list)
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
@@ -73,6 +75,8 @@ class ScenarioStore:
             self.applied_recommendation = None
             self.plan_basis_at = None
             self.plan_basis_events = []
+            self.previous_holds = {}
+            self.previous_overrides = {}
             self.recommendations.clear()
             self.decision_log.clear()
 
@@ -110,6 +114,7 @@ class ScenarioStore:
                 timetable=self.timetable, events=list(self.events), holds=dict(self.holds),
                 route_overrides=dict(self.route_overrides), applied_recommendation=self.applied_recommendation,
                 plan_basis_at=self.plan_basis_at, plan_basis_events=list(self.plan_basis_events),
+                previous_holds=dict(self.previous_holds), previous_overrides=dict(self.previous_overrides),
                 _nets=self._nets,
             )
 
@@ -120,6 +125,7 @@ class ScenarioStore:
             return pickle.dumps((self.timetable, self.events, sorted(self.holds.items()),
                                  sorted(self.route_overrides.items()), self.applied_recommendation,
                                  self.plan_basis_at, self.plan_basis_events,
+                                 sorted(self.previous_holds.items()), sorted(self.previous_overrides.items()),
                                  sorted((k, v.decision) for k, v in self.recommendations.items()),
                                  self.decision_log))
 
@@ -142,6 +148,7 @@ class ScenarioStore:
             rec.decision = decision
             replaces = self.applied_recommendation if decision == "accept" else None
             if decision == "accept":
+                self.previous_holds, self.previous_overrides = dict(self.holds), dict(self.route_overrides)
                 self.holds = dict(rec.holds)
                 self.route_overrides = dict(rec.route_overrides)
                 self.applied_recommendation = rec_id

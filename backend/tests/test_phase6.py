@@ -198,3 +198,32 @@ def test_demo_act2_maintenance_block_replan_beats_keeping_the_plan(ctx):
     c.post("/api/events", json={"event_type": "DELAY", "train_id": "T202", "location": "C",
                                 "start_time": format_time(dep_c), "duration_min": 5})
     optimize_and_check(c, store, dep_c, "act 2 talking point: T202 +5 at C")
+
+
+def test_watchlist_marks_risk_reduced_not_resolved_when_wait_shrinks(ctx):
+    """Act 2: after the re-plan T303 still waits at B, but less than under the plan it replaced (R1)."""
+    c, _ = ctx
+    c.post("/api/scenario/reset", json={"timetable": "reference"})
+    c.post("/api/events", json=STOPPAGE)
+    r1 = c.post("/api/optimize", json={"at": "10:03"}).json()["recommendation"]
+    c.post(f"/api/recommendation/{r1['recommendation_id']}/decision", json={"decision": "accept"})
+    c.post("/api/events", json={"event_type": "TRACK_UNAVAILABLE", "location": "S_BC", "start_time": "10:30", "duration_min": 20})
+    r2 = c.post("/api/optimize", json={"at": "10:25"}).json()["recommendation"]
+    c.post(f"/api/recommendation/{r2['recommendation_id']}/decision", json={"decision": "accept"})
+
+    body = c.get("/api/conflicts", params={"at": "10:25"}).json()
+    if body["ml_note"] and "models not found" in body["ml_note"]:
+        pytest.skip("trained models needed for the ML watchlist")
+    t303 = next(w for w in body["ml_watchlist"] if w["train_id"] == "T303" and w["section_id"] == "S_BC")
+    print(f"\n[SIMULATED] T303 wait before B-C: {t303['baseline_wait_min']} min under {r1['recommendation_id']} -> "
+          f"{t303['plan_wait_min']} min with {r2['recommendation_id']}")
+    assert t303["reduced_by_plan"] is True and t303["resolved_by_plan"] is False
+    assert 0 < t303["plan_wait_min"] < t303["baseline_wait_min"]
+
+    # act 1 keeps the green 'resolved' case: zero wait in the plan's replay
+    c.post("/api/scenario/reset", json={"timetable": "reference"})
+    c.post("/api/events", json=STOPPAGE)
+    r = c.post("/api/optimize", json={"at": "10:03"}).json()["recommendation"]
+    c.post(f"/api/recommendation/{r['recommendation_id']}/decision", json={"decision": "accept"})
+    w = next(w for w in c.get("/api/conflicts", params={"at": "10:03"}).json()["ml_watchlist"] if w["train_id"] == "T303")
+    assert w["resolved_by_plan"] is True and w["reduced_by_plan"] is False and w["plan_wait_min"] == 0

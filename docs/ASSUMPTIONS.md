@@ -213,7 +213,10 @@ Rerouting T202 cuts that to 53 / 19.
     so in `ml_note`.
     A watchlist item is marked `resolved_by_plan` when, in a deterministic
     replay (rng=None) of the accepted plan on the known events, that train
-    does not wait before the flagged trip (same stations, either line).
+    does not wait before the flagged trip (same stations, either line). It is
+    marked `reduced_by_plan` when that wait is above zero but lower than in a
+    replay of the plan the accepted one replaced (no plan if there was none),
+    e.g. T303 16 -> 2 min in demo act 2.
 31. **Train state at a clock time**:
     - Status, from the simulated timeline: not started, at station, waiting
       at signal (ready but not entered, including held trains), in section,

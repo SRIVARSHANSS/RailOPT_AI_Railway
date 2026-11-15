@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { BrainCircuit, CircleCheck, ShieldAlert, Sparkles, TriangleAlert } from 'lucide-react'
+import { BrainCircuit, CircleCheck, ShieldAlert, Sparkles, TrendingDown, TriangleAlert } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { ConflictsAt, PlanStatus } from '../../api/types'
 import { buildAlerts } from './alerts'
@@ -13,6 +13,8 @@ const style = {
   WARNING: { box: 'border-signal-amber/45 bg-signal-amber/10', text: 'text-signal-amber', icon: TriangleAlert },
   RECOMMENDATION: { box: 'border-signal-cyan/50 bg-signal-cyan/10', text: 'text-signal-cyan', icon: Sparkles },
   RESOLVED: { box: 'border-signal-green/40 bg-signal-green/10', text: 'text-signal-green', icon: CircleCheck },
+  // calm cyan: the plan lowered the risk but did not remove it
+  REDUCED: { box: 'border-signal-cyan/30 bg-signal-cyan/[0.06]', text: 'text-signal-cyan', icon: TrendingDown },
 } as const
 
 export function AlertsFeed({ conflicts, loading, plan }: { conflicts: ConflictsAt | undefined; loading: boolean; plan?: PlanStatus }) {

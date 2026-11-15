@@ -2,7 +2,7 @@ import type { ConflictsAt, OptimizeResult, PlanStatus } from '../../api/types'
 
 export type Alert = {
   key: string
-  level: 'CRITICAL' | 'WARNING' | 'RECOMMENDATION' | 'RESOLVED'
+  level: 'CRITICAL' | 'WARNING' | 'RECOMMENDATION' | 'RESOLVED' | 'REDUCED'
   title: string
   detail: string
   section_id: string | null
@@ -43,6 +43,17 @@ export function buildAlerts(c: ConflictsAt | undefined, opt: OptimizeResult | nu
     })
   }
   for (const w of c?.ml_watchlist ?? []) {
+    if (w.reduced_by_plan) {
+      // the accepted plan lowers the wait but not to zero: calm cyan, not an active warning
+      out.push({
+        key: `ml-${w.train_id}-${w.section_id}`, level: 'REDUCED',
+        title: `Risk reduced by plan (${w.baseline_wait_min} -> ${w.plan_wait_min} min wait)`,
+        detail: `AI watch: ${w.train_id} on ${w.section_id}, model ${w.conflict_probability.toFixed(2)}. In the accepted plan's replay ` +
+          `${w.train_id} waits ${w.plan_wait_min} min before this trip, ${w.baseline_wait_min} under the plan it replaced.`,
+        section_id: w.section_id, trains: [w.train_id],
+      })
+      continue
+    }
     out.push({
       key: `ml-${w.train_id}-${w.section_id}`, level: w.resolved_by_plan ? 'RESOLVED' : 'WARNING',
       title: w.resolved_by_plan ? 'Risk resolved by accepted plan' : `AI watch: ${w.train_id} on ${w.section_id}`,

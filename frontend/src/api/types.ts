@@ -49,6 +49,7 @@ export type Conflict = {
 export type WatchItem = Prediction & {
   train_id: string; section_id: string; time_to_section_min: number
   resolved_by_plan: boolean; plan_wait_min: number | null
+  reduced_by_plan: boolean; baseline_wait_min: number | null
 }
 export type ConflictsAt = Labelled & { at: string; known_events: string[]; conflicts: Conflict[]; ml_watchlist: WatchItem[]; ml_note: string | null }
 
