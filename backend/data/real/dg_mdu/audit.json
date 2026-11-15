@@ -1,0 +1,280 @@
+{
+  "data_label": "REAL",
+  "corridor": "DG -> MDU",
+  "manifest": {
+    "data_label": "REAL",
+    "corridor": "dg_mdu",
+    "direction": "DG -> MDU",
+    "source_zip": "Indian-Railway-Network-and-Delays.zip",
+    "source_zip_sha256": "f8a6fe9e70972acb8ad98bbe5b7eb594c5b6b3475e21efd6d3b9e19049bdaf91",
+    "source_files": [
+      "train_routes_Sep2024.csv",
+      "train_routes_delays_Sep2024.csv"
+    ],
+    "date_checked": "2026-11-15",
+    "period": "2024-09-01..2024-09-30 (journey start dates)",
+    "dg_chainage": {
+      "km": 433.02,
+      "method": "DERIVED",
+      "note": "ABI 444.02 (map 2024) - DG-ABI 11 km (dataset route file)"
+    },
+    "licence": "CC BY-SA 4.0 (see LICENSE-DATA)"
+  },
+  "timetable": {
+    "regular_trains": 44,
+    "by_type": {
+      "SUPERFAST": 26,
+      "EXPRESS": 15,
+      "PREMIUM": 3
+    },
+    "excluded": [
+      {
+        "train_no": 2122,
+        "train_name": "Jbp Mdu Sf Special",
+        "reason": "special train (0xxxx), not a regular service"
+      },
+      {
+        "train_no": 6011,
+        "train_name": "Tbm-ncj Sf Tod Special",
+        "reason": "special train (0xxxx), not a regular service"
+      },
+      {
+        "train_no": 6029,
+        "train_name": "Mtp-ten Tod Wkly Special",
+        "reason": "special train (0xxxx), not a regular service"
+      },
+      {
+        "train_no": 6035,
+        "train_name": "Tbm Kcvl Ac Special",
+        "reason": "special train (0xxxx), not a regular service"
+      },
+      {
+        "train_no": 6153,
+        "train_name": "Tbm Kcvl Special",
+        "reason": "special train (0xxxx), not a regular service"
+      },
+      {
+        "train_no": 7191,
+        "train_name": "Kcg Mdu Special",
+        "reason": "special train (0xxxx), not a regular service"
+      },
+      {
+        "train_no": 7435,
+        "train_name": "Kcg Ncj Special",
+        "reason": "special train (0xxxx), not a regular service"
+      },
+      {
+        "train_no": 9520,
+        "train_name": "Okha  Mdu Special",
+        "reason": "special train (0xxxx), not a regular service"
+      }
+    ],
+    "timetable_from_records_fallback": [
+      12665,
+      20494,
+      20601
+    ],
+    "cells": {
+      "ESTIMATED": 249,
+      "DATASET_ROUTE": 97,
+      "DATASET_RECORDS": 6
+    },
+    "passenger_memu": "none in the dataset (it excludes local trains): known to run, schedule not in the dataset, not modelled",
+    "runs_on_weekday_counts": {
+      "Mon": 25,
+      "Tue": 23,
+      "Wed": 23,
+      "Thu": 23,
+      "Fri": 23,
+      "Sat": 27,
+      "Sun": 27
+    }
+  },
+  "dataset": {
+    "regular_trains_in_timetable": 44,
+    "regular_trains_with_records": 44,
+    "train_days": 682,
+    "dg_dates": 32,
+    "first_dg_date": "2024-09-01",
+    "last_dg_date": "2024-10-02"
+  },
+  "coverage": {
+    "DG": {
+      "station_records": 682,
+      "trains": 44,
+      "days": 32
+    },
+    "intermediate": {
+      "station_records": 312,
+      "trains": 11,
+      "days": 31
+    },
+    "MDU": {
+      "station_records": 682,
+      "trains": 44,
+      "days": 32
+    },
+    "per_station": {
+      "DG": 682,
+      "ABI": 29,
+      "KQN": 134,
+      "VDP": 0,
+      "SDN": 119,
+      "SER": 0,
+      "KON": 30,
+      "MDU": 682
+    }
+  },
+  "missing": {
+    "expected_train_days_sept": 736,
+    "observed_train_days_sept": 682,
+    "missing_train_days": 54,
+    "missing_share": 0.073,
+    "listed_stop_records_expected": 1676,
+    "listed_stop_records_present": 1676,
+    "runs_without_dg_record": 0,
+    "runs_without_mdu_record": 0,
+    "runs_with_upstream_record": 682,
+    "note": "runs_on is DERIVED from the same records (>= half of a weekday's dates), so the expected count is a lower bound on what was scheduled."
+  },
+  "delays": {
+    "dg_departure": {
+      "n": 682,
+      "mean": 13.58,
+      "min": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "median": 2.0,
+      "p75": 9.0,
+      "p90": 18.0,
+      "p95": 29.899999999999864,
+      "max": 1575.0,
+      "share_on_time_le_0": 0.406,
+      "share_le_5": 0.638,
+      "share_gt_15": 0.122,
+      "share_gt_60": 0.018,
+      "histogram": {
+        "<=0": 277,
+        "1-5": 158,
+        "6-15": 164,
+        "16-30": 49,
+        "31-60": 22,
+        "61-120": 2,
+        ">120": 10
+      }
+    },
+    "mdu_arrival": {
+      "n": 682,
+      "mean": 11.93,
+      "min": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 7.0,
+      "p90": 15.0,
+      "p95": 25.949999999999932,
+      "max": 1545.0,
+      "share_on_time_le_0": 0.535,
+      "share_le_5": 0.694,
+      "share_gt_15": 0.1,
+      "share_gt_60": 0.019,
+      "histogram": {
+        "<=0": 365,
+        "1-5": 108,
+        "6-15": 141,
+        "16-30": 41,
+        "31-60": 14,
+        "61-120": 4,
+        ">120": 9
+      }
+    },
+    "mdu_arrival_terminating": {
+      "n": 170,
+      "mean": 27.88,
+      "min": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0,
+      "p90": 4.0,
+      "p95": 64.449999999999,
+      "max": 1545.0,
+      "share_on_time_le_0": 0.876,
+      "share_le_5": 0.912,
+      "share_gt_15": 0.071,
+      "share_gt_60": 0.053,
+      "histogram": {
+        "<=0": 149,
+        "1-5": 6,
+        "6-15": 3,
+        "16-30": 1,
+        "31-60": 2,
+        "61-120": 1,
+        ">120": 8
+      }
+    },
+    "mdu_arrival_through": {
+      "n": 512,
+      "mean": 6.64,
+      "min": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "median": 2.0,
+      "p75": 9.0,
+      "p90": 16.0,
+      "p95": 23.44999999999999,
+      "max": 262.0,
+      "share_on_time_le_0": 0.422,
+      "share_le_5": 0.621,
+      "share_gt_15": 0.109,
+      "share_gt_60": 0.008,
+      "histogram": {
+        "<=0": 216,
+        "1-5": 102,
+        "6-15": 138,
+        "16-30": 40,
+        "31-60": 12,
+        "61-120": 3,
+        ">120": 1
+      }
+    },
+    "change_dg_to_mdu": {
+      "n": 682,
+      "mean": -1.64,
+      "min": -43.0,
+      "p10": -11.899999999999991,
+      "p25": -4.0,
+      "median": 0.0,
+      "p75": 0.0,
+      "p90": 5.0,
+      "p95": 10.0,
+      "max": 59.0,
+      "share_on_time_le_0": 0.755,
+      "share_le_5": 0.9,
+      "share_gt_15": 0.016,
+      "share_gt_60": 0.0,
+      "histogram": {
+        "<=0": 515,
+        "1-5": 99,
+        "6-15": 57,
+        "16-30": 9,
+        "31-60": 2,
+        "61-120": 0,
+        ">120": 0
+      }
+    },
+    "early_running_recorded_as_zero": 0,
+    "suspicious_mdu_zero_after_dg_ge_10": {
+      "runs": 39,
+      "of_runs_with_both": 682,
+      "terminating_at_mdu": 36,
+      "note": "MDU arrival exactly on time although DG departure was >= 10 min late; possibly filled with the scheduled time by the source. Flagged, not removed."
+    }
+  },
+  "checks": {
+    "recorded_runs_between_consecutive_recorded_stations": 994,
+    "recorded_runs_faster_than_assumed_min_run": 4,
+    "scheduled_sections_faster_than_assumed_min_run": 0,
+    "clock_vs_delay_mismatches": 0
+  }
+}

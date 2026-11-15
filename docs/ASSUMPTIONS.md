@@ -326,3 +326,40 @@ with plain DYNAMIC (the ML-free reference) and with no re-planning.
 46. Batch scoring for 10b uses the same preprocessing and conflict model as the deployed
     predictor (probabilities only, no SHAP); tests check it matches `Predictor.predict`.
 
+
+## REAL data: Dindigul -> Madurai corridor (Step 1)
+
+REAL and SIMULATED never mix: real files live in `backend/data/real/` and carry
+`data_label = REAL`; sources and licence in `docs/DATA_SOURCES.md`.
+
+47. **Corridor**: direction DG -> MDU only, stations DG, ABI, KQN, VDP, SDN, SER, KON, MDU;
+    7 block sections with 1 track each in this direction (the line is double, "twin single
+    line"). Chainages ABI..MDU: SR Madurai division system map 2024 (owner-supplied values).
+48. **DG chainage DERIVED**: the 2024 division map and the 2021 SR zonal map URLs returned
+    404 on 2026-11-15, so DG = ABI 444.02 - 11 km (DG-ABI in the dataset's route file) =
+    433.02 km. The dataset's route distances are whole km and disagree with the map at the
+    other stations by about 1 km (KQN, SDN, KON, MDU imply DG about 428.9-429.2); ABI is the
+    outlier (+3 km). Owner's rule kept; to revisit if the map becomes readable.
+49. **ASSUMED platforms** usable by DG -> MDU trains: DG 5, MDU 7, intermediate stations 2.
+50. **ASSUMED minimum running time** per section = ceil(length / 110 km/h); no scheduled
+    section is faster; 4 of 994 recorded station-to-station runs are (flagged in the audit
+    as likely source artifacts, not removed).
+51. **ASSUMED minimum headway** 5 min on every section.
+52. **Priority**: all real trains are expresses/superfasts/premium; priority 1 for all
+    (ASSUMED; no public priority order). Type from the IR numbering (12/20/22xxx superfast),
+    "Vande Bharat"/"Tejas" in the name = PREMIUM, 4-digit numbers = 0xxxx specials (excluded).
+53. **Timetable**: `train_routes_Sep2024.csv` is the primary source; times only at the
+    stations it lists. Where its times are degenerate (every station at one clock time:
+    12665, 20494, 20601) the modal scheduled times from the running records are used
+    (`DATASET_RECORDS`). Stations a train does not list are ESTIMATED by linear
+    interpolation on km between the neighbouring listed times (passing, no stop).
+    Passenger/MEMU: not in the dataset (it excludes local trains), not modelled, no times
+    invented. Freight: not public, synthetic freight only in SIMULATED scenarios.
+54. **Dates**: the dataset `date` is the journey START date; times are unrolled along the
+    route (a day added whenever the clock goes backwards). Records are keyed by the DG date.
+55. **Delays** are recomputed (signed) from the scheduled and actual clock times; they agree
+    with the dataset's delay column on every record. The source never records an actual time
+    earlier than scheduled.
+56. **runs_on** is DERIVED from the records: a DG weekday counts when the train was recorded on
+    at least half of that weekday's dates in September. Missing train-days are counted against
+    this, so the missing share is a lower bound.

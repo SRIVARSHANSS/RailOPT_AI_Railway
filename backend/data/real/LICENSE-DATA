@@ -1,0 +1,23 @@
+Files in backend/data/real/dg_mdu/ (REAL data) are an extract of:
+
+  "Indian Railway Operations and Delay Dataset - September 2024"
+  Koyena Chowdhury, Paramita Koley, Abhijnan Chakraborty, Saptarshi Ghosh
+  https://github.com/KoyenaChowdhury/RSTGCN  (zip: Indian-Railway-Network-and-Delays.zip)
+  https://datahubkgp.org/datasets/79deb8a0a7d361bb4f27
+  Paper: "RSTGCN: Railway-centric Spatio-Temporal Graph Convolutional Network for Train
+  Delay Prediction", IEEE Transactions on Intelligent Transportation Systems (2026),
+  doi:10.1109/TITS.2026.3726308; arXiv:2510.01262.
+
+Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+  https://creativecommons.org/licenses/by-sa/4.0/
+  (licence as stated on the DataHub KGP listing; the GitHub repository has no LICENSE file;
+  checked 2026-11-15)
+
+Changes made: rows restricted to the Dindigul (DG) -> Madurai (MDU) corridor and to regular
+trains; times unrolled across midnight; signed delays recomputed; passing times at stations
+a train does not list are ESTIMATED by km interpolation; station chainages from the Southern
+Railway Madurai division map 2024 (DG DERIVED). These derived files are shared under the same
+licence, CC BY-SA 4.0.
+
+The dataset authors collected the data from https://runningstatus.in/ (a third-party running
+status website). RailOpt AI did not scrape any website.

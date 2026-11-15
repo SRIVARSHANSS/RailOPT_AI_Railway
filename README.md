@@ -31,7 +31,11 @@ and is not connected to Indian Railways systems. All results are simulated.
     ML-triggered early re-planning), reported under "ML integration variants"
 - [x] Analytics and Model Insights pages: the stored evaluation and ML metrics through `GET /api/evaluation`
   and `GET /api/model`, hash-checked ("Outdated - rerun" when the result files or models changed)
-- 89 passing tests. Remaining phases: see `CLAUDE.md`
+- [~] REAL data, Dindigul -> Madurai (kept apart from SIMULATED, labelled REAL): Step 1 done:
+  corridor (8 stations, 7 single-track sections in this direction), 44 regular trains from the
+  RSTGCN Sept 2024 dataset (CC BY-SA 4.0), recorded running times and an audit
+  (`backend/data/real/dg_mdu/audit.md`). Sources and licence: `docs/DATA_SOURCES.md`
+- 99 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

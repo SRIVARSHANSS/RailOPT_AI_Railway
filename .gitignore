@@ -25,3 +25,6 @@ Thumbs.db
 
 # Claude Code local skills/settings
 .claude/
+
+# Real data: raw downloads (licence: see docs/DATA_SOURCES.md)
+backend/data/real/raw/
