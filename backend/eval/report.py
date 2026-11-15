@@ -7,11 +7,14 @@ from pathlib import Path
 
 import numpy as np
 
-from eval.evaluation import METHODS, METRICS, RAILOPT, SETTINGS, SIMULATED_NOTE
+from eval.evaluation import ALL_METHODS, METHODS, METRICS, RAILOPT, SETTINGS, SIMULATED_NOTE, VARIANTS
 from eval.stats import describe, paired
 
 LABEL = {"NO_REPLANNING": "No re-planning (FCFS)", "PRIORITY_DISPATCH": "Priority dispatch",
-         "SINGLE_SHOT": "RailOpt single-shot", "DYNAMIC": "RailOpt dynamic", "DYNAMIC_ML": "RailOpt dynamic + ML"}
+         "SINGLE_SHOT": "RailOpt single-shot", "DYNAMIC": "RailOpt dynamic", "DYNAMIC_ML": "RailOpt dynamic + ML",
+         "DYNAMIC_ML_B2": "A: dynamic + ML, 2-min buffers", "DYNAMIC_ML_B3": "A: dynamic + ML, 3-min buffers",
+         "DYNAMIC_ML_PROP": "B: dynamic + ML, round(3p)-min buffers",
+         "DYNAMIC_ML_TRIGGER": "C: dynamic + ML-triggered re-planning"}
 METRIC_LABEL = {"avg_delay_min": "Avg delay (min/train)", "total_delay_min": "Total delay (min)",
                 "weighted_delay": "Weighted delay", "max_delay_min": "Max delay (min)",
                 "throughput_trains_per_hour": "Throughput (trains/h)", "trains_waited": "Trains that waited",
@@ -31,19 +34,27 @@ def summarize(rows: list[dict], plans_info: dict, config: dict) -> dict:
     """plans_info: {"solves": {method: [solve dicts]}, "guarantee": [dicts], "scenarios": [...] }"""
     out = {"label": SIMULATED_NOTE, "config": config, "settings": {}}
     for setting in SETTINGS:
-        s = {"methods": {}, "paired_vs_no_replanning": {}, "ml_ablation": {}, "dynamic_vs_single_shot": {}}
-        for m in METHODS:
+        s = {"methods": {}, "paired_vs_no_replanning": {}, "ml_ablation": {}, "dynamic_vs_single_shot": {},
+             "variants_vs_dynamic": {}}
+        present = [m for m in ALL_METHODS if any(r["method"] == m for r in rows)]
+        for m in present:
             s["methods"][m] = {k: describe(_series(rows, setting, m, k), seed=1) for k in METRICS}
         base = {k: _series(rows, setting, "NO_REPLANNING", k) for k in PAIRED_METRICS}
-        for m in METHODS[1:]:
+        for m in present[1:]:
             s["paired_vs_no_replanning"][m] = {k: paired(_series(rows, setting, m, k), base[k], seed=2) for k in PAIRED_METRICS}
         for k in PAIRED_METRICS:
             s["ml_ablation"][k] = paired(_series(rows, setting, "DYNAMIC_ML", k), _series(rows, setting, "DYNAMIC", k), seed=3)
             s["dynamic_vs_single_shot"][k] = paired(_series(rows, setting, "DYNAMIC", k), _series(rows, setting, "SINGLE_SHOT", k), seed=4)
+        dyn = {k: _series(rows, setting, "DYNAMIC", k) for k in PAIRED_METRICS}
+        for m in ["DYNAMIC_ML", *VARIANTS]:
+            if m in present:
+                s["variants_vs_dynamic"][m] = {k: paired(_series(rows, setting, m, k), dyn[k], seed=3) for k in PAIRED_METRICS}
         out["settings"][setting] = s
 
     solver = {}
     for m in RAILOPT:
+        if m not in plans_info["solves"]:
+            continue
         xs = plans_info["solves"][m]
         secs = np.array([x["seconds"] for x in xs]) if xs else np.array([0.0])
         statuses = [x["status"] for x in xs]
@@ -69,6 +80,8 @@ def summarize(rows: list[dict], plans_info: dict, config: dict) -> dict:
                  "listed, not hidden."),
     }
     out["plans_differ_ml_vs_dynamic"] = plans_info["ml_plans_differ"]
+    out["plans_differ_vs_dynamic"] = plans_info.get("plans_differ_vs_dynamic", {})
+    out["ml_trigger"] = plans_info.get("ml_trigger")
     out["scenarios"] = plans_info["scenarios"]
     return out
 
@@ -132,6 +145,8 @@ def write_report(summary: dict, path: Path) -> None:
               "| Method | Metric | Wins / ties / losses | Mean diff [95% CI] | Median diff | Wilcoxon p | |",
               "|---|---|---|---|---|---|---|"]
         for m, per in s["paired_vs_no_replanning"].items():
+            if m not in METHODS:
+                continue
             for k, p in per.items():
                 L.append(f"| {LABEL[m]} | {METRIC_LABEL[k]} | {p['wins']} / {p['ties']} / {p['losses']} | "
                          f"{_f(p['mean_diff'])} {_ci(p['mean_diff_ci'])} | {_f(p['median_diff'])} | "
@@ -157,6 +172,7 @@ def write_report(summary: dict, path: Path) -> None:
           "- A buffer is +1 min headway; whether it helps depends on the variability it has to absorb. "
           "If the difference is not significant, the ML buffers did not help on this corridor - that is a valid result.", ""]
 
+    L += _variants_section(summary)
     L += ["## Solver", "", "| Method | Solves | OPTIMAL | FEASIBLE | other | Plans adopted | Solve time mean / p95 / max (s) |",
           "|---|---|---|---|---|---|---|"]
     for m, v in summary["solver"].items():
@@ -180,6 +196,51 @@ def write_report(summary: dict, path: Path) -> None:
           "- Waits include planned holds (a held train counts as waiting).",
           "- Priority dispatch only differs from FCFS when two trains wait for the same section at the same time.", ""]
     path.write_text("\n".join(L), encoding="utf-8")
+
+
+def _variants_section(summary: dict) -> list[str]:
+    """Phase 10b: pre-registered ML integration variants, all reported."""
+    if not summary["settings"]["deterministic"]["variants_vs_dynamic"]:
+        return []
+    L = ["## ML integration variants (Phase 10b, pre-registered)", "",
+         "Defined in docs/ASSUMPTIONS.md (43-46) before any run. Same scenarios, settings and statistics. "
+         "Reference: **RailOpt dynamic** (no ML). Diff = variant - reference (negative = better).", ""]
+    for setting in ("deterministic", "robustness"):
+        s = summary["settings"][setting]
+        L += [f"### {setting}", "",
+              "| Variant | Weighted delay [95% CI] | Total delay [95% CI] | vs dynamic: W / T / L | "
+              "vs dynamic: mean diff [95% CI] | | vs no re-planning: mean diff [95% CI] | |",
+              "|---|---|---|---|---|---|---|---|"]
+        ref, refp = s["methods"]["DYNAMIC"], s["paired_vs_no_replanning"]["DYNAMIC"]["weighted_delay"]
+        L.append(f"| {LABEL['DYNAMIC']} (reference) | {_f(ref['weighted_delay']['mean'])} {_ci(ref['weighted_delay']['mean_ci'])} | "
+                 f"{_f(ref['total_delay_min']['mean'])} {_ci(ref['total_delay_min']['mean_ci'])} | - | - | | "
+                 f"{_f(refp['mean_diff'])} {_ci(refp['mean_diff_ci'])} | {_sig(refp)} |")
+        for m, per in s["variants_vs_dynamic"].items():
+            v, p, b = s["methods"][m], per["weighted_delay"], s["paired_vs_no_replanning"][m]["weighted_delay"]
+            L.append(f"| {LABEL[m]} | {_f(v['weighted_delay']['mean'])} {_ci(v['weighted_delay']['mean_ci'])} | "
+                     f"{_f(v['total_delay_min']['mean'])} {_ci(v['total_delay_min']['mean_ci'])} | "
+                     f"{p['wins']} / {p['ties']} / {p['losses']} | {_f(p['mean_diff'], 2)} {_ci(p['mean_diff_ci'], 2)} | "
+                     f"{_sig(p)} | {_f(b['mean_diff'])} {_ci(b['mean_diff_ci'])} | {_sig(b)} |")
+        L.append("")
+    L += ["### Reading (generated)", ""]
+    n = summary["config"]["scenarios"]
+    for m in summary["settings"]["deterministic"]["variants_vs_dynamic"]:
+        parts = []
+        for setting in ("deterministic", "robustness"):
+            p = summary["settings"][setting]["variants_vs_dynamic"][m]["weighted_delay"]
+            verdict = ("better than dynamic" if p["significant"] and p["mean_diff"] < 0 else
+                       "worse than dynamic" if p["significant"] else "not significantly different from dynamic")
+            parts.append(f"{setting}: {verdict} ({_f(p['mean_diff'], 2)} {_ci(p['mean_diff_ci'], 2)})")
+        differ = summary.get("plans_differ_vs_dynamic", {}).get(m)
+        extra = f"; final plan differs from dynamic in {differ} of {n} scenarios" if differ is not None else ""
+        L.append(f"- **{LABEL[m]}** - " + "; ".join(parts) + extra + ".")
+    t = summary.get("ml_trigger")
+    if t:
+        L.append(f"- Variant C ran {t['checks']} model checks; {t['triggers']} early re-solves were triggered "
+                 f"in {t['scenarios_with_triggers']} of {n} scenarios.")
+    L += ["- A variant that is not significantly better than plain dynamic did not earn its ML component on "
+          "this corridor; that is reported as a result, not tuned away.", ""]
+    return L
 
 
 # ---------------------------------------------------------------------------

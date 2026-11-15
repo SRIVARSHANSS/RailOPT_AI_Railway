@@ -144,7 +144,8 @@ def simulate_run(net: RailNetwork, sample: RunSample, rng: random.Random) -> Sim
 # features (known at state time) and rows for one run
 # ---------------------------------------------------------------------------
 def plan_features(net: RailNetwork, state_time: int, known_events: list[Disruption],
-                  first: Disruption) -> list[dict]:
+                  first: Disruption, route_overrides: dict | None = None,
+                  holds: dict | None = None) -> list[dict]:
     """Feature rows for every (train, section) the plan has the train entering
     after `state_time`, using only what is known then. Usable on a live
     scenario: no simulation outcome is needed.
@@ -154,10 +155,13 @@ def plan_features(net: RailNetwork, state_time: int, known_events: list[Disrupti
     simulator (rng=None) run on the known events, i.e. what the rules plus
     the simulator predict without ML. It is a comparison column only, never
     a model feature.
+
+    route_overrides / holds (optional, default none = the training setting): build the
+    features on the projection of an accepted plan (used by the Phase 10b trigger variant).
     """
-    plan = project_plan(net, state_time, known_events)
+    plan = project_plan(net, state_time, known_events, route_overrides, holds)
     flagged = {(c.later, c.section_id) for c in detect_conflicts(net, plan)}
-    projection = simulate(net, known_events)            # rng=None: deterministic
+    projection = simulate(net, known_events, route_overrides=route_overrides, holds=holds)   # rng=None
 
     # planned delay of each trip = planned entry - timetabled departure from that section's start
     delay_at: dict[tuple[str, str], int] = {}

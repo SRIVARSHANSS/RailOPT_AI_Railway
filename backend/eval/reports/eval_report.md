@@ -11,8 +11,8 @@
 - Methods: **No re-planning (FCFS)** - first come, first served at the signals; **Priority dispatch** - the waiting train with the highest priority enters first; **RailOpt single-shot** - COMBINED CP-SAT once, when the first disruption becomes known; **RailOpt dynamic** - COMBINED re-solved whenever a new event becomes known, on top of the current plan (started trips fixed, 120-min horizon); **RailOpt dynamic + ML** - dynamic + ML risk buffers (+1 min headway on trips the conflict model flags).
 - Settings: **deterministic** (one replay, no randomness) and **robustness** (5 seeded replays per scenario under the Phase 2 running-time and dwell variability, same seeds for every method, plans fixed in advance; a scenario's value is the mean of its replays).
 - Statistics: mean and median with 10000-resample bootstrap 95% CIs over scenarios; paired comparisons per scenario (diff = method - reference, negative = better); a difference is significant when the CI of the mean difference excludes 0 (Wilcoxon p shown for reference).
-- Every replay was checked for violations (headway, capacity, minimum running time, closures, early departures): **0 violations in 6000 replays**.
-- Runtime: 180 s.
+- Every replay was checked for violations (headway, capacity, minimum running time, closures, early departures): **0 violations in 10800 replays**.
+- Runtime: 323 s.
 
 ## Results - deterministic
 
@@ -83,13 +83,53 @@ Dynamic minus single-shot (weighted delay): 70 / 123 / 7, mean diff -22.4 [-28.5
 - The model put a buffer on 1874 trips at 348 of 388 decision points; the final plan differs from plain dynamic in 40 of 200 scenarios.
 - A buffer is +1 min headway; whether it helps depends on the variability it has to absorb. If the difference is not significant, the ML buffers did not help on this corridor - that is a valid result.
 
+## ML integration variants (Phase 10b, pre-registered)
+
+Defined in docs/ASSUMPTIONS.md (43-46) before any run. Same scenarios, settings and statistics. Reference: **RailOpt dynamic** (no ML). Diff = variant - reference (negative = better).
+
+### deterministic
+
+| Variant | Weighted delay [95% CI] | Total delay [95% CI] | vs dynamic: W / T / L | vs dynamic: mean diff [95% CI] | | vs no re-planning: mean diff [95% CI] | |
+|---|---|---|---|---|---|---|---|
+| RailOpt dynamic (reference) | 124.8 [117.5, 132.4] | 67.2 [63.5, 71.0] | - | - | | -46.1 [-54.2, -38.6] | significant |
+| RailOpt dynamic + ML | 125.1 [117.8, 132.6] | 67.4 [63.7, 71.2] | 2 / 169 / 29 | 0.26 [0.15, 0.37] | significant | -45.9 [-54.0, -38.3] | significant |
+| A: dynamic + ML, 2-min buffers | 125.5 [118.1, 133.1] | 67.5 [63.8, 71.4] | 2 / 151 / 47 | 0.66 [0.47, 0.86] | significant | -45.5 [-53.5, -37.9] | significant |
+| A: dynamic + ML, 3-min buffers | 126.0 [118.6, 133.6] | 67.9 [64.2, 71.7] | 3 / 129 / 68 | 1.18 [0.76, 1.57] | significant | -45.0 [-53.0, -37.5] | significant |
+| B: dynamic + ML, round(3p)-min buffers | 126.1 [118.8, 133.8] | 68.0 [64.2, 71.8] | 2 / 121 / 77 | 1.33 [1.03, 1.66] | significant | -44.8 [-52.9, -37.3] | significant |
+| C: dynamic + ML-triggered re-planning | 124.8 [117.5, 132.4] | 67.2 [63.5, 71.0] | 1 / 199 / 0 | -0.01 [-0.03, 0.00] | **not significant** | -46.2 [-54.2, -38.6] | significant |
+
+### robustness
+
+| Variant | Weighted delay [95% CI] | Total delay [95% CI] | vs dynamic: W / T / L | vs dynamic: mean diff [95% CI] | | vs no re-planning: mean diff [95% CI] | |
+|---|---|---|---|---|---|---|---|
+| RailOpt dynamic (reference) | 251.1 [243.2, 259.3] | 138.2 [134.2, 142.5] | - | - | | -54.8 [-64.1, -45.9] | significant |
+| RailOpt dynamic + ML | 251.0 [243.1, 259.2] | 138.2 [134.1, 142.5] | 4 / 183 / 13 | -0.04 [-0.20, 0.10] | **not significant** | -54.9 [-64.2, -46.0] | significant |
+| A: dynamic + ML, 2-min buffers | 250.6 [242.9, 258.7] | 137.9 [133.9, 142.0] | 9 / 173 / 18 | -0.45 [-1.32, 0.14] | **not significant** | -55.3 [-64.6, -46.4] | significant |
+| A: dynamic + ML, 3-min buffers | 250.7 [243.0, 258.8] | 138.0 [134.1, 142.2] | 14 / 153 / 33 | -0.31 [-1.05, 0.27] | **not significant** | -55.1 [-64.4, -46.3] | significant |
+| B: dynamic + ML, round(3p)-min buffers | 250.8 [243.0, 258.9] | 138.0 [134.1, 142.1] | 14 / 154 / 32 | -0.26 [-0.98, 0.33] | **not significant** | -55.1 [-64.4, -46.2] | significant |
+| C: dynamic + ML-triggered re-planning | 251.1 [243.2, 259.3] | 138.2 [134.2, 142.5] | 0 / 199 / 1 | 0.01 [0.00, 0.04] | **not significant** | -54.8 [-64.1, -45.9] | significant |
+
+### Reading (generated)
+
+- **RailOpt dynamic + ML** - deterministic: worse than dynamic (0.26 [0.15, 0.37]); robustness: not significantly different from dynamic (-0.04 [-0.20, 0.10]); final plan differs from dynamic in 40 of 200 scenarios.
+- **A: dynamic + ML, 2-min buffers** - deterministic: worse than dynamic (0.66 [0.47, 0.86]); robustness: not significantly different from dynamic (-0.45 [-1.32, 0.14]); final plan differs from dynamic in 57 of 200 scenarios.
+- **A: dynamic + ML, 3-min buffers** - deterministic: worse than dynamic (1.18 [0.76, 1.57]); robustness: not significantly different from dynamic (-0.31 [-1.05, 0.27]); final plan differs from dynamic in 76 of 200 scenarios.
+- **B: dynamic + ML, round(3p)-min buffers** - deterministic: worse than dynamic (1.33 [1.03, 1.66]); robustness: not significantly different from dynamic (-0.26 [-0.98, 0.33]); final plan differs from dynamic in 83 of 200 scenarios.
+- **C: dynamic + ML-triggered re-planning** - deterministic: not significantly different from dynamic (-0.01 [-0.03, 0.00]); robustness: not significantly different from dynamic (0.01 [0.00, 0.04]); final plan differs from dynamic in 43 of 200 scenarios.
+- Variant C ran 5742 model checks; 255 early re-solves were triggered in 121 of 200 scenarios.
+- A variant that is not significantly better than plain dynamic did not earn its ML component on this corridor; that is reported as a result, not tuned away.
+
 ## Solver
 
 | Method | Solves | OPTIMAL | FEASIBLE | other | Plans adopted | Solve time mean / p95 / max (s) |
 |---|---|---|---|---|---|---|
-| RailOpt single-shot | 200 | 200 | 0 | 0 | 200 | 0.013 / 0.023 / 0.030 |
-| RailOpt dynamic | 388 | 388 | 0 | 0 | 388 | 0.012 / 0.022 / 0.029 |
-| RailOpt dynamic + ML | 388 | 388 | 0 | 0 | 388 | 0.013 / 0.023 / 0.033 |
+| RailOpt single-shot | 200 | 200 | 0 | 0 | 200 | 0.014 / 0.024 / 0.045 |
+| RailOpt dynamic | 388 | 388 | 0 | 0 | 388 | 0.014 / 0.025 / 0.032 |
+| RailOpt dynamic + ML | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.035 |
+| A: dynamic + ML, 2-min buffers | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.037 |
+| A: dynamic + ML, 3-min buffers | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.042 |
+| B: dynamic + ML, round(3p)-min buffers | 388 | 388 | 0 | 0 | 388 | 0.015 / 0.027 / 0.038 |
+| C: dynamic + ML-triggered re-planning | 643 | 643 | 0 | 0 | 643 | 0.014 / 0.024 / 0.042 |
 
 Solve time is wall time of one CP-SAT call including model building (1 worker, 10 s limit).
 

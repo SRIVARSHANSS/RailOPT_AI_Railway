@@ -12,7 +12,11 @@
       "PRIORITY_DISPATCH": "the waiting train with the highest priority enters first",
       "SINGLE_SHOT": "COMBINED CP-SAT once, when the first disruption becomes known",
       "DYNAMIC": "COMBINED re-solved whenever a new event becomes known, on top of the current plan (started trips fixed, 120-min horizon)",
-      "DYNAMIC_ML": "dynamic + ML risk buffers (+1 min headway on trips the conflict model flags)"
+      "DYNAMIC_ML": "dynamic + ML risk buffers (+1 min headway on trips the conflict model flags)",
+      "DYNAMIC_ML_B2": "as dynamic + ML with +2 min on flagged trips (10b, A)",
+      "DYNAMIC_ML_B3": "as dynamic + ML with +3 min on flagged trips (10b, A)",
+      "DYNAMIC_ML_PROP": "every upcoming trip gets round(3 x conflict probability) min (10b, B)",
+      "DYNAMIC_ML_TRIGGER": "dynamic + a model check every 10 min; a newly flagged train with no rule conflict triggers a re-solve (10b, C)"
     }
   },
   "settings": {
@@ -447,6 +451,350 @@
               4.0
             ]
           }
+        },
+        "DYNAMIC_ML_B2": {
+          "avg_delay_min": {
+            "mean": 5.62875,
+            "mean_ci": [
+              5.32,
+              5.950010416666666
+            ],
+            "median": 5.166666666666667,
+            "median_ci": [
+              4.833333333333333,
+              5.583333333333333
+            ]
+          },
+          "total_delay_min": {
+            "mean": 67.545,
+            "mean_ci": [
+              63.84,
+              71.400125
+            ],
+            "median": 62.0,
+            "median_ci": [
+              58.0,
+              67.0
+            ]
+          },
+          "weighted_delay": {
+            "mean": 125.465,
+            "mean_ci": [
+              118.12,
+              133.05525
+            ],
+            "median": 112.0,
+            "median_ci": [
+              105.0,
+              122.5
+            ]
+          },
+          "max_delay_min": {
+            "mean": 23.6,
+            "mean_ci": [
+              22.09,
+              25.125124999999997
+            ],
+            "median": 24.0,
+            "median_ci": [
+              23.0,
+              26.0
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.6682,
+            "mean_ci": [
+              1.66315,
+              1.67325
+            ],
+            "median": 1.67,
+            "median_ci": [
+              1.67,
+              1.67
+            ]
+          },
+          "trains_waited": {
+            "mean": 1.705,
+            "mean_ci": [
+              1.525,
+              1.89
+            ],
+            "median": 1.0,
+            "median_ci": [
+              1.0,
+              2.0
+            ]
+          },
+          "total_wait_min": {
+            "mean": 12.435,
+            "mean_ci": [
+              9.545,
+              15.510249999999996
+            ],
+            "median": 3.0,
+            "median_ci": [
+              3.0,
+              4.0
+            ]
+          }
+        },
+        "DYNAMIC_ML_B3": {
+          "avg_delay_min": {
+            "mean": 5.654583333333332,
+            "mean_ci": [
+              5.346239583333333,
+              5.976666666666667
+            ],
+            "median": 5.208333333333334,
+            "median_ci": [
+              4.875,
+              5.666666666666667
+            ]
+          },
+          "total_delay_min": {
+            "mean": 67.855,
+            "mean_ci": [
+              64.154875,
+              71.72
+            ],
+            "median": 62.5,
+            "median_ci": [
+              58.5,
+              68.0
+            ]
+          },
+          "weighted_delay": {
+            "mean": 125.985,
+            "mean_ci": [
+              118.575,
+              133.62525
+            ],
+            "median": 114.0,
+            "median_ci": [
+              105.0,
+              123.0
+            ]
+          },
+          "max_delay_min": {
+            "mean": 23.56,
+            "mean_ci": [
+              22.03,
+              25.115124999999995
+            ],
+            "median": 24.0,
+            "median_ci": [
+              23.0,
+              26.0
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.6684999999999999,
+            "mean_ci": [
+              1.6635,
+              1.6734512500000003
+            ],
+            "median": 1.67,
+            "median_ci": [
+              1.67,
+              1.67
+            ]
+          },
+          "trains_waited": {
+            "mean": 1.82,
+            "mean_ci": [
+              1.635,
+              2.005
+            ],
+            "median": 2.0,
+            "median_ci": [
+              1.0,
+              2.0
+            ]
+          },
+          "total_wait_min": {
+            "mean": 12.69,
+            "mean_ci": [
+              9.775,
+              15.8
+            ],
+            "median": 3.0,
+            "median_ci": [
+              3.0,
+              4.0
+            ]
+          }
+        },
+        "DYNAMIC_ML_PROP": {
+          "avg_delay_min": {
+            "mean": 5.66375,
+            "mean_ci": [
+              5.354166666666668,
+              5.985020833333334
+            ],
+            "median": 5.208333333333334,
+            "median_ci": [
+              4.916666666666667,
+              5.625
+            ]
+          },
+          "total_delay_min": {
+            "mean": 67.965,
+            "mean_ci": [
+              64.25,
+              71.82024999999999
+            ],
+            "median": 62.5,
+            "median_ci": [
+              59.0,
+              67.5
+            ]
+          },
+          "weighted_delay": {
+            "mean": 126.14,
+            "mean_ci": [
+              118.76975,
+              133.76024999999998
+            ],
+            "median": 113.5,
+            "median_ci": [
+              105.0,
+              123.0
+            ]
+          },
+          "max_delay_min": {
+            "mean": 23.655,
+            "mean_ci": [
+              22.139875,
+              25.195124999999997
+            ],
+            "median": 24.0,
+            "median_ci": [
+              23.0,
+              26.0
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.6679500000000003,
+            "mean_ci": [
+              1.66285,
+              1.673
+            ],
+            "median": 1.67,
+            "median_ci": [
+              1.67,
+              1.67
+            ]
+          },
+          "trains_waited": {
+            "mean": 1.865,
+            "mean_ci": [
+              1.685,
+              2.045
+            ],
+            "median": 2.0,
+            "median_ci": [
+              1.0,
+              2.0
+            ]
+          },
+          "total_wait_min": {
+            "mean": 12.725,
+            "mean_ci": [
+              9.81,
+              15.830124999999999
+            ],
+            "median": 4.0,
+            "median_ci": [
+              3.0,
+              4.0
+            ]
+          }
+        },
+        "DYNAMIC_ML_TRIGGER": {
+          "avg_delay_min": {
+            "mean": 5.5975,
+            "mean_ci": [
+              5.293322916666667,
+              5.915416666666667
+            ],
+            "median": 5.166666666666667,
+            "median_ci": [
+              4.833333333333333,
+              5.5
+            ]
+          },
+          "total_delay_min": {
+            "mean": 67.17,
+            "mean_ci": [
+              63.519875000000006,
+              70.985
+            ],
+            "median": 62.0,
+            "median_ci": [
+              58.0,
+              66.0
+            ]
+          },
+          "weighted_delay": {
+            "mean": 124.795,
+            "mean_ci": [
+              117.52487500000001,
+              132.37525
+            ],
+            "median": 112.0,
+            "median_ci": [
+              104.0,
+              122.0
+            ]
+          },
+          "max_delay_min": {
+            "mean": 23.565,
+            "mean_ci": [
+              22.06,
+              25.09
+            ],
+            "median": 24.0,
+            "median_ci": [
+              23.0,
+              26.0
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.6683,
+            "mean_ci": [
+              1.66324875,
+              1.67335
+            ],
+            "median": 1.67,
+            "median_ci": [
+              1.67,
+              1.67
+            ]
+          },
+          "trains_waited": {
+            "mean": 1.595,
+            "mean_ci": [
+              1.415,
+              1.78
+            ],
+            "median": 1.0,
+            "median_ci": [
+              1.0,
+              2.0
+            ]
+          },
+          "total_wait_min": {
+            "mean": 12.19,
+            "mean_ci": [
+              9.315,
+              15.245
+            ],
+            "median": 3.0,
+            "median_ci": [
+              2.0,
+              4.0
+            ]
+          }
         }
       },
       "paired_vs_no_replanning": {
@@ -569,6 +917,126 @@
             "wilcoxon_p": 8.949832263359526e-24,
             "significant": true
           }
+        },
+        "DYNAMIC_ML_B2": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 129,
+            "ties": 58,
+            "losses": 13,
+            "mean_diff": -45.49,
+            "mean_diff_ci": [
+              -53.545125,
+              -37.92475
+            ],
+            "median_diff": -25.0,
+            "wilcoxon_p": 5.755807483857274e-24,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 128,
+            "ties": 56,
+            "losses": 16,
+            "mean_diff": -23.17,
+            "mean_diff_ci": [
+              -27.350125000000002,
+              -19.28975
+            ],
+            "median_diff": -14.0,
+            "wilcoxon_p": 8.223975090508991e-24,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_B3": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 130,
+            "ties": 53,
+            "losses": 17,
+            "mean_diff": -44.97,
+            "mean_diff_ci": [
+              -53.04,
+              -37.469875
+            ],
+            "median_diff": -24.5,
+            "wilcoxon_p": 5.08238476599112e-24,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 129,
+            "ties": 52,
+            "losses": 19,
+            "mean_diff": -22.86,
+            "mean_diff_ci": [
+              -27.065,
+              -18.984875000000002
+            ],
+            "median_diff": -14.0,
+            "wilcoxon_p": 9.863587307067317e-24,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_PROP": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 129,
+            "ties": 51,
+            "losses": 20,
+            "mean_diff": -44.815,
+            "mean_diff_ci": [
+              -52.875375,
+              -37.28475
+            ],
+            "median_diff": -24.5,
+            "wilcoxon_p": 7.011528208628504e-24,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 128,
+            "ties": 50,
+            "losses": 22,
+            "mean_diff": -22.75,
+            "mean_diff_ci": [
+              -26.925,
+              -18.874750000000002
+            ],
+            "median_diff": -13.5,
+            "wilcoxon_p": 1.282009744657664e-23,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_TRIGGER": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 133,
+            "ties": 66,
+            "losses": 1,
+            "mean_diff": -46.16,
+            "mean_diff_ci": [
+              -54.22525,
+              -38.589875000000006
+            ],
+            "median_diff": -25.0,
+            "wilcoxon_p": 1.5157045024906784e-23,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 131,
+            "ties": 65,
+            "losses": 4,
+            "mean_diff": -23.545,
+            "mean_diff_ci": [
+              -27.715374999999998,
+              -19.675
+            ],
+            "median_diff": -14.0,
+            "wilcoxon_p": 1.7184930598501697e-23,
+            "significant": true
+          }
         }
       },
       "ml_ablation": {
@@ -629,6 +1097,158 @@
           "median_diff": 0.0,
           "wilcoxon_p": 5.077854919753476e-13,
           "significant": true
+        }
+      },
+      "variants_vs_dynamic": {
+        "DYNAMIC_ML": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 2,
+            "ties": 169,
+            "losses": 29,
+            "mean_diff": 0.255,
+            "mean_diff_ci": [
+              0.155,
+              0.37
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 3.7885259820391107e-06,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 2,
+            "ties": 169,
+            "losses": 29,
+            "mean_diff": 0.185,
+            "mean_diff_ci": [
+              0.115,
+              0.265
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 3.5688079788103128e-06,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_B2": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 2,
+            "ties": 151,
+            "losses": 47,
+            "mean_diff": 0.66,
+            "mean_diff_ci": [
+              0.47,
+              0.865
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 1.6880725776055384e-09,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 4,
+            "ties": 151,
+            "losses": 45,
+            "mean_diff": 0.37,
+            "mean_diff_ci": [
+              0.195,
+              0.535
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 2.231433440977995e-07,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_B3": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 3,
+            "ties": 129,
+            "losses": 68,
+            "mean_diff": 1.18,
+            "mean_diff_ci": [
+              0.755,
+              1.575
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 6.8532975127363984e-12,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 7,
+            "ties": 128,
+            "losses": 65,
+            "mean_diff": 0.68,
+            "mean_diff_ci": [
+              0.29,
+              1.02
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 4.216033973013636e-09,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_PROP": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 2,
+            "ties": 121,
+            "losses": 77,
+            "mean_diff": 1.335,
+            "mean_diff_ci": [
+              1.035,
+              1.655
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 1.90669240567755e-14,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 6,
+            "ties": 120,
+            "losses": 74,
+            "mean_diff": 0.79,
+            "mean_diff_ci": [
+              0.525,
+              1.05
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 2.964936181437632e-11,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_TRIGGER": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 1,
+            "ties": 199,
+            "losses": 0,
+            "mean_diff": -0.01,
+            "mean_diff_ci": [
+              -0.03,
+              0.0
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 1.0,
+            "significant": false
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 1,
+            "ties": 199,
+            "losses": 0,
+            "mean_diff": -0.005,
+            "mean_diff_ci": [
+              -0.015,
+              0.0
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 1.0,
+            "significant": false
+          }
         }
       }
     },
@@ -1063,6 +1683,350 @@
               7.999999999999999
             ]
           }
+        },
+        "DYNAMIC_ML_B2": {
+          "avg_delay_min": {
+            "mean": 11.489666666666666,
+            "mean_ci": [
+              11.159997916666667,
+              11.833670833333331
+            ],
+            "median": 10.933333333333334,
+            "median_ci": [
+              10.691666666666668,
+              11.341666666666669
+            ]
+          },
+          "total_delay_min": {
+            "mean": 137.87599999999998,
+            "mean_ci": [
+              133.919975,
+              142.00405
+            ],
+            "median": 131.2,
+            "median_ci": [
+              128.3,
+              136.1
+            ]
+          },
+          "weighted_delay": {
+            "mean": 250.605,
+            "mean_ci": [
+              242.857925,
+              258.65509999999995
+            ],
+            "median": 236.89999999999998,
+            "median_ci": [
+              229.8,
+              244.5
+            ]
+          },
+          "max_delay_min": {
+            "mean": 30.263,
+            "mean_ci": [
+              28.667975000000002,
+              31.894999999999996
+            ],
+            "median": 30.8,
+            "median_ci": [
+              28.8,
+              32.2
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.6417899999999996,
+            "mean_ci": [
+              1.6366100000000001,
+              1.6469299999999998
+            ],
+            "median": 1.646,
+            "median_ci": [
+              1.642,
+              1.6479999999999997
+            ]
+          },
+          "trains_waited": {
+            "mean": 2.479,
+            "mean_ci": [
+              2.3040000000000003,
+              2.6559999999999997
+            ],
+            "median": 2.4,
+            "median_ci": [
+              2.1999999999999997,
+              2.5
+            ]
+          },
+          "total_wait_min": {
+            "mean": 17.785,
+            "mean_ci": [
+              14.547875000000001,
+              21.145175
+            ],
+            "median": 6.800000000000001,
+            "median_ci": [
+              6.0,
+              7.9
+            ]
+          }
+        },
+        "DYNAMIC_ML_B3": {
+          "avg_delay_min": {
+            "mean": 11.502416666666665,
+            "mean_ci": [
+              11.17258125,
+              11.846252083333333
+            ],
+            "median": 10.933333333333334,
+            "median_ci": [
+              10.700000000000003,
+              11.350000000000001
+            ]
+          },
+          "total_delay_min": {
+            "mean": 138.02900000000002,
+            "mean_ci": [
+              134.07097500000003,
+              142.155025
+            ],
+            "median": 131.2,
+            "median_ci": [
+              128.4,
+              136.2
+            ]
+          },
+          "weighted_delay": {
+            "mean": 250.74899999999997,
+            "mean_ci": [
+              242.95997500000001,
+              258.80899999999997
+            ],
+            "median": 236.89999999999998,
+            "median_ci": [
+              229.8,
+              245.2
+            ]
+          },
+          "max_delay_min": {
+            "mean": 30.311,
+            "mean_ci": [
+              28.71,
+              31.954024999999998
+            ],
+            "median": 30.8,
+            "median_ci": [
+              28.8,
+              32.2
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.64177,
+            "mean_ci": [
+              1.63658,
+              1.6468999999999996
+            ],
+            "median": 1.646,
+            "median_ci": [
+              1.642,
+              1.6479999999999997
+            ]
+          },
+          "trains_waited": {
+            "mean": 2.4629999999999996,
+            "mean_ci": [
+              2.2880000000000003,
+              2.6380249999999994
+            ],
+            "median": 2.4,
+            "median_ci": [
+              2.0000000000000004,
+              2.4000000000000004
+            ]
+          },
+          "total_wait_min": {
+            "mean": 17.745,
+            "mean_ci": [
+              14.471700000000004,
+              21.160999999999998
+            ],
+            "median": 6.8,
+            "median_ci": [
+              5.8999999999999995,
+              7.6000000000000005
+            ]
+          }
+        },
+        "DYNAMIC_ML_PROP": {
+          "avg_delay_min": {
+            "mean": 11.501083333333334,
+            "mean_ci": [
+              11.171000000000001,
+              11.84543125
+            ],
+            "median": 10.933333333333334,
+            "median_ci": [
+              10.691666666666668,
+              11.350000000000001
+            ]
+          },
+          "total_delay_min": {
+            "mean": 138.013,
+            "mean_ci": [
+              134.05200000000002,
+              142.145175
+            ],
+            "median": 131.2,
+            "median_ci": [
+              128.3,
+              136.2
+            ]
+          },
+          "weighted_delay": {
+            "mean": 250.803,
+            "mean_ci": [
+              243.015775,
+              258.86917500000004
+            ],
+            "median": 236.89999999999998,
+            "median_ci": [
+              229.8,
+              245.09999999999997
+            ]
+          },
+          "max_delay_min": {
+            "mean": 30.303999999999995,
+            "mean_ci": [
+              28.697,
+              31.9501
+            ],
+            "median": 30.8,
+            "median_ci": [
+              28.8,
+              32.2
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.6417399999999998,
+            "mean_ci": [
+              1.6365499999999997,
+              1.64687
+            ],
+            "median": 1.646,
+            "median_ci": [
+              1.642,
+              1.6479999999999997
+            ]
+          },
+          "trains_waited": {
+            "mean": 2.478,
+            "mean_ci": [
+              2.303,
+              2.654
+            ],
+            "median": 2.4,
+            "median_ci": [
+              2.1999999999999997,
+              2.5999999999999996
+            ]
+          },
+          "total_wait_min": {
+            "mean": 17.801,
+            "mean_ci": [
+              14.509,
+              21.211274999999993
+            ],
+            "median": 6.8,
+            "median_ci": [
+              6.0,
+              7.699999999999999
+            ]
+          }
+        },
+        "DYNAMIC_ML_TRIGGER": {
+          "avg_delay_min": {
+            "mean": 11.520833333333336,
+            "mean_ci": [
+              11.182583333333332,
+              11.872166666666667
+            ],
+            "median": 10.933333333333334,
+            "median_ci": [
+              10.691666666666668,
+              11.308333333333334
+            ]
+          },
+          "total_delay_min": {
+            "mean": 138.25,
+            "mean_ci": [
+              134.191,
+              142.466
+            ],
+            "median": 131.2,
+            "median_ci": [
+              128.3,
+              135.7
+            ]
+          },
+          "weighted_delay": {
+            "mean": 251.072,
+            "mean_ci": [
+              243.215,
+              259.299575
+            ],
+            "median": 236.89999999999998,
+            "median_ci": [
+              229.8,
+              244.5
+            ]
+          },
+          "max_delay_min": {
+            "mean": 30.276999999999997,
+            "mean_ci": [
+              28.680974999999997,
+              31.917999999999996
+            ],
+            "median": 30.8,
+            "median_ci": [
+              28.8,
+              32.2
+            ]
+          },
+          "throughput_trains_per_hour": {
+            "mean": 1.6413099999999998,
+            "mean_ci": [
+              1.63604,
+              1.64660025
+            ],
+            "median": 1.646,
+            "median_ci": [
+              1.642,
+              1.6479999999999997
+            ]
+          },
+          "trains_waited": {
+            "mean": 2.5260000000000002,
+            "mean_ci": [
+              2.3480000000000003,
+              2.7089999999999996
+            ],
+            "median": 2.4,
+            "median_ci": [
+              2.1999999999999997,
+              2.5999999999999996
+            ]
+          },
+          "total_wait_min": {
+            "mean": 18.352,
+            "mean_ci": [
+              14.986975000000001,
+              21.862
+            ],
+            "median": 6.800000000000001,
+            "median_ci": [
+              6.199999999999999,
+              7.800000000000001
+            ]
+          }
         }
       },
       "paired_vs_no_replanning": {
@@ -1185,6 +2149,126 @@
             "wilcoxon_p": 5.5640240704760035e-24,
             "significant": true
           }
+        },
+        "DYNAMIC_ML_B2": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 137,
+            "ties": 57,
+            "losses": 6,
+            "mean_diff": -55.29,
+            "mean_diff_ci": [
+              -64.60725000000001,
+              -46.354
+            ],
+            "median_diff": -33.70000000000002,
+            "wilcoxon_p": 7.853082631005596e-25,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 133,
+            "ties": 58,
+            "losses": 9,
+            "mean_diff": -28.531999999999996,
+            "mean_diff_ci": [
+              -33.442099999999996,
+              -23.91085
+            ],
+            "median_diff": -17.5,
+            "wilcoxon_p": 2.9348601034400625e-24,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_B3": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 138,
+            "ties": 50,
+            "losses": 12,
+            "mean_diff": -55.145999999999994,
+            "mean_diff_ci": [
+              -64.42227500000001,
+              -46.25970000000002
+            ],
+            "median_diff": -33.70000000000002,
+            "wilcoxon_p": 2.655909561290337e-25,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 134,
+            "ties": 51,
+            "losses": 15,
+            "mean_diff": -28.378999999999998,
+            "mean_diff_ci": [
+              -33.24244999999999,
+              -23.808875000000004
+            ],
+            "median_diff": -16.10000000000001,
+            "wilcoxon_p": 1.3098627833116227e-24,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_PROP": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 138,
+            "ties": 50,
+            "losses": 12,
+            "mean_diff": -55.092000000000006,
+            "mean_diff_ci": [
+              -64.389575,
+              -46.19995
+            ],
+            "median_diff": -33.70000000000002,
+            "wilcoxon_p": 2.789736526833918e-25,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 134,
+            "ties": 51,
+            "losses": 15,
+            "mean_diff": -28.395,
+            "mean_diff_ci": [
+              -33.26205,
+              -23.811725000000003
+            ],
+            "median_diff": -16.799999999999997,
+            "wilcoxon_p": 1.2468057048803709e-24,
+            "significant": true
+          }
+        },
+        "DYNAMIC_ML_TRIGGER": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 136,
+            "ties": 60,
+            "losses": 4,
+            "mean_diff": -54.82299999999999,
+            "mean_diff_ci": [
+              -64.11805,
+              -45.90285
+            ],
+            "median_diff": -32.70000000000003,
+            "wilcoxon_p": 1.7683936709982086e-24,
+            "significant": true
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 133,
+            "ties": 61,
+            "losses": 6,
+            "mean_diff": -28.158,
+            "mean_diff_ci": [
+              -32.96017499999999,
+              -23.561899999999998
+            ],
+            "median_diff": -16.799999999999997,
+            "wilcoxon_p": 5.685388863747153e-24,
+            "significant": true
+          }
         }
       },
       "ml_ablation": {
@@ -1246,6 +2330,158 @@
           "wilcoxon_p": 4.326416294505702e-13,
           "significant": true
         }
+      },
+      "variants_vs_dynamic": {
+        "DYNAMIC_ML": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 4,
+            "ties": 183,
+            "losses": 13,
+            "mean_diff": -0.041999999999999885,
+            "mean_diff_ci": [
+              -0.2020250000000002,
+              0.10000000000000057
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.43462745532228175,
+            "significant": false
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 6,
+            "ties": 183,
+            "losses": 11,
+            "mean_diff": -0.021999999999999815,
+            "mean_diff_ci": [
+              -0.1279999999999994,
+              0.0640000000000002
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.41998699520344784,
+            "significant": false
+          }
+        },
+        "DYNAMIC_ML_B2": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 9,
+            "ties": 173,
+            "losses": 18,
+            "mean_diff": -0.4530000000000001,
+            "mean_diff_ci": [
+              -1.3170250000000019,
+              0.14499999999999946
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.588741948245441,
+            "significant": false
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 10,
+            "ties": 173,
+            "losses": 17,
+            "mean_diff": -0.36600000000000016,
+            "mean_diff_ci": [
+              -0.977025,
+              0.04399999999999979
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.7638313169235883,
+            "significant": false
+          }
+        },
+        "DYNAMIC_ML_B3": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 14,
+            "ties": 153,
+            "losses": 33,
+            "mean_diff": -0.30900000000000033,
+            "mean_diff_ci": [
+              -1.0549999999999993,
+              0.2739999999999992
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.2400745318367059,
+            "significant": false
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 14,
+            "ties": 153,
+            "losses": 33,
+            "mean_diff": -0.2130000000000001,
+            "mean_diff_ci": [
+              -0.7430000000000001,
+              0.19899999999999973
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.250718297290476,
+            "significant": false
+          }
+        },
+        "DYNAMIC_ML_PROP": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 14,
+            "ties": 154,
+            "losses": 32,
+            "mean_diff": -0.25500000000000056,
+            "mean_diff_ci": [
+              -0.9810250000000008,
+              0.32500000000000057
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.204941294474697,
+            "significant": false
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 14,
+            "ties": 155,
+            "losses": 31,
+            "mean_diff": -0.22899999999999957,
+            "mean_diff_ci": [
+              -0.7509999999999993,
+              0.17400000000000004
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 0.2204973149349605,
+            "significant": false
+          }
+        },
+        "DYNAMIC_ML_TRIGGER": {
+          "weighted_delay": {
+            "n": 200,
+            "wins": 0,
+            "ties": 199,
+            "losses": 1,
+            "mean_diff": 0.013999999999999915,
+            "mean_diff_ci": [
+              0.0,
+              0.041999999999999746
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 1.0,
+            "significant": false
+          },
+          "total_delay_min": {
+            "n": 200,
+            "wins": 0,
+            "ties": 199,
+            "losses": 1,
+            "mean_diff": 0.007999999999999901,
+            "mean_diff_ci": [
+              0.0,
+              0.023999999999999702
+            ],
+            "median_diff": 0.0,
+            "wilcoxon_p": 1.0,
+            "significant": false
+          }
+        }
       }
     }
   },
@@ -1256,9 +2492,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 200,
-      "solve_s_mean": 0.012515397500028485,
-      "solve_s_p95": 0.022938420008722444,
-      "solve_s_max": 0.030242499997257255,
+      "solve_s_mean": 0.014016393499914556,
+      "solve_s_p95": 0.024448630010738263,
+      "solve_s_max": 0.045440900008543395,
       "risk_buffers_total": 0,
       "decision_points_with_buffers": 0
     },
@@ -1268,9 +2504,9 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 388,
-      "solve_s_mean": 0.012343902319229265,
-      "solve_s_p95": 0.021852399999625047,
-      "solve_s_max": 0.02890109999862034,
+      "solve_s_mean": 0.014098304123913247,
+      "solve_s_p95": 0.024625035006465616,
+      "solve_s_max": 0.03169329999946058,
       "risk_buffers_total": 0,
       "decision_points_with_buffers": 0
     },
@@ -1280,11 +2516,59 @@
       "feasible": 0,
       "other": 0,
       "plans_adopted": 388,
-      "solve_s_mean": 0.01294587345358936,
-      "solve_s_p95": 0.023410039999725997,
-      "solve_s_max": 0.032589399997959845,
+      "solve_s_mean": 0.014593645360890282,
+      "solve_s_p95": 0.02650239999857149,
+      "solve_s_max": 0.03525139999692328,
       "risk_buffers_total": 1874,
       "decision_points_with_buffers": 348
+    },
+    "DYNAMIC_ML_B2": {
+      "solves": 388,
+      "optimal": 388,
+      "feasible": 0,
+      "other": 0,
+      "plans_adopted": 388,
+      "solve_s_mean": 0.01464639613419122,
+      "solve_s_p95": 0.02706371500462409,
+      "solve_s_max": 0.03737590000673663,
+      "risk_buffers_total": 1874,
+      "decision_points_with_buffers": 348
+    },
+    "DYNAMIC_ML_B3": {
+      "solves": 388,
+      "optimal": 388,
+      "feasible": 0,
+      "other": 0,
+      "plans_adopted": 388,
+      "solve_s_mean": 0.014848464175396581,
+      "solve_s_p95": 0.02712963000303716,
+      "solve_s_max": 0.042400599995744415,
+      "risk_buffers_total": 1874,
+      "decision_points_with_buffers": 348
+    },
+    "DYNAMIC_ML_PROP": {
+      "solves": 388,
+      "optimal": 388,
+      "feasible": 0,
+      "other": 0,
+      "plans_adopted": 388,
+      "solve_s_mean": 0.014831054896575617,
+      "solve_s_p95": 0.026783145000808865,
+      "solve_s_max": 0.03831730000092648,
+      "risk_buffers_total": 2834,
+      "decision_points_with_buffers": 366
+    },
+    "DYNAMIC_ML_TRIGGER": {
+      "solves": 643,
+      "optimal": 643,
+      "feasible": 0,
+      "other": 0,
+      "plans_adopted": 643,
+      "solve_s_mean": 0.01376047713875236,
+      "solve_s_p95": 0.02420756999781588,
+      "solve_s_max": 0.041780400002608076,
+      "risk_buffers_total": 0,
+      "decision_points_with_buffers": 0
     }
   },
   "single_shot_guarantee": {
@@ -1298,6 +2582,18 @@
     "note": "The by-construction claim covers the events known when the solver ran. On the full replay, disruptions that become known later can make a fixed single-shot plan worse; those cases are listed, not hidden."
   },
   "plans_differ_ml_vs_dynamic": 40,
+  "plans_differ_vs_dynamic": {
+    "DYNAMIC_ML": 40,
+    "DYNAMIC_ML_B2": 57,
+    "DYNAMIC_ML_B3": 76,
+    "DYNAMIC_ML_PROP": 83,
+    "DYNAMIC_ML_TRIGGER": 43
+  },
+  "ml_trigger": {
+    "checks": 5742,
+    "triggers": 255,
+    "scenarios_with_triggers": 121
+  },
   "scenarios": {
     "trains": 12,
     "training_runs": 3000,
@@ -1316,6 +2612,6 @@
     }
   },
   "violations": 0,
-  "replays_checked": 6000,
-  "runtime_s": 179.82541380000475
+  "replays_checked": 10800,
+  "runtime_s": 323.21338910001214
 }

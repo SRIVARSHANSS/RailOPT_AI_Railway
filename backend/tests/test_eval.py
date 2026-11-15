@@ -4,8 +4,8 @@ import pytest
 from app.services.datagen.generator import TIMETABLE
 from app.services.network import load_network
 from eval.evaluation import (
-    METHODS, TRAINING_SEED, decision_points, evaluate_scenario, fingerprint, known_at, known_from,
-    make_scenarios, training_fingerprints,
+    ALL_METHODS, METHODS, TRAINING_SEED, VARIANTS, conflict_probabilities, first_known, decision_points, evaluate_scenario, fingerprint, known_at, known_from,
+    make_scenarios, plan_features, training_fingerprints,
 )
 
 N, SEED = 10, 2026
@@ -50,7 +50,7 @@ def test_reproducible_with_the_same_seed(net, predictor, evaluated):
 
 def test_every_method_and_setting_has_a_row_and_zero_violations(evaluated):
     for s, rows, _ in evaluated:
-        assert {(r["method"], r["setting"]) for r in rows} == {(m, x) for m in METHODS for x in ("deterministic", "robustness")}
+        assert {(r["method"], r["setting"]) for r in rows} == {(m, x) for m in ALL_METHODS for x in ("deterministic", "robustness")}
         assert all(r["label"] == "SIMULATED" for r in rows)
     # evaluate_scenario asserts find_violations == [] on the deterministic replay and all 5 seeded replays
 
@@ -86,3 +86,29 @@ def test_optimal_single_shot_never_worse_than_no_replanning_on_known_events(eval
     print(f"\n[SIMULATED] OPTIMAL single-shot solves checked: {checked}, exceptions: {exceptions}")
     assert checked > 0
     assert exceptions == []
+
+
+# ---- Phase 10b: ML integration variants (pre-registered, docs/ASSUMPTIONS.md 43-46) ----
+def test_batch_scoring_matches_the_deployed_predictor(net, predictor, evaluated):
+    s = evaluated[1][0]
+    t = decision_points(s)[0]
+    known = known_at(s, t)
+    rows = plan_features(net, t, known, first_known(known))
+    batch = conflict_probabilities(predictor, rows)
+    single = [predictor.predict(r)["conflict_probability"] for r in rows]
+    assert rows and batch == pytest.approx(single, abs=1e-9)
+
+
+def test_variants_use_their_preregistered_buffers(evaluated):
+    for _, rows, plans in evaluated:
+        by = {p.method: p for p in plans}
+        for m in VARIANTS:
+            assert m in by
+        # same decision points as DYNAMIC for the buffer variants; no buffers in C
+        for m in ("DYNAMIC_ML_B2", "DYNAMIC_ML_B3", "DYNAMIC_ML_PROP"):
+            assert [x["at"] for x in by[m].solves] == [x["at"] for x in by["DYNAMIC"].solves]
+        c = by["DYNAMIC_ML_TRIGGER"]
+        assert all(x["buffers"] == 0 for x in c.solves)
+        event_solves = [x["at"] for x in c.solves if not x["triggered_by_ml"]]
+        assert event_solves == [x["at"] for x in by["DYNAMIC"].solves]          # every event still re-plans
+        assert c.trigger["triggers"] == sum(x["triggered_by_ml"] for x in c.solves)

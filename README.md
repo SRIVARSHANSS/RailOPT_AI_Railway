@@ -27,7 +27,9 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] Phase 10: evaluation on 200 SIMULATED scenarios: no re-planning, priority dispatch, RailOpt
   single-shot, dynamic, and dynamic + ML risk buffers; deterministic and robustness replays,
   bootstrap CIs and paired tests (`backend/eval/reports/eval_report.md`, generated from the JSON)
-- 83 passing tests. Remaining phases: see `CLAUDE.md`
+  - Phase 10b: pre-registered ML integration variants (bigger and probability-scaled buffers,
+    ML-triggered early re-planning), reported under "ML integration variants"
+- 85 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

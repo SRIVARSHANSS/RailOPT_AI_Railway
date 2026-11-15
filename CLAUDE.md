@@ -63,6 +63,8 @@ Rail OPT/  (project root)
   needs the trained models) writes eval/reports/{eval_results.csv,eval_summary.json,eval_report.md,*.png}
   (committed). eval_report.md is generated from the JSON: never edit numbers by hand. Seed 42 is the
   training seed and is refused; tests/test_eval.py checks no scenario overlaps the training data.
+  Phase 10b ML integration variants (B2/B3 buffers, round(3p) buffers, ML-triggered re-planning) are
+  pre-registered in docs/ASSUMPTIONS.md 43-46 and run in the same evaluation; report every result.
 - Optimizer demo: `python -m app.services.optimizer.run_demo`. Call a plan optimal only when the
   CP-SAT status is OPTIMAL; strategy D is named COMBINED for that reason. All metrics come from the replay.
 - API (thin layer, Phase 8 adds Postgres + JWT): from backend/ `uvicorn app.main:app` (dev: --reload), docs at
@@ -84,7 +86,7 @@ Rail OPT/  (project root)
   API start, reset, event and decision. The frontend caches the optimizer result with it and drops the
   cache (and the recommendation alert) when the server reports another version; the tab's own
   decision adopts the new version (useScenarioVersionGuard in api/hooks.ts, /scenario polled every 5 s).
-- 83 tests passing.
+- 85 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;

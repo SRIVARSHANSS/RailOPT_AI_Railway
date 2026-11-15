@@ -302,3 +302,27 @@ accepted plan" (weighted 69): the recommendation repeats the plan already in for
 42. **Statistics**: per-scenario values; 95% percentile bootstrap CIs (10,000 resamples,
     seeded) for mean and median; paired differences vs no re-planning, called significant
     only when the CI of the mean difference excludes 0 (Wilcoxon p reported alongside).
+
+## Phase 10b: ML integration variants (pre-registered before any run)
+
+Written down before implementing or running them; all results are reported, helpful or not.
+Same 200 scenarios (seed 2026), both settings, same statistics; each variant is compared
+with plain DYNAMIC (the ML-free reference) and with no re-planning.
+
+43. **A - fixed buffers of 2 and 3 min** (`DYNAMIC_ML_B2`, `DYNAMIC_ML_B3`): exactly
+    `DYNAMIC_ML` (features on the plan-free projection, flag = conflict probability >= the
+    deployed recall >= 0.80 threshold), but each flagged trip gets +2 / +3 min headway.
+44. **B - proportional buffers** (`DYNAMIC_ML_PROP`): every upcoming trip gets
+    round(3 x p) min headway (half rounds up; p < 1/6 gives 0), flagged or not. Same features.
+45. **C - ML-triggered early re-planning** (`DYNAMIC_ML_TRIGGER`): DYNAMIC (re-solve at every
+    newly known event, no buffers) plus model checks every 10 min from the first decision
+    point to the last timetabled arrival. At each check the features are built on the
+    current plan's projection (accepted holds and reroutes) with the events known then. A
+    train is "newly high-risk" when the model flags one of its upcoming trips (p >= the
+    deployed threshold), the rule-based detector has no conflict for that trip, and the
+    train was not flagged at any earlier check. Any newly high-risk train triggers a COMBINED
+    re-solve on top of the current plan (started trips fixed). Flags seen at an event-time
+    check count as seen.
+46. Batch scoring for 10b uses the same preprocessing and conflict model as the deployed
+    predictor (probabilities only, no SHAP); tests check it matches `Predictor.predict`.
+

@@ -19,7 +19,7 @@ import pandas as pd
 from app.services.datagen.generator import TIMETABLE
 from app.services.network import load_network
 from eval.evaluation import (
-    CLOSURE_NOTICE_MIN, METHODS, RAILOPT, REPLAYS, SIMULATED_NOTE, TRAINING_RUNS, TRAINING_SEED,
+    ALL_METHODS, CLOSURE_NOTICE_MIN, METHODS, RAILOPT, REPLAYS, VARIANTS, SIMULATED_NOTE, TRAINING_RUNS, TRAINING_SEED,
     evaluate_scenario, fingerprint, make_scenarios, training_fingerprints,
 )
 from eval.report import summarize, write_charts, write_report, write_summary
@@ -32,6 +32,10 @@ METHOD_TEXT = {
     "SINGLE_SHOT": "COMBINED CP-SAT once, when the first disruption becomes known",
     "DYNAMIC": "COMBINED re-solved whenever a new event becomes known, on top of the current plan (started trips fixed, 120-min horizon)",
     "DYNAMIC_ML": "dynamic + ML risk buffers (+1 min headway on trips the conflict model flags)",
+    "DYNAMIC_ML_B2": "as dynamic + ML with +2 min on flagged trips (10b, A)",
+    "DYNAMIC_ML_B3": "as dynamic + ML with +3 min on flagged trips (10b, A)",
+    "DYNAMIC_ML_PROP": "every upcoming trip gets round(3 x conflict probability) min (10b, B)",
+    "DYNAMIC_ML_TRIGGER": "dynamic + a model check every 10 min; a newly flagged train with no rule conflict triggers a re-solve (10b, C)",
 }
 
 
@@ -52,14 +56,22 @@ def run(n: int, seed: int, replays: int = REPLAYS, predictor=None, check_overlap
             raise SystemExit(f"{overlap} evaluation scenarios also occur in the training data - choose another seed")
 
     rows, solves, guarantee, ml_differ = [], {m: [] for m in RAILOPT}, [], 0
+    differ = {m: 0 for m in ["DYNAMIC_ML", *VARIANTS]}
+    trig = {"checks": 0, "triggers": 0, "scenarios_with_triggers": 0}
     for i, s in enumerate(scenarios):
-        r, plans = evaluate_scenario(net, s, i, seed, predictor, METHODS, replays)
+        r, plans = evaluate_scenario(net, s, i, seed, predictor, ALL_METHODS, replays)
         rows += r
         by = {p.method: p for p in plans}
         for m in RAILOPT:
             solves[m] += [{**x, "scenario_id": s.run_id} for x in by[m].solves]
         guarantee.append({**by["SINGLE_SHOT"].guarantee, "scenario_id": s.run_id})
         ml_differ += (by["DYNAMIC_ML"].holds, by["DYNAMIC_ML"].overrides) != (by["DYNAMIC"].holds, by["DYNAMIC"].overrides)
+        for m in differ:
+            differ[m] += (by[m].holds, by[m].overrides) != (by["DYNAMIC"].holds, by["DYNAMIC"].overrides)
+        t = by["DYNAMIC_ML_TRIGGER"].trigger
+        trig["checks"] += t["checks"]
+        trig["triggers"] += t["triggers"]
+        trig["scenarios_with_triggers"] += t["triggers"] > 0
         if progress and (i + 1) % 20 == 0:
             print(f"  {i + 1}/{n} scenarios, {time.perf_counter() - started:.0f} s", flush=True)
 
@@ -67,6 +79,7 @@ def run(n: int, seed: int, replays: int = REPLAYS, predictor=None, check_overlap
     config = {"scenarios": n, "seed": seed, "timetable": TIMETABLE, "replays": replays, "bootstrap": BOOTSTRAP,
               "closure_notice_min": CLOSURE_NOTICE_MIN, "methods": METHOD_TEXT}
     info = {"solves": solves, "guarantee": guarantee, "ml_plans_differ": ml_differ,
+            "plans_differ_vs_dynamic": differ, "ml_trigger": trig,
             "scenarios": {"trains": len(net.schedules), "training_runs": TRAINING_RUNS, "training_seed": TRAINING_SEED,
                           "overlap_with_training": overlap,
                           "disruptions_total": sum(types.values()),
@@ -74,7 +87,7 @@ def run(n: int, seed: int, replays: int = REPLAYS, predictor=None, check_overlap
                           "types": dict(sorted(types.items()))}}
     summary = summarize(rows, info, config)
     summary["violations"] = 0                                   # evaluate_scenario asserts on every replay
-    summary["replays_checked"] = n * len(METHODS) * (1 + replays)
+    summary["replays_checked"] = n * len(ALL_METHODS) * (1 + replays)
     summary["runtime_s"] = time.perf_counter() - started
     return rows, summary
 
@@ -100,13 +113,13 @@ def main(argv: list[str] | None = None) -> None:
     print(f"done in {summary['runtime_s']:.0f} s; wrote {a.out}")
     for setting in ("deterministic", "robustness"):
         print(f"\n[{setting}] weighted delay per scenario: mean [95% CI]")
-        for m in METHODS:
+        for m in ALL_METHODS:
             v = summary["settings"][setting]["methods"][m]["weighted_delay"]
             p = summary["settings"][setting]["paired_vs_no_replanning"].get(m, {}).get("weighted_delay")
             vs = "" if p is None else (f"  vs no re-planning W/T/L {p['wins']}/{p['ties']}/{p['losses']}, "
                                        f"diff {p['mean_diff']:.1f} [{p['mean_diff_ci'][0]:.1f}, {p['mean_diff_ci'][1]:.1f}]"
                                        f"{'' if p['significant'] else ' NOT significant'}")
-            print(f"  {m:<18} {v['mean']:7.1f} [{v['mean_ci'][0]:.1f}, {v['mean_ci'][1]:.1f}]{vs}")
+            print(f"  {m:<19} {v['mean']:7.1f} [{v['mean_ci'][0]:.1f}, {v['mean_ci'][1]:.1f}]{vs}")
 
 
 if __name__ == "__main__":
