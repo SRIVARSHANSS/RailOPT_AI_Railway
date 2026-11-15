@@ -42,7 +42,9 @@ and is not connected to Indian Railways systems. All results are simulated.
     "date": "2024-09-12"}`): trains move by their recorded times (interpolated between recorded
     stations), hypothetical events and decisions on top are labelled "HYPOTHETICAL on a real recorded
     day"; loops per station (ASSUMED), headway calibrated on the recordings, HOLD / RESEQUENCE only
-- 115 passing tests. Remaining phases: see `CLAUDE.md`
+- The API starts on the REAL recorded demo day (Dindigul -> Madurai, 2024-09-12); set
+  `RAILOPT_BOOT=simulated` to start on the SIMULATED sample corridor.
+- 116 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

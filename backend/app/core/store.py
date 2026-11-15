@@ -229,7 +229,27 @@ class ScenarioStore:
             return rec
 
 
-_store = ScenarioStore()
+def boot_store() -> ScenarioStore:
+    """The API's scenario at server start.
+
+    Default: the REAL recorded demo day (DG -> MDU, replay mode). RAILOPT_BOOT=simulated starts on
+    the SIMULATED reference corridor instead; so does a checkout without the REAL extract.
+    Tests use a fresh ScenarioStore() (SIMULATED reference) and are not affected."""
+    import os
+    store = ScenarioStore()
+    if os.environ.get("RAILOPT_BOOT", "replay").strip().lower() == "simulated":
+        return store
+    try:
+        from app.services.realdata.replay import DEMO_DAY
+        store.reset("dg_mdu", "replay", DEMO_DAY)
+        store.revision = 0
+    except (OSError, ValueError) as exc:          # no REAL extract: stay on the SIMULATED corridor
+        log.warning("REAL demo day not available (%s); booting on the SIMULATED reference corridor", exc)
+        store = ScenarioStore()
+    return store
+
+
+_store = boot_store()
 
 
 def get_store() -> ScenarioStore:

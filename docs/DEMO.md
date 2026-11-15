@@ -31,6 +31,8 @@ Notes before presenting:
   (sessionStorage): a page refresh keeps them; the clock always comes back paused.
   The optimizer result is tied to the API's scenario version: after an API restart, a reset or
   a new event it is dropped automatically (within about 5 s), so no outdated recommendation lingers.
+- The API starts on the REAL recorded day (DG -> MDU, 2024-09-12, label REAL). Acts 1-2 use the
+  SIMULATED corridor, so step 2 (Demo reset) switches to it; Act 3 loads the real day again.
 - **Demo reset** (Disruptions -> Scenario) does everything in one click: reference timetable,
   no events, no plan, session state cleared, clock at 09:55.
 

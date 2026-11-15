@@ -113,7 +113,9 @@ Rail OPT/  (project root)
   PREMIUM 1 / SUPERFAST 2 / EXPRESS 3, weights = 4 - priority. Only HOLD and RESEQUENCE (no
   alternate line); every replay optimize also reports the headway-4 sensitivity. Simulated stations
   have loops = None: nothing changes there. ML models are not applied to real data.
-- 115 tests passing.
+- The API boots on the REAL demo day (dg_mdu replay, 2024-09-12; `boot_store()` in app/core/store.py).
+  `RAILOPT_BOOT=simulated` boots on the SIMULATED reference corridor; tests use a fresh ScenarioStore() (reference).
+- 116 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;

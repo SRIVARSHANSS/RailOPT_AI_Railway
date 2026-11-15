@@ -135,3 +135,14 @@ def test_calibration_report_matches_a_fresh_run(tmp_path):
     out = json.loads(json.dumps(CAL.calibrate(tmp_path / "dg_mdu"), default=str))
     assert out == json.loads(stored.read_text(encoding="utf-8"))
     assert out["recorded_gaps"]["pairs"] == 75 and out["largest_headway_respected_by_recorded_pairs"] == 0
+
+
+def test_api_boots_on_the_real_demo_day(monkeypatch):
+    from app.core.store import boot_store
+    monkeypatch.delenv("RAILOPT_BOOT", raising=False)
+    s = boot_store()
+    assert s.is_replay and s.timetable == "dg_mdu" and s.replay_date == DEMO_DAY
+    assert s.label() == "REAL" and s.revision == 0
+    monkeypatch.setenv("RAILOPT_BOOT", "simulated")
+    s = boot_store()
+    assert not s.is_replay and s.timetable == "reference" and s.label() == "SIMULATED"
