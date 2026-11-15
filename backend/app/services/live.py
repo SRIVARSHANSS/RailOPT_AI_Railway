@@ -231,23 +231,47 @@ def explain(net: RailNetwork, best, base, conflicts) -> dict:
 # ---------------------------------------------------------------------------
 # timeline
 # ---------------------------------------------------------------------------
-def timeline_rows(net: RailNetwork, result: SimResult) -> list[dict]:
+def timeline_rows(net: RailNetwork, result: SimResult, disruptions: list[Disruption] | None = None) -> list[dict]:
+    """One row per section trip, ready to draw on a time-distance chart.
+
+    stops      [start, end) windows the train stood still inside the section (stoppages)
+    delay_min  exit compared with the timetabled arrival at the row's end station
+    alternate  the trip ran on a standby (alternate) line
+    """
     rows = []
     for o in sorted(result.occupancies, key=lambda o: (o.train_id, o.entry)):
         sec = net.sections[o.section_id]
+        sched_arr = next((s.sched_arr for s in net.schedules[o.train_id] if s.station == sec.to_station), None)
         rows.append({"train_id": o.train_id, "section_id": o.section_id,
                      "from_station": sec.from_station, "to_station": sec.to_station,
                      "from_km": net.stations[sec.from_station].km_from_start,
                      "to_km": net.stations[sec.to_station].km_from_start,
                      "entry_min": o.entry, "exit_min": o.exit,
                      "entry": format_time(o.entry), "exit": format_time(o.exit),
-                     "wait_min": o.wait, "stopped_min": o.stopped_min})
+                     "wait_min": o.wait, "stopped_min": o.stopped_min,
+                     "stops": [{"start_min": s, "end_min": e} for s, e in _stop_windows(o, disruptions or [])],
+                     "delay_min": None if sched_arr is None else o.exit - sched_arr,
+                     "alternate": sec.status == "standby"})
     return rows
 
 
 def planned_timeline(net: RailNetwork) -> list[dict]:
     """The timetable as occupancies (no disruptions: the normal day is conflict-free)."""
     return timeline_rows(net, simulate(net))
+
+
+def closure_blocks(net: RailNetwork, events: list[Disruption]) -> list[dict]:
+    """Posted track closures (known once posted) as blocks for the chart."""
+    out = []
+    for e in events:
+        if e.event_type != "TRACK_UNAVAILABLE" or e.location not in net.sections:
+            continue
+        sec = net.sections[e.location]
+        out.append({"event_id": e.event_id, "section_id": e.location,
+                    "from_km": net.stations[sec.from_station].km_from_start,
+                    "to_km": net.stations[sec.to_station].km_from_start,
+                    "start_min": e.start, "end_min": e.end, "start": format_time(e.start), "end": format_time(e.end)})
+    return out
 
 
 # ---------------------------------------------------------------------------

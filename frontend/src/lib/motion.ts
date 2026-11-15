@@ -7,6 +7,7 @@ export const duration = {
   base: 0.22,
   slow: 0.36,
   route: 0.5, // page wipe; must stay under 0.6 s
+  draw: 1.2, // one-off line drawing of the time-distance chart (first load only)
 } as const
 
 export const ease = {

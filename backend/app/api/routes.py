@@ -27,6 +27,7 @@ from app.schemas.api import (
 from app.services import live
 from app.services.conflicts import detect_conflicts, project_plan
 from app.services.network import RailNetwork, format_time, parse_time
+from app.services.simulator import simulate
 
 router = APIRouter(prefix="/api")
 
@@ -236,7 +237,18 @@ def decide(rec_id: str, req: DecisionRequest, store: ScenarioStore = Depends(get
 
 @router.get("/timeline", response_model=TimelineOut)
 def timeline(store: ScenarioStore = Depends(get_store)):
+    """Time-distance data. `actual` = every posted event + the accepted plan (what happens);
+    `before_plan` = the same events under the plan the accepted one replaced (none if it replaced
+    nothing); null while no plan is accepted."""
     net = store.network()
+    before = None
+    if store.applied_recommendation is not None:
+        replay = simulate(net, store.events, route_overrides=store.previous_overrides or None,
+                          holds=store.previous_holds or None)
+        before = live.timeline_rows(net, replay, store.events)
     return TimelineOut(timetable=store.timetable, stations=_stations(net),
-                       planned=live.planned_timeline(net), actual=live.timeline_rows(net, store.actual()),
-                       applied_recommendation=store.applied_recommendation)
+                       planned=live.planned_timeline(net), actual=live.timeline_rows(net, store.actual(), store.events),
+                       before_plan=before, closures=live.closure_blocks(net, store.events),
+                       applied_recommendation=store.applied_recommendation,
+                       previous_plan=next((d["replaces"] for d in reversed(store.decision_log) if d["decision"] == "accept"), None)
+                       if store.applied_recommendation else None)

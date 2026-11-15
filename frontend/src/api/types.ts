@@ -79,3 +79,27 @@ export type WhatIfResult = Labelled & {
   current: WhatIfSide; hypothetical: WhatIfSide; note: string
 }
 export type DecisionResult = Labelled & { scenario_version: string; recommendation_id: string; decision: string; applied_recommendation: string | null; decision_log: DecisionLogEntry[] }
+
+// ---- GET /api/timeline (time-distance chart) ----
+export type TimelineRow = {
+  train_id: string; section_id: string; from_station: string; to_station: string
+  from_km: number; to_km: number; entry_min: number; exit_min: number; entry: string; exit: string
+  wait_min: number; stopped_min: number
+  stops: { start_min: number; end_min: number }[]
+  delay_min: number | null
+  alternate: boolean
+}
+export type ClosureBlock = {
+  event_id: string; section_id: string; from_km: number; to_km: number
+  start_min: number; end_min: number; start: string; end: string
+}
+export type Timeline = Labelled & {
+  timetable: Timetable
+  stations: Station[]
+  planned: TimelineRow[]
+  actual: TimelineRow[]
+  before_plan: TimelineRow[] | null
+  closures: ClosureBlock[]
+  applied_recommendation: string | null
+  previous_plan: string | null
+}

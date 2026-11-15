@@ -80,7 +80,7 @@ Rail OPT/  (project root)
   API start, reset, event and decision. The frontend caches the optimizer result with it and drops the
   cache (and the recommendation alert) when the server reports another version; the tab's own
   decision adopts the new version (useScenarioVersionGuard in api/hooks.ts, /scenario polled every 5 s).
-- 75 tests passing.
+- 78 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -88,6 +88,12 @@ Rail OPT/  (project root)
   reduced motion. Every screen shows the SIMULATED badge. Never show invented numbers in the UI:
   data comes from the API, gallery examples are labelled as examples. framer-motion is pinned with
   npm overrides for motion-dom / motion-utils (12.18.1); keep them in step when upgrading.
+- Timeline (src/pages/Timeline.tsx, src/features/timeline/): time-distance chart, D3 (scales, zoom,
+  line) inside React. Rows, stops, waits, delays, closures and before_plan all come from /api/timeline
+  (before_plan = replay under the plan the accepted one replaced, null without a plan); conflicts
+  from /api/conflicts at the sim clock. Alternate (standby) sections are drawn as a lane offset
+  LANE_DY px below their main section. Only exception to "transform/opacity only": the one-off
+  first-load line drawing (pathLength / stroke-dashoffset, duration.draw), off under reduced motion.
 - Console motion rules: trains glide only from the API state at minute m to m+1, sampled along the
   SVG track (getPointAtLength) and through the station node on a section change; any clock jump
   (scrub, reset, backwards) snaps. The UI never computes railway logic: positions, delays, `stopped`,
@@ -111,7 +117,7 @@ Rail OPT/  (project root)
 - [x] Phase 6: what-if (POST /api/whatif, What-If Studio) + re-optimization on top of an accepted plan
 - [ ] Phase 7: explainer
 - [ ] Phase 8: FastAPI + PostgreSQL + auth
-- [x] Phase 9: React frontend - design system, shell, login, Traffic Console, Disruptions, Strategies
-  (demo: docs/DEMO.md). Timeline page is still a placeholder.
+- [x] Phase 9: React frontend - design system, shell, login, Traffic Console, Disruptions, Strategies,
+  What-if, Timeline (time-distance chart) (demo: docs/DEMO.md).
 - [ ] Phase 10: evaluation
 - [ ] Phase 11: Docker, README, demo script

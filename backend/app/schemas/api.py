@@ -290,13 +290,36 @@ class TimelineRow(BaseModel):
     exit_min: int
     entry: str
     exit: str
-    wait_min: int
+    wait_min: int = Field(description="minutes held at the signal before entering")
     stopped_min: int
+    stops: list[StopWindow] = Field(default_factory=list, description="stood still inside the section")
+    delay_min: int | None = Field(None, description="exit vs timetabled arrival at to_station")
+    alternate: bool = Field(False, description="ran on a standby (alternate) line")
+
+
+class StopWindow(BaseModel):
+    start_min: int
+    end_min: int
+
+
+class ClosureBlock(BaseModel):
+    event_id: str
+    section_id: str
+    from_km: float
+    to_km: float
+    start_min: int
+    end_min: int
+    start: str
+    end: str
 
 
 class TimelineOut(Labelled):
     timetable: str
     stations: list[StationOut]
     planned: list[TimelineRow]
-    actual: list[TimelineRow]
+    actual: list[TimelineRow] = Field(description="every posted event + the accepted plan")
+    before_plan: list[TimelineRow] | None = Field(
+        None, description="same events under the plan the accepted one replaced (no plan if none); null without a plan")
+    closures: list[ClosureBlock] = Field(default_factory=list)
     applied_recommendation: str | None
+    previous_plan: str | None = Field(None, description="plan the accepted one replaced (before_plan basis)")

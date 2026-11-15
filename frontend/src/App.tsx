@@ -13,9 +13,9 @@ import { Disruptions } from './pages/Disruptions'
 import { Strategies } from './pages/Strategies'
 import { WhatIf } from './pages/WhatIf'
 import { Login } from './pages/Login'
-import { Placeholder } from './pages/Placeholder'
 import { useSession } from './store/session'
 
+const Timeline = lazy(() => import('./pages/Timeline').then((m) => ({ default: m.Timeline })))
 const DesignSystem = lazy(() => import('./pages/DesignSystem').then((m) => ({ default: m.DesignSystem })))
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: false } } })
@@ -42,7 +42,7 @@ export default function App() {
                   <Route path="/disruptions" element={<Disruptions />} />
                   <Route path="/strategies" element={<Strategies />} />
                   <Route path="/whatif" element={<WhatIf />} />
-                  <Route path="/timeline" element={<Placeholder title="Timeline" what="Planned vs actual time-distance chart." />} />
+                  <Route path="/timeline" element={<Timeline />} />
                   <Route path="/design" element={<DesignSystem />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/console" replace />} />

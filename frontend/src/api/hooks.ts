@@ -5,7 +5,7 @@ import { api } from '../lib/api'
 import { fmt } from '../lib/time'
 import { useConsole } from '../store/sim'
 import type {
-  ConflictsAt, DecisionResult, EventType, Network, OptimizeResult, Scenario, StateAt, Timetable, WhatIfResult,
+  ConflictsAt, DecisionResult, EventType, Network, OptimizeResult, Scenario, StateAt, Timeline, Timetable, WhatIfResult,
 } from './types'
 
 export const qk = {
@@ -13,6 +13,7 @@ export const qk = {
   network: (t: Timetable) => ['network', t] as const,
   state: (m: number) => ['state', m] as const,
   conflicts: (m: number) => ['conflicts', m] as const,
+  timeline: ['timeline'] as const,
 }
 
 export const useScenario = () =>
@@ -43,6 +44,9 @@ export const useConflictsAt = (minute: number) =>
     retry: false,
   })
 
+export const useTimeline = () =>
+  useQuery({ queryKey: qk.timeline, queryFn: () => api<Timeline>('/api/timeline'), retry: false })
+
 /** Anything that changes the scenario invalidates every time-based view. */
 function useInvalidateScenario() {
   const qc = useQueryClient()
@@ -50,6 +54,7 @@ function useInvalidateScenario() {
     qc.invalidateQueries({ queryKey: qk.scenario })
     qc.invalidateQueries({ queryKey: ['state'] })
     qc.invalidateQueries({ queryKey: ['conflicts'] })
+    qc.invalidateQueries({ queryKey: qk.timeline })
   }, [qc])
 }
 

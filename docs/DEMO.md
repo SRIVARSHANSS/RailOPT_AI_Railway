@@ -69,6 +69,13 @@ Notes before presenting:
    - **Talking point:** the AI watch on T303 has turned **green and struck through -
      "Risk resolved by accepted plan"** (in the accepted plan's replay T303 waits 0 min).
      The CRITICAL alert is gone because the detector now plans with the reroute.
+   - **Optional - the time-distance chart.** Open *Timeline*. In *Planned vs actual* the solid lines
+     are the simulated day: T101 goes flat inside B-C (10:03-10:18), dashed lines are the timetable.
+     Switch to **Before vs after plan**: dashed = no plan (T202 and T303 wait at B, red ticks
+     "wait 15" / "wait 13"), solid = accepted R1: T202 steps into the S_BC_ALT lane at B and back out
+     at C, and T303 runs straight through - the lines un-bend. Hover a line for entry/exit and
+     delay; click a train to follow it; scroll to zoom the time axis. (Before Accept, at 10:03, the
+     same chart shows the red CRITICAL band "T202 overlap 10:13-10:28" on B-C.)
 8. **T202 on the alternate line.** Press *Play* again. At **10:13** T202 leaves B and
    glides along the curved S_BC_ALT (it follows the track, it does not cut across),
    reaching C about 10:31. T101 stays stopped in B-C until 10:18 ("stopped in S_BC").

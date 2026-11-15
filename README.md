@@ -22,8 +22,9 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] Phase 9 part 1: design system "Midnight Signal", app shell, cinematic login (`frontend/`)
 - [x] Phase 9 part 2: Traffic Console (live corridor map), Disruption Panel, Strategy Comparison
   - step-by-step demo with talking points: `docs/DEMO.md`
+  - Timeline: time-distance (Marey) chart, planned vs actual and before vs after the accepted plan (D3)
 - [x] Phase 6: what-if studio (HYPOTHETICAL copy) and re-optimization on top of an accepted plan
-- 75 passing tests. Remaining phases: see `CLAUDE.md`
+- 78 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -86,7 +87,7 @@ docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
 | GET | `/api/conflicts?at=HH:MM` | detector conflicts + ML probability and top drivers, ML watchlist |
 | POST | `/api/optimize` | strategy comparison (replayed) + recommendation with explanation |
 | POST | `/api/recommendation/{id}/decision` | accept (applies holds / reroutes) or reject; both logged |
-| GET | `/api/timeline` | planned and actual occupancies for a time-distance chart |
+| GET | `/api/timeline` | planned, actual and before-plan trips (stops, waits, delays) + closures for the time-distance chart |
 | POST | `/api/whatif` | HYPOTHETICAL: 1-3 events on a copy of the scenario, compared with the current one |
 
 Detection, prediction and re-planning only see events known at `at`. A
