@@ -277,3 +277,28 @@ After the accepted reroute R1, S_BC is closed for planned maintenance 10:30-10:5
 A later T202 +5 min delay at C (10:33) re-optimizes to "no strategy improves on keeping the
 accepted plan" (weighted 69): the recommendation repeats the plan already in force.
 
+## Phase 10: evaluation (assumptions)
+
+37. **Evaluation scenarios**: the Phase 2 generator logic (`sample_run`, full-day timetable,
+    12 trains, 1-3 disruptions of 5-30 min, 0-5 min starting delays) with seed 2026. The
+    3000 training scenarios (seed 42) are rebuilt and fingerprinted; no evaluation scenario
+    may match one (checked in tests/test_eval.py and by the CLI).
+38. **Closure posting rule**: a TRACK_UNAVAILABLE is posted 30 min before it starts, or at
+    06:00 if that is later; it is known from posting. Stoppages and delays are known at their
+    start; starting delays are known from the start (as in Phase 2).
+39. **RailOpt methods** use the COMBINED strategy. Single-shot solves once, when the first
+    disruption becomes known; dynamic solves again at every time a new event becomes known,
+    on top of the plan in force (started trips fixed, 120-min horizon); dynamic + ML adds the
+    optional risk buffers (+1 min headway on trips the conflict model flags). A method adopts
+    the solver's plan whenever the solve returns one (OPTIMAL or FEASIBLE).
+40. **Settings**: deterministic = one replay with all events, rng=None. Robustness = the same
+    plans, fixed in advance, replayed 5 times under the Phase 2 variability with the same
+    seeds for every method (common random numbers); a scenario's value is the mean of its 5
+    replays. In use, RailOpt would re-plan again as actual times drift; that is not modelled.
+41. **Metrics** come from replays only: delay at destination (average per train, total,
+    priority-weighted with 3/2/1, maximum), throughput, trains that waited at least once and
+    total wait minutes (planned holds count as waiting). Every replay is checked for
+    violations (asserted zero).
+42. **Statistics**: per-scenario values; 95% percentile bootstrap CIs (10,000 resamples,
+    seeded) for mean and median; paired differences vs no re-planning, called significant
+    only when the CI of the mean difference excludes 0 (Wilcoxon p reported alongside).

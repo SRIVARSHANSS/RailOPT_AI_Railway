@@ -24,7 +24,10 @@ and is not connected to Indian Railways systems. All results are simulated.
   - step-by-step demo with talking points: `docs/DEMO.md`
   - Timeline: time-distance (Marey) chart, planned vs actual and before vs after the accepted plan (D3)
 - [x] Phase 6: what-if studio (HYPOTHETICAL copy) and re-optimization on top of an accepted plan
-- 78 passing tests. Remaining phases: see `CLAUDE.md`
+- [x] Phase 10: evaluation on 200 SIMULATED scenarios: no re-planning, priority dispatch, RailOpt
+  single-shot, dynamic, and dynamic + ML risk buffers; deterministic and robustness replays,
+  bootstrap CIs and paired tests (`backend/eval/reports/eval_report.md`, generated from the JSON)
+- 83 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -46,6 +49,7 @@ python -m app.services.optimizer.run_demo   # strategy comparison for the T101 s
 uvicorn app.main:app                        # API on http://127.0.0.1:8000, docs at /docs (demos: no --reload)
 python -m app.services.datagen.generate --runs 3000 --seed 42   # SIMULATED training rows -> data/generated/
 python -m ml.train                          # models -> ml/models/, reports -> ml/reports/ (~3 min)
+python -m eval.run_eval --scenarios 200 --seed 2026   # Phase 10 evaluation -> eval/reports/
 ```
 
 Frontend (second terminal):
