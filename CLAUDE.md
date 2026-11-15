@@ -97,7 +97,12 @@ Rail OPT/  (project root)
   `python -m app.services.realdata.extract` then `python -m app.services.realdata.audit`
   (audit.md is generated: never edit numbers by hand). DG chainage is DERIVED, platforms/headway/
   min run ASSUMED (ASSUMPTIONS.md 47-56). No scraping of NTES/IRCTC or any website.
-- 99 tests passing.
+- Real delay validation (Step 2, pre-registered in ASSUMPTIONS.md 57-63): from backend/
+  `python -m ml.real_delay` (~10 s) writes ml/reports/real/{metrics_real.json, model_card_real.md,
+  predictions_real.csv} (committed; card generated from the JSON). Split by DG date, train-mean
+  feature from training dates only; carry-the-DG-delay is the baseline to beat. The SIMULATED
+  Phase 4 models are not trained on real data.
+- 103 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -145,5 +150,6 @@ Rail OPT/  (project root)
 - [x] Phase 10: evaluation on 200 SIMULATED scenarios (backend/eval; results: eval/reports/eval_report.md)
 - [ ] Phase 11: Docker, README, demo script
 - [~] Real data phase, Dindigul -> Madurai: [x] Step 1 corridor, timetable, extract, audit
-  (backend/data/real/dg_mdu/audit.md)  [ ] Step 2 real delay model validation
+  (backend/data/real/dg_mdu/audit.md)  [x] Step 2 real delay model validation
+  (ml/reports/real/model_card_real.md)
   [ ] Step 3 real-day replay mode

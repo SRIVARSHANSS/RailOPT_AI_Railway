@@ -3,6 +3,8 @@
 **SIMULATED data - sample corridor, synthetic disruptions, not real railway records.** These models are trained and evaluated only on simulated runs of the
 sample corridor. Nothing here is a measurement of real Indian Railways operations.
 All numbers below are generated from `metrics.json` (shown to 3 decimals).
+These models were not trained on real data. A separate validation on REAL recorded
+Dindigul -> Madurai runs (Sept 2024) is in `reports/real/model_card_real.md`.
 
 ## Data and split
 - 68011 rows from 2945 simulated runs (`training_rows.csv`), seed 42 (3000 runs generated; runs where every train had already entered its sections at state time give no rows).

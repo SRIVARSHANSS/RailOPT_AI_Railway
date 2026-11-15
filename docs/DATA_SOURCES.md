@@ -48,6 +48,11 @@ Per-train source and date checked are in `backend/data/real/dg_mdu/trains.csv`
 - **Tracks**: one track per direction (owner-supplied: "twin single line").
 - **Platforms, minimum headway, minimum running times**: not public, **ASSUMED** (ASSUMPTIONS.md 49-51).
 
+## REAL: derived results
+
+- `backend/ml/reports/real/` (Step 2 delay model validation): computed only from the corridor
+  extract above; `predictions_real.csv` contains derived REAL rows (CC BY-SA 4.0, same attribution).
+
 ## Not used
 
 - NTES, IRCTC and other live-status or booking websites: not scraped, not used.

@@ -393,6 +393,8 @@ def render_model_card(m: dict) -> str:
         f"**{m['note']}.** These models are trained and evaluated only on simulated runs of the",
         "sample corridor. Nothing here is a measurement of real Indian Railways operations.",
         "All numbers below are generated from `metrics.json` (shown to 3 decimals).",
+        "These models were not trained on real data. A separate validation on REAL recorded",
+        "Dindigul -> Madurai runs (Sept 2024) is in `reports/real/model_card_real.md`.",
         "",
         "## Data and split",
         f"- {m['data']['rows']} rows from {m['data']['runs']} simulated runs (`{m['data']['csv']}`), seed {m['seed']}"

@@ -1,0 +1,1738 @@
+{
+  "data_label": "REAL",
+  "note": "Recorded Sept 2024 running data, DG -> MDU (RSTGCN dataset, CC BY-SA 4.0). The SIMULATED Phase 4 models were not trained on real data and are unchanged.",
+  "design": "docs/ASSUMPTIONS.md 57-63 (pre-registered)",
+  "split": {
+    "train": "DG dates <= 2024-09-22",
+    "test": "DG dates > 2024-09-22"
+  },
+  "rows_total": 682,
+  "flagged_runs": 39,
+  "flagged_in_test": 5,
+  "bootstrap": {
+    "resamples": 10000,
+    "seed": 2024,
+    "clustered_resamples": 2000
+  },
+  "inputs": {
+    "runs.csv": "62fca820b9d871a856aa077a047253c37aa7579dfdd59acca2a227f8fb61593d",
+    "trains.csv": "04431ba18ff544cd852603b1c8a896b52926726c25c82b8410526e22acbb811c",
+    "schedule.csv": "b91532a47f9993461c135c7542ac13f12bb4fd198f00ec0831da8de9da21f623"
+  },
+  "methods": {
+    "CARRY": "B0 carry the DG delay",
+    "LINEAR": "B1 linear regression",
+    "RF": "Random forest",
+    "XGB": "XGBoost"
+  },
+  "analyses": {
+    "main": {
+      "label": "Main (39 flagged runs excluded)",
+      "n_train": 445,
+      "n_test": 198,
+      "train_trains": 44,
+      "test_trains": 41,
+      "test_trains_unseen": 0,
+      "importance": {
+        "LINEAR": {
+          "dg_dep_delay": 0.4774,
+          "dg_arr_delay": 0.4774,
+          "upstream_dep_delay": 0.0192,
+          "terminates_at_mdu": -4.554,
+          "hour_sin": 0.3055,
+          "hour_cos": 0.9891,
+          "train_mean_past_delay": -0.0138,
+          "type_SUPERFAST": -0.6499,
+          "type_PREMIUM": 0.5102,
+          "dow_Tue": -0.1175,
+          "dow_Wed": -0.6601,
+          "dow_Thu": -0.8554,
+          "dow_Fri": -0.5015,
+          "dow_Sat": 0.6254,
+          "dow_Sun": -0.8166
+        },
+        "RF": {
+          "dg_dep_delay": 0.3307,
+          "dg_arr_delay": 0.4169,
+          "upstream_dep_delay": 0.2489,
+          "terminates_at_mdu": 0.0008,
+          "hour_sin": 0.0005,
+          "hour_cos": 0.0008,
+          "train_mean_past_delay": 0.0011,
+          "type_SUPERFAST": 0.0001,
+          "type_PREMIUM": 0.0,
+          "dow_Tue": 0.0,
+          "dow_Wed": 0.0,
+          "dow_Thu": 0.0,
+          "dow_Fri": 0.0,
+          "dow_Sat": 0.0001,
+          "dow_Sun": 0.0
+        },
+        "XGB": {
+          "dg_dep_delay": 0.3136,
+          "dg_arr_delay": 0.4227,
+          "upstream_dep_delay": 0.1633,
+          "terminates_at_mdu": 0.0024,
+          "hour_sin": 0.0131,
+          "hour_cos": 0.0025,
+          "train_mean_past_delay": 0.0139,
+          "type_SUPERFAST": 0.0007,
+          "type_PREMIUM": 0.0002,
+          "dow_Tue": 0.0024,
+          "dow_Wed": 0.0013,
+          "dow_Thu": 0.0,
+          "dow_Fri": 0.0618,
+          "dow_Sat": 0.001,
+          "dow_Sun": 0.0011
+        }
+      },
+      "metrics": {
+        "overall": {
+          "n": 198,
+          "trains": 41,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 4.944,
+                "ci": [
+                  3.924,
+                  6.071
+                ]
+              },
+              "rmse": {
+                "value": 9.207,
+                "ci": [
+                  7.0,
+                  11.492
+                ]
+              },
+              "r2": {
+                "value": 0.587,
+                "ci": [
+                  0.203,
+                  0.781
+                ]
+              },
+              "medae": {
+                "value": 2.0,
+                "ci": [
+                  1.0,
+                  3.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 5.527,
+                "ci": [
+                  4.627,
+                  6.547
+                ]
+              },
+              "rmse": {
+                "value": 8.857,
+                "ci": [
+                  6.819,
+                  11.057
+                ]
+              },
+              "r2": {
+                "value": 0.618,
+                "ci": [
+                  0.261,
+                  0.804
+                ]
+              },
+              "medae": {
+                "value": 3.302,
+                "ci": [
+                  2.64,
+                  3.841
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.583,
+                "ci": [
+                  0.224,
+                  0.956
+                ],
+                "ci_train_clustered": [
+                  0.123,
+                  1.12
+                ],
+                "better": false,
+                "worse": true,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 6.036,
+                "ci": [
+                  4.313,
+                  8.016
+                ]
+              },
+              "rmse": {
+                "value": 14.587,
+                "ci": [
+                  10.557,
+                  18.216
+                ]
+              },
+              "r2": {
+                "value": -0.037,
+                "ci": [
+                  -0.932,
+                  0.412
+                ]
+              },
+              "medae": {
+                "value": 1.375,
+                "ci": [
+                  1.154,
+                  1.696
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 1.092,
+                "ci": [
+                  -0.094,
+                  2.436
+                ],
+                "ci_train_clustered": [
+                  -0.197,
+                  2.641
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 4.204,
+                "ci": [
+                  3.398,
+                  5.187
+                ]
+              },
+              "rmse": {
+                "value": 7.716,
+                "ci": [
+                  5.089,
+                  10.641
+                ]
+              },
+              "r2": {
+                "value": 0.71,
+                "ci": [
+                  0.436,
+                  0.862
+                ]
+              },
+              "medae": {
+                "value": 2.338,
+                "ci": [
+                  2.006,
+                  2.803
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -0.74,
+                "ci": [
+                  -1.503,
+                  -0.024
+                ],
+                "ci_train_clustered": [
+                  -1.596,
+                  0.177
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": false
+              }
+            }
+          }
+        },
+        "terminating": {
+          "n": 47,
+          "trains": 11,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 5.298,
+                "ci": [
+                  3.043,
+                  7.851
+                ]
+              },
+              "rmse": {
+                "value": 10.035,
+                "ci": [
+                  6.175,
+                  13.298
+                ]
+              },
+              "r2": {
+                "value": 0.704,
+                "ci": [
+                  -82.541,
+                  0.911
+                ]
+              },
+              "medae": {
+                "value": 0.0,
+                "ci": [
+                  0.0,
+                  4.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 6.228,
+                "ci": [
+                  4.572,
+                  8.152
+                ]
+              },
+              "rmse": {
+                "value": 8.853,
+                "ci": [
+                  5.938,
+                  11.498
+                ]
+              },
+              "r2": {
+                "value": 0.77,
+                "ci": [
+                  -71.839,
+                  0.935
+                ]
+              },
+              "medae": {
+                "value": 3.884,
+                "ci": [
+                  3.697,
+                  4.861
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.93,
+                "ci": [
+                  -0.446,
+                  2.33
+                ],
+                "ci_train_clustered": [
+                  -0.764,
+                  3.721
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 5.428,
+                "ci": [
+                  1.527,
+                  10.302
+                ]
+              },
+              "rmse": {
+                "value": 16.462,
+                "ci": [
+                  6.243,
+                  23.864
+                ]
+              },
+              "r2": {
+                "value": 0.204,
+                "ci": [
+                  -48.73,
+                  0.765
+                ]
+              },
+              "medae": {
+                "value": 0.183,
+                "ci": [
+                  0.066,
+                  0.814
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.13,
+                "ci": [
+                  -2.404,
+                  3.208
+                ],
+                "ci_train_clustered": [
+                  -2.137,
+                  2.729
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 3.572,
+                "ci": [
+                  2.236,
+                  5.27
+                ]
+              },
+              "rmse": {
+                "value": 6.422,
+                "ci": [
+                  3.229,
+                  9.174
+                ]
+              },
+              "r2": {
+                "value": 0.879,
+                "ci": [
+                  -23.359,
+                  0.935
+                ]
+              },
+              "medae": {
+                "value": 1.798,
+                "ci": [
+                  1.525,
+                  2.122
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -1.726,
+                "ci": [
+                  -4.008,
+                  0.51
+                ],
+                "ci_train_clustered": [
+                  -4.133,
+                  1.899
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            }
+          }
+        },
+        "through": {
+          "n": 151,
+          "trains": 30,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 4.834,
+                "ci": [
+                  3.722,
+                  6.126
+                ]
+              },
+              "rmse": {
+                "value": 8.933,
+                "ci": [
+                  6.286,
+                  11.813
+                ]
+              },
+              "r2": {
+                "value": 0.503,
+                "ci": [
+                  0.292,
+                  0.686
+                ]
+              },
+              "medae": {
+                "value": 2.0,
+                "ci": [
+                  1.0,
+                  3.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 5.309,
+                "ci": [
+                  4.252,
+                  6.528
+                ]
+              },
+              "rmse": {
+                "value": 8.858,
+                "ci": [
+                  6.33,
+                  11.635
+                ]
+              },
+              "r2": {
+                "value": 0.511,
+                "ci": [
+                  0.305,
+                  0.688
+                ]
+              },
+              "medae": {
+                "value": 2.534,
+                "ci": [
+                  2.042,
+                  3.47
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.475,
+                "ci": [
+                  0.295,
+                  0.649
+                ],
+                "ci_train_clustered": [
+                  0.293,
+                  0.674
+                ],
+                "better": false,
+                "worse": true,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 6.226,
+                "ci": [
+                  4.392,
+                  8.379
+                ]
+              },
+              "rmse": {
+                "value": 13.952,
+                "ci": [
+                  9.361,
+                  17.95
+                ]
+              },
+              "r2": {
+                "value": -0.212,
+                "ci": [
+                  -0.711,
+                  0.173
+                ]
+              },
+              "medae": {
+                "value": 2.01,
+                "ci": [
+                  1.429,
+                  3.249
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 1.391,
+                "ci": [
+                  0.051,
+                  2.884
+                ],
+                "ci_train_clustered": [
+                  -0.165,
+                  3.06
+                ],
+                "better": false,
+                "worse": true,
+                "better_clustered": false
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 4.401,
+                "ci": [
+                  3.445,
+                  5.61
+                ]
+              },
+              "rmse": {
+                "value": 8.077,
+                "ci": [
+                  4.876,
+                  11.642
+                ]
+              },
+              "r2": {
+                "value": 0.594,
+                "ci": [
+                  0.37,
+                  0.803
+                ]
+              },
+              "medae": {
+                "value": 2.803,
+                "ci": [
+                  2.322,
+                  3.259
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -0.433,
+                "ci": [
+                  -1.117,
+                  0.223
+                ],
+                "ci_train_clustered": [
+                  -1.089,
+                  0.332
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "S1_include_flagged": {
+      "label": "S1: flagged runs included",
+      "n_train": 479,
+      "n_test": 203,
+      "train_trains": 44,
+      "test_trains": 41,
+      "test_trains_unseen": 0,
+      "importance": {
+        "LINEAR": {
+          "dg_dep_delay": 0.4659,
+          "dg_arr_delay": 0.4659,
+          "upstream_dep_delay": 0.0438,
+          "terminates_at_mdu": -8.7357,
+          "hour_sin": 0.9065,
+          "hour_cos": 0.7529,
+          "train_mean_past_delay": -0.0037,
+          "type_SUPERFAST": -0.4991,
+          "type_PREMIUM": 2.3048,
+          "dow_Tue": -0.7004,
+          "dow_Wed": -0.5795,
+          "dow_Thu": -1.3717,
+          "dow_Fri": -0.6085,
+          "dow_Sat": 0.4439,
+          "dow_Sun": -1.1215
+        },
+        "RF": {
+          "dg_dep_delay": 0.3495,
+          "dg_arr_delay": 0.4219,
+          "upstream_dep_delay": 0.2217,
+          "terminates_at_mdu": 0.0018,
+          "hour_sin": 0.0005,
+          "hour_cos": 0.0007,
+          "train_mean_past_delay": 0.0036,
+          "type_SUPERFAST": 0.0001,
+          "type_PREMIUM": 0.0,
+          "dow_Tue": 0.0,
+          "dow_Wed": 0.0,
+          "dow_Thu": 0.0,
+          "dow_Fri": 0.0,
+          "dow_Sat": 0.0001,
+          "dow_Sun": 0.0
+        },
+        "XGB": {
+          "dg_dep_delay": 0.3955,
+          "dg_arr_delay": 0.425,
+          "upstream_dep_delay": 0.1371,
+          "terminates_at_mdu": 0.0039,
+          "hour_sin": 0.0034,
+          "hour_cos": 0.0025,
+          "train_mean_past_delay": 0.0043,
+          "type_SUPERFAST": 0.0006,
+          "type_PREMIUM": 0.0,
+          "dow_Tue": 0.0006,
+          "dow_Wed": 0.0061,
+          "dow_Thu": 0.0003,
+          "dow_Fri": 0.0002,
+          "dow_Sat": 0.0016,
+          "dow_Sun": 0.0188
+        }
+      },
+      "metrics": {
+        "overall": {
+          "n": 203,
+          "trains": 41,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 5.148,
+                "ci": [
+                  4.133,
+                  6.266
+                ]
+              },
+              "rmse": {
+                "value": 9.333,
+                "ci": [
+                  7.226,
+                  11.54
+                ]
+              },
+              "r2": {
+                "value": 0.567,
+                "ci": [
+                  0.161,
+                  0.771
+                ]
+              },
+              "medae": {
+                "value": 2.0,
+                "ci": [
+                  1.0,
+                  3.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 5.709,
+                "ci": [
+                  4.833,
+                  6.695
+                ]
+              },
+              "rmse": {
+                "value": 8.838,
+                "ci": [
+                  6.915,
+                  10.985
+                ]
+              },
+              "r2": {
+                "value": 0.612,
+                "ci": [
+                  0.251,
+                  0.803
+                ]
+              },
+              "medae": {
+                "value": 3.594,
+                "ci": [
+                  2.545,
+                  4.671
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.561,
+                "ci": [
+                  0.02,
+                  1.101
+                ],
+                "ci_train_clustered": [
+                  -0.218,
+                  1.325
+                ],
+                "better": false,
+                "worse": true,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 5.687,
+                "ci": [
+                  4.036,
+                  7.584
+                ]
+              },
+              "rmse": {
+                "value": 14.181,
+                "ci": [
+                  10.073,
+                  17.779
+                ]
+              },
+              "r2": {
+                "value": 0.001,
+                "ci": [
+                  -0.828,
+                  0.445
+                ]
+              },
+              "medae": {
+                "value": 1.447,
+                "ci": [
+                  1.107,
+                  1.947
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.539,
+                "ci": [
+                  -0.703,
+                  1.903
+                ],
+                "ci_train_clustered": [
+                  -0.929,
+                  2.09
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 3.749,
+                "ci": [
+                  2.976,
+                  4.693
+                ]
+              },
+              "rmse": {
+                "value": 7.414,
+                "ci": [
+                  4.543,
+                  10.464
+                ]
+              },
+              "r2": {
+                "value": 0.727,
+                "ci": [
+                  0.447,
+                  0.88
+                ]
+              },
+              "medae": {
+                "value": 1.856,
+                "ci": [
+                  1.555,
+                  2.404
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -1.399,
+                "ci": [
+                  -2.213,
+                  -0.671
+                ],
+                "ci_train_clustered": [
+                  -2.603,
+                  -0.284
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": true
+              }
+            }
+          }
+        },
+        "terminating": {
+          "n": 51,
+          "trains": 11,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 5.843,
+                "ci": [
+                  3.686,
+                  8.235
+                ]
+              },
+              "rmse": {
+                "value": 10.236,
+                "ci": [
+                  6.915,
+                  13.207
+                ]
+              },
+              "r2": {
+                "value": 0.667,
+                "ci": [
+                  -96.822,
+                  0.895
+                ]
+              },
+              "medae": {
+                "value": 2.0,
+                "ci": [
+                  0.0,
+                  7.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 6.924,
+                "ci": [
+                  5.626,
+                  8.339
+                ]
+              },
+              "rmse": {
+                "value": 8.565,
+                "ci": [
+                  6.812,
+                  10.369
+                ]
+              },
+              "r2": {
+                "value": 0.767,
+                "ci": [
+                  -85.928,
+                  0.926
+                ]
+              },
+              "medae": {
+                "value": 6.873,
+                "ci": [
+                  4.671,
+                  7.619
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 1.081,
+                "ci": [
+                  -0.993,
+                  3.128
+                ],
+                "ci_train_clustered": [
+                  -1.589,
+                  5.11
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 4.26,
+                "ci": [
+                  0.939,
+                  8.356
+                ]
+              },
+              "rmse": {
+                "value": 14.44,
+                "ci": [
+                  3.363,
+                  21.293
+                ]
+              },
+              "r2": {
+                "value": 0.338,
+                "ci": [
+                  -12.883,
+                  0.79
+                ]
+              },
+              "medae": {
+                "value": 0.058,
+                "ci": [
+                  0.025,
+                  0.119
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -1.583,
+                "ci": [
+                  -4.132,
+                  1.336
+                ],
+                "ci_train_clustered": [
+                  -3.623,
+                  1.291
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 1.78,
+                "ci": [
+                  0.969,
+                  3.1
+                ]
+              },
+              "rmse": {
+                "value": 4.505,
+                "ci": [
+                  1.269,
+                  7.462
+                ]
+              },
+              "r2": {
+                "value": 0.936,
+                "ci": [
+                  -1.088,
+                  0.94
+                ]
+              },
+              "medae": {
+                "value": 1.151,
+                "ci": [
+                  0.587,
+                  1.299
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -4.063,
+                "ci": [
+                  -6.26,
+                  -2.036
+                ],
+                "ci_train_clustered": [
+                  -7.116,
+                  -0.644
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": true
+              }
+            }
+          }
+        },
+        "through": {
+          "n": 152,
+          "trains": 30,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 4.914,
+                "ci": [
+                  3.789,
+                  6.171
+                ]
+              },
+              "rmse": {
+                "value": 9.01,
+                "ci": [
+                  6.397,
+                  11.833
+                ]
+              },
+              "r2": {
+                "value": 0.492,
+                "ci": [
+                  0.281,
+                  0.678
+                ]
+              },
+              "medae": {
+                "value": 2.0,
+                "ci": [
+                  1.0,
+                  3.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 5.301,
+                "ci": [
+                  4.236,
+                  6.51
+                ]
+              },
+              "rmse": {
+                "value": 8.927,
+                "ci": [
+                  6.388,
+                  11.656
+                ]
+              },
+              "r2": {
+                "value": 0.501,
+                "ci": [
+                  0.294,
+                  0.679
+                ]
+              },
+              "medae": {
+                "value": 2.539,
+                "ci": [
+                  1.712,
+                  3.608
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.387,
+                "ci": [
+                  0.204,
+                  0.567
+                ],
+                "ci_train_clustered": [
+                  0.164,
+                  0.632
+                ],
+                "better": false,
+                "worse": true,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 6.165,
+                "ci": [
+                  4.292,
+                  8.362
+                ]
+              },
+              "rmse": {
+                "value": 14.093,
+                "ci": [
+                  9.298,
+                  18.414
+                ]
+              },
+              "r2": {
+                "value": -0.242,
+                "ci": [
+                  -0.759,
+                  0.178
+                ]
+              },
+              "medae": {
+                "value": 2.09,
+                "ci": [
+                  1.453,
+                  3.112
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 1.251,
+                "ci": [
+                  -0.112,
+                  2.843
+                ],
+                "ci_train_clustered": [
+                  -0.311,
+                  3.082
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 4.41,
+                "ci": [
+                  3.457,
+                  5.625
+                ]
+              },
+              "rmse": {
+                "value": 8.161,
+                "ci": [
+                  4.847,
+                  11.842
+                ]
+              },
+              "r2": {
+                "value": 0.583,
+                "ci": [
+                  0.33,
+                  0.815
+                ]
+              },
+              "medae": {
+                "value": 2.66,
+                "ci": [
+                  2.002,
+                  3.093
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -0.505,
+                "ci": [
+                  -1.185,
+                  0.154
+                ],
+                "ci_train_clustered": [
+                  -1.138,
+                  0.167
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "S2_cap_180": {
+      "label": "S2: main rows, delays capped at 180 min",
+      "n_train": 445,
+      "n_test": 198,
+      "train_trains": 44,
+      "test_trains": 41,
+      "test_trains_unseen": 0,
+      "importance": {
+        "LINEAR": {
+          "dg_dep_delay": 0.4731,
+          "dg_arr_delay": 0.4731,
+          "upstream_dep_delay": 0.0377,
+          "terminates_at_mdu": -3.9246,
+          "hour_sin": 0.1658,
+          "hour_cos": 0.8192,
+          "train_mean_past_delay": -0.0055,
+          "type_SUPERFAST": -0.2149,
+          "type_PREMIUM": 0.2777,
+          "dow_Tue": -0.2685,
+          "dow_Wed": -0.7762,
+          "dow_Thu": -0.8529,
+          "dow_Fri": -0.1017,
+          "dow_Sat": 0.6546,
+          "dow_Sun": -0.6542
+        },
+        "RF": {
+          "dg_dep_delay": 0.363,
+          "dg_arr_delay": 0.4446,
+          "upstream_dep_delay": 0.1674,
+          "terminates_at_mdu": 0.0058,
+          "hour_sin": 0.0033,
+          "hour_cos": 0.006,
+          "train_mean_past_delay": 0.0083,
+          "type_SUPERFAST": 0.0004,
+          "type_PREMIUM": 0.0,
+          "dow_Tue": 0.0001,
+          "dow_Wed": 0.0002,
+          "dow_Thu": 0.0,
+          "dow_Fri": 0.0001,
+          "dow_Sat": 0.0005,
+          "dow_Sun": 0.0003
+        },
+        "XGB": {
+          "dg_dep_delay": 0.4019,
+          "dg_arr_delay": 0.3896,
+          "upstream_dep_delay": 0.0972,
+          "terminates_at_mdu": 0.0398,
+          "hour_sin": 0.0068,
+          "hour_cos": 0.0085,
+          "train_mean_past_delay": 0.0109,
+          "type_SUPERFAST": 0.0036,
+          "type_PREMIUM": 0.0,
+          "dow_Tue": 0.0027,
+          "dow_Wed": 0.002,
+          "dow_Thu": 0.0011,
+          "dow_Fri": 0.0018,
+          "dow_Sat": 0.0094,
+          "dow_Sun": 0.0248
+        }
+      },
+      "metrics": {
+        "overall": {
+          "n": 198,
+          "trains": 41,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 4.944,
+                "ci": [
+                  3.924,
+                  6.071
+                ]
+              },
+              "rmse": {
+                "value": 9.207,
+                "ci": [
+                  7.0,
+                  11.492
+                ]
+              },
+              "r2": {
+                "value": 0.587,
+                "ci": [
+                  0.203,
+                  0.781
+                ]
+              },
+              "medae": {
+                "value": 2.0,
+                "ci": [
+                  1.0,
+                  3.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 5.327,
+                "ci": [
+                  4.414,
+                  6.365
+                ]
+              },
+              "rmse": {
+                "value": 8.822,
+                "ci": [
+                  6.706,
+                  11.072
+                ]
+              },
+              "r2": {
+                "value": 0.621,
+                "ci": [
+                  0.27,
+                  0.806
+                ]
+              },
+              "medae": {
+                "value": 3.032,
+                "ci": [
+                  2.451,
+                  3.627
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.383,
+                "ci": [
+                  0.11,
+                  0.659
+                ],
+                "ci_train_clustered": [
+                  0.026,
+                  0.732
+                ],
+                "better": false,
+                "worse": true,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 3.654,
+                "ci": [
+                  2.789,
+                  4.681
+                ]
+              },
+              "rmse": {
+                "value": 7.778,
+                "ci": [
+                  4.881,
+                  10.721
+                ]
+              },
+              "r2": {
+                "value": 0.705,
+                "ci": [
+                  0.453,
+                  0.842
+                ]
+              },
+              "medae": {
+                "value": 1.369,
+                "ci": [
+                  1.146,
+                  1.743
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -1.29,
+                "ci": [
+                  -1.905,
+                  -0.692
+                ],
+                "ci_train_clustered": [
+                  -1.913,
+                  -0.669
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": true
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 3.567,
+                "ci": [
+                  2.833,
+                  4.509
+                ]
+              },
+              "rmse": {
+                "value": 7.04,
+                "ci": [
+                  4.337,
+                  10.087
+                ]
+              },
+              "r2": {
+                "value": 0.759,
+                "ci": [
+                  0.499,
+                  0.894
+                ]
+              },
+              "medae": {
+                "value": 2.224,
+                "ci": [
+                  1.576,
+                  2.949
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -1.378,
+                "ci": [
+                  -2.197,
+                  -0.629
+                ],
+                "ci_train_clustered": [
+                  -2.37,
+                  -0.396
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": true
+              }
+            }
+          }
+        },
+        "terminating": {
+          "n": 47,
+          "trains": 11,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 5.298,
+                "ci": [
+                  3.043,
+                  7.851
+                ]
+              },
+              "rmse": {
+                "value": 10.035,
+                "ci": [
+                  6.175,
+                  13.298
+                ]
+              },
+              "r2": {
+                "value": 0.704,
+                "ci": [
+                  -82.541,
+                  0.911
+                ]
+              },
+              "medae": {
+                "value": 0.0,
+                "ci": [
+                  0.0,
+                  4.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 5.58,
+                "ci": [
+                  3.888,
+                  7.575
+                ]
+              },
+              "rmse": {
+                "value": 8.536,
+                "ci": [
+                  5.171,
+                  11.449
+                ]
+              },
+              "r2": {
+                "value": 0.786,
+                "ci": [
+                  -63.557,
+                  0.943
+                ]
+              },
+              "medae": {
+                "value": 3.358,
+                "ci": [
+                  3.173,
+                  4.453
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.283,
+                "ci": [
+                  -0.728,
+                  1.294
+                ],
+                "ci_train_clustered": [
+                  -0.831,
+                  1.929
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 2.769,
+                "ci": [
+                  0.91,
+                  5.136
+                ]
+              },
+              "rmse": {
+                "value": 8.073,
+                "ci": [
+                  2.627,
+                  12.273
+                ]
+              },
+              "r2": {
+                "value": 0.808,
+                "ci": [
+                  -29.616,
+                  0.88
+                ]
+              },
+              "medae": {
+                "value": 0.166,
+                "ci": [
+                  0.065,
+                  0.818
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -2.529,
+                "ci": [
+                  -4.033,
+                  -0.974
+                ],
+                "ci_train_clustered": [
+                  -4.114,
+                  -0.509
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": true
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 1.91,
+                "ci": [
+                  0.935,
+                  3.352
+                ]
+              },
+              "rmse": {
+                "value": 4.728,
+                "ci": [
+                  1.639,
+                  7.657
+                ]
+              },
+              "r2": {
+                "value": 0.934,
+                "ci": [
+                  -2.694,
+                  0.94
+                ]
+              },
+              "medae": {
+                "value": 0.482,
+                "ci": [
+                  0.362,
+                  0.818
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -3.387,
+                "ci": [
+                  -5.53,
+                  -1.45
+                ],
+                "ci_train_clustered": [
+                  -5.82,
+                  -0.585
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": true
+              }
+            }
+          }
+        },
+        "through": {
+          "n": 151,
+          "trains": 30,
+          "methods": {
+            "CARRY": {
+              "mae": {
+                "value": 4.834,
+                "ci": [
+                  3.722,
+                  6.126
+                ]
+              },
+              "rmse": {
+                "value": 8.933,
+                "ci": [
+                  6.286,
+                  11.813
+                ]
+              },
+              "r2": {
+                "value": 0.503,
+                "ci": [
+                  0.292,
+                  0.686
+                ]
+              },
+              "medae": {
+                "value": 2.0,
+                "ci": [
+                  1.0,
+                  3.0
+                ]
+              }
+            },
+            "LINEAR": {
+              "mae": {
+                "value": 5.248,
+                "ci": [
+                  4.173,
+                  6.474
+                ]
+              },
+              "rmse": {
+                "value": 8.909,
+                "ci": [
+                  6.348,
+                  11.705
+                ]
+              },
+              "r2": {
+                "value": 0.506,
+                "ci": [
+                  0.299,
+                  0.684
+                ]
+              },
+              "medae": {
+                "value": 2.426,
+                "ci": [
+                  1.786,
+                  3.358
+                ]
+              },
+              "mae_minus_carry": {
+                "value": 0.414,
+                "ci": [
+                  0.255,
+                  0.568
+                ],
+                "ci_train_clustered": [
+                  0.234,
+                  0.598
+                ],
+                "better": false,
+                "worse": true,
+                "better_clustered": false
+              }
+            },
+            "RF": {
+              "mae": {
+                "value": 3.93,
+                "ci": [
+                  3.012,
+                  5.093
+                ]
+              },
+              "rmse": {
+                "value": 7.684,
+                "ci": [
+                  4.512,
+                  11.228
+                ]
+              },
+              "r2": {
+                "value": 0.632,
+                "ci": [
+                  0.399,
+                  0.842
+                ]
+              },
+              "medae": {
+                "value": 1.996,
+                "ci": [
+                  1.391,
+                  3.1
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -0.904,
+                "ci": [
+                  -1.555,
+                  -0.283
+                ],
+                "ci_train_clustered": [
+                  -1.398,
+                  -0.376
+                ],
+                "better": true,
+                "worse": false,
+                "better_clustered": true
+              }
+            },
+            "XGB": {
+              "mae": {
+                "value": 4.082,
+                "ci": [
+                  3.195,
+                  5.251
+                ]
+              },
+              "rmse": {
+                "value": 7.618,
+                "ci": [
+                  4.482,
+                  11.189
+                ]
+              },
+              "r2": {
+                "value": 0.639,
+                "ci": [
+                  0.388,
+                  0.849
+                ]
+              },
+              "medae": {
+                "value": 2.949,
+                "ci": [
+                  2.29,
+                  3.419
+                ]
+              },
+              "mae_minus_carry": {
+                "value": -0.752,
+                "ci": [
+                  -1.547,
+                  0.006
+                ],
+                "ci_train_clustered": [
+                  -1.568,
+                  0.154
+                ],
+                "better": false,
+                "worse": false,
+                "better_clustered": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "conclusion": {
+    "ml_better_than_carry": [
+      "XGB"
+    ],
+    "ml_worse_than_carry": [],
+    "text": "XGBoost beat the carry-the-DG-delay baseline on test MAE in the main analysis (4.20 vs 4.94 min; difference -0.74 min, 95% CI [-1.50, -0.02]), but not under the train-clustered check [-1.60, +0.18]. The gain is under one minute per train on average. Sensitivity - S1: flagged runs included: XGBoost better; S2: main rows, delays capped at 180 min: Random forest, XGBoost better."
+  }
+}

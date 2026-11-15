@@ -35,7 +35,10 @@ and is not connected to Indian Railways systems. All results are simulated.
   corridor (8 stations, 7 single-track sections in this direction), 44 regular trains from the
   RSTGCN Sept 2024 dataset (CC BY-SA 4.0), recorded running times and an audit
   (`backend/data/real/dg_mdu/audit.md`). Sources and licence: `docs/DATA_SOURCES.md`
-- 99 passing tests. Remaining phases: see `CLAUDE.md`
+  - Step 2: delay at Madurai predicted from what is known at Dindigul, validated on the last
+    week of recorded runs against carry-the-DG-delay and linear baselines
+    (`backend/ml/reports/real/model_card_real.md`, pre-registered, all results reported)
+- 103 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
