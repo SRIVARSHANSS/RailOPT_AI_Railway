@@ -74,7 +74,7 @@ Rail OPT/  (project root)
   hypothetical events known at `at`), labelled HYPOTHETICAL; never touch the live store from it.
   A TRACK_UNAVAILABLE that would start while a train is inside the section is rejected (422 with
   the clear time). For demos run the API without --reload (the Windows watcher can stall).
-- 72 tests passing.
+- 73 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;

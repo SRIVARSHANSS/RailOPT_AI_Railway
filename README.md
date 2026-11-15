@@ -23,7 +23,7 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] Phase 9 part 2: Traffic Console (live corridor map), Disruption Panel, Strategy Comparison
   - step-by-step demo with talking points: `docs/DEMO.md`
 - [x] Phase 6: what-if studio (HYPOTHETICAL copy) and re-optimization on top of an accepted plan
-- 72 passing tests. Remaining phases: see `CLAUDE.md`
+- 73 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

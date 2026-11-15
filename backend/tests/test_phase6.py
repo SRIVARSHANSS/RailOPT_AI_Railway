@@ -164,3 +164,37 @@ def test_stale_flag_on_scenario_without_clock(ctx):
     plan = c.get("/api/scenario").json()["plan"]                  # without a clock every posted event counts
     assert plan["stale"] is True and plan["new_events"] == ["E2"]
     assert c.get("/api/scenario", params={"at": "10:30"}).json()["plan"]["stale"] is False
+
+
+def test_demo_act2_maintenance_block_replan_beats_keeping_the_plan(ctx):
+    """Demo act 2: after the accepted reroute, a planned block closes S_BC 10:30-10:50 (posted 10:25).
+    Numbers are printed; the assertion is only that re-planning beats keeping the plan."""
+    c, store = ctx
+    c.post("/api/scenario/reset", json={"timetable": "reference"})
+    c.post("/api/events", json=STOPPAGE)
+    r1 = c.post("/api/optimize", json={"at": "10:03"}).json()["recommendation"]
+    c.post(f"/api/recommendation/{r1['recommendation_id']}/decision", json={"decision": "accept"})
+
+    block = {"event_type": "TRACK_UNAVAILABLE", "location": "S_BC", "start_time": "10:30", "duration_min": 20}
+    assert c.post("/api/events", json=block).status_code == 201       # nobody inside S_BC at 10:30
+    assert c.get("/api/state", params={"at": "10:25"}).json()["plan"]["stale"] is True
+
+    rec = optimize_and_check(c, store, t("10:25"), "act 2: S_BC maintenance block 10:30-10:50")
+    rows = {r["name"]: r for r in c.post("/api/optimize", json={"at": "10:25"}).json()["results"]}
+    keep = rows["NO_REPLANNING"]["weighted_delay"]
+    print(f"\n[SIMULATED] keep plan: weighted {keep} {rows['NO_REPLANNING']['delays']}; "
+          f"re-plan {rec['strategy']}: weighted {rec['weighted_delay']} {rec['delays']}")
+    assert rec["weighted_delay"] < keep
+
+    c.post(f"/api/recommendation/{rec['recommendation_id']}/decision", json={"decision": "accept"})
+    after = store.actual()
+    on_alt = [o.train_id for o in after.occupancies if o.section_id == "S_BC_ALT"]
+    print(f"[SIMULATED] after accept: S_BC_ALT used by {on_alt}, delays "
+          f"{ {x: after.final_delay(x) for x in sorted(store.network().trains)} }")
+    assert "T202" in on_alt                                          # the started reroute is kept
+
+    # talking point: the T202 +5 delay at C afterwards needs no new intervention
+    dep_c = after.call("T202", "C").dep
+    c.post("/api/events", json={"event_type": "DELAY", "train_id": "T202", "location": "C",
+                                "start_time": format_time(dep_c), "duration_min": 5})
+    optimize_and_check(c, store, dep_c, "act 2 talking point: T202 +5 at C")

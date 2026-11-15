@@ -76,27 +76,47 @@ Notes before presenting:
 Optional: repeat step 6-7 and press *Reject* instead: a calm dismissal, the plan is
 unchanged and the rejection is logged in the event history.
 
-## Optional second act: a new event after the accepted plan
+## Act 2: a planned maintenance block after the accepted reroute
 
-Continue straight after step 8 (T202 is on the alternate line, plan R1 accepted).
+Continue straight after step 8 of act 1 (plan R1 accepted: T202 runs on the alternate line).
+Numbers below are from the simulator replay (tests/test_phase6.py prints them).
 
-10. **Play to 10:33** (60x, or scrub). Under R1, T202 departs C at 10:33.
-11. **Inject the delay.** *Disruptions* -> *Custom event* -> *Delay*: train **T202**, station
-    **C**, start **10:33**, **5 min**, *Add event*. It becomes event E2.
-    - Talking point: try a *Track closure* on **S_CD at 10:45** first. The form refuses it
-      inline: "T202 is inside S_CD at 10:45; closing an occupied section isn't modelled -
-      choose a start after it clears (11:16)". The model never strands a train.
-12. **Stale plan.** Back on the *Traffic console* at 10:33: a glowing banner "New event since
-    your accepted plan - Re-optimize" and a cyan alert "New event - re-plan suggested"
-    (E2 became known after R1).
-13. **Re-optimize.** Click *Re-optimize* -> *Run optimizer at 10:33*. A note says the run
-    re-plans from the current state on top of R1: trips already started (T202 on S_BC_ALT)
-    stay as R1 made them; the baselines now mean "keep the current plan".
-    - Simulated result on the reference timetable: every strategy ties at weighted 63
-      (T101 +15, T202 +9, T303 on time); the recommendation says no strategy improves on
-      keeping the accepted plan. Say so plainly: the system does not invent an improvement.
-14. **Accept.** Accept R2: the banner disappears, S_BC_ALT is still T202's route, and the
-    event history shows "R2 accepted" (the API logs that it replaced R1).
-15. **What-if (optional).** Open *What-if studio*, add a hypothetical *Delay* for **T303 at B,
-    10:34, 20 min**, *Run what-if at 10:33*: current weighted 63 next to hypothetical 83, with
-    the HYPOTHETICAL badge. Nothing in the live scenario changes.
+10. **Set the clock to 10:25.** On the *Traffic console*, pause and drag the scrubber (or play
+    at 60x and pause) to **10:25**. T101 has just cleared B-C (10:23); T202 is on S_BC_ALT.
+11. **Post the maintenance block.** *Disruptions* -> *Custom event* -> *Track closure*:
+    section **S_BC**, start **10:30**, duration **20** min, *Add event* (event E2).
+    - Talking point: planned maintenance is known as soon as it is posted, unlike a stoppage.
+    - Talking point: nobody is inside S_BC at 10:30, so the block is allowed. (Try start 10:10:
+      the form refuses it - a train is inside then - and names the first start after it clears.)
+12. **Stale plan.** Back on the *Traffic console*: a glowing banner "New event since your
+    accepted plan - Re-optimize", a cyan alert "New event - re-plan suggested" (E2 became
+    known after R1), and a red **CRITICAL** alert "T303 closure on S_BC - planned entry 10:34,
+    section closed until 10:50 (16 min short)": the detector sees the problem 9 minutes ahead.
+13. **Re-optimize.** Click *Re-optimize* -> *Run optimizer at 10:25*.
+    - The note says it re-plans from the current state on top of R1: T202's reroute is already
+      under way and stays as it is.
+    - **Keep current plan: weighted 69** - T303 is held at B until the block ends at 10:50 and
+      arrives **16 min** late.
+    - **Recommended: B - Reroute, weighted 59 (-10)** - "reroute T303 B->C via S_BC_ALT, hold T303
+      at B until 10:36": T303 follows T202 onto the alternate line once T202 has cleared it
+      (10:31 + 5 min headway) and arrives **6 min** late. CP-SAT optimal.
+    - Read *Why*: "T303 is planned to enter S_BC at 10:34 while it is closed (E2) until 10:50."
+14. **Accept.** *Accept plan* (R2): check, burst, back to the console. S_BC_ALT is now the
+    planned route for **T202, T303**; the banner and the CRITICAL alert are gone.
+    - If asked about the amber "AI watch: T303 on S_BC" that stays: in the accepted plan T303
+      still waits 2 minutes at B for T202 to clear, so the risk is reduced, not removed - the
+      "resolved" mark is only given when the plan's replay shows zero wait.
+15. **Play on (60x).** S_BC turns red "CLOSED" at 10:30. T303 reaches B at 10:34, waits two
+    minutes at the red signal, and at **10:36** glides onto the curved alternate line behind
+    T202, reaching C at 10:58. Simulated end state: T101 +15, T202 +4, T303 +6.
+16. **Talking point - no invented interventions (optional).** Pause at **10:33** (T202 departs
+    C then), post a *Delay* for **T202 at C, 10:33, 5 min**, and re-optimize at 10:33.
+    - Every option is compared again, and the result is "No strategy improves on keeping the
+      accepted plan (weighted delay 69)": T202 simply arrives 9 min late instead of 4.
+    - The recommended plan is the one already in force (T303 still via S_BC_ALT at 10:36), so
+      there is nothing new to do. The system says so instead of inventing an intervention.
+      You can leave it without accepting.
+
+17. **What-if (optional).** *What-if studio*: add a hypothetical *Delay* for **T303 at B, 10:34,
+    20 min**, *Run what-if*: the current scenario next to the hypothetical one, with the
+    HYPOTHETICAL badge. Nothing in the live scenario changes.

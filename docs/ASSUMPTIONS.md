@@ -260,3 +260,17 @@ All CP-SAT statuses OPTIMAL, zero violations in every replay, started trips unch
 S_CD is occupied without a gap from 10:25 to 11:16 (T101, then the delayed T202, then T303),
 so a closure at 11:00 was rejected ("T303 is inside S_CD at 11:00 ... clears (11:16)") and the
 first legal start, 11:16, affects no train.
+
+### Demo act 2: maintenance block re-plan (simulated, reference timetable)
+
+After the accepted reroute R1, S_BC is closed for planned maintenance 10:30-10:50 (posted
+10:25, known on posting). Re-optimized at 10:25, every replay with zero violations:
+
+| Plan | Weighted | T101 / T202 / T303 | What happens to T303 |
+| --- | --- | --- | --- |
+| Keep R1 (no new re-planning) | 69 | 15 / 4 / 16 | held at B until 10:50 |
+| REROUTE (recommended, OPTIMAL) | 59 | 15 / 4 / 6 | via S_BC_ALT 10:36-10:58, after T202 clears |
+
+A later T202 +5 min delay at C (10:33) re-optimizes to "no strategy improves on keeping the
+accepted plan" (weighted 69): the recommendation repeats the plan already in force.
+
