@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
@@ -54,6 +55,10 @@ class ScenarioStore:
     previous_overrides: dict[tuple[str, str], str] = field(default_factory=dict)
     recommendations: dict[str, Recommendation] = field(default_factory=dict)
     decision_log: list[dict] = field(default_factory=list)
+    # scenario_version = '<boot id>-<revision>': a new random boot id per store (per server start),
+    # revision +1 on every reset, event and decision. Clients drop cached results when it differs.
+    boot_id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
+    revision: int = 0
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
     _nets: dict[str, RailNetwork] = field(default_factory=dict, repr=False)
 
@@ -65,6 +70,10 @@ class ScenarioStore:
         return self._nets[name]
 
     # ---- scenario ----------------------------------------------------------------
+    @property
+    def version(self) -> str:
+        return f"{self.boot_id}-{self.revision}"
+
     def reset(self, timetable: str) -> None:
         self.network(timetable)                 # validates the name
         with self._lock:
@@ -79,6 +88,7 @@ class ScenarioStore:
             self.previous_overrides = {}
             self.recommendations.clear()
             self.decision_log.clear()
+            self.revision += 1
 
     def add_event(self, event_type: str, train_id: str | None, location: str,
                   start: int, duration: int, prefix: str = "E") -> Disruption:
@@ -86,6 +96,7 @@ class ScenarioStore:
             n = sum(1 for e in self.events if e.event_id.startswith(prefix)) + 1
             event = Disruption(f"{prefix}{n}", event_type, train_id, location, start, duration)
             self.events.append(event)
+            self.revision += 1
             return event
 
     def known_events(self, at: int) -> list[Disruption]:
@@ -158,6 +169,7 @@ class ScenarioStore:
                      "at": rec.at, "replaces": replaces,
                      "logged_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
             self.decision_log.append(entry)
+            self.revision += 1
             log.info("recommendation %s (%s) %sed", rec_id, rec.strategy, decision)
             return rec
 

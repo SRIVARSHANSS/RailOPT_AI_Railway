@@ -14,6 +14,10 @@ class Labelled(BaseModel):
     data_label: Literal["SIMULATED"] = "SIMULATED"
 
 
+VERSION_DOC = ("'<server boot id>-<revision>': changes on every API start, reset, event and decision; "
+               "clients drop cached optimizer results when it differs")
+
+
 # ---- requests ------------------------------------------------------------------------
 class ResetRequest(BaseModel):
     timetable: Timetable = "reference"
@@ -113,6 +117,7 @@ class PlanStatus(BaseModel):
 
 
 class ScenarioOut(Labelled):
+    scenario_version: str = Field(description=VERSION_DOC)
     timetable: str
     events: list[EventOut]
     applied_recommendation: str | None
@@ -142,6 +147,7 @@ class Kpis(BaseModel):
 
 
 class StateOut(Labelled):
+    scenario_version: str = Field(description=VERSION_DOC)
     at: str
     known_events: list[str]
     trains: list[TrainState]
@@ -239,6 +245,7 @@ class RecommendationOut(RecommendationBase):
 
 
 class OptimizeOut(Labelled):
+    scenario_version: str = Field(description="version this run was computed against")
     at: str
     known_events: list[str]
     results: list[StrategyRow]
@@ -265,6 +272,7 @@ class WhatIfOut(Labelled):
 
 
 class DecisionOut(Labelled):
+    scenario_version: str = Field(description="version after this decision")
     recommendation_id: str
     decision: str
     applied_recommendation: str | None

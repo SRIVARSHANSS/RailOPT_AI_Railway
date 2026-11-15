@@ -227,3 +227,36 @@ def test_watchlist_marks_risk_reduced_not_resolved_when_wait_shrinks(ctx):
     c.post(f"/api/recommendation/{r['recommendation_id']}/decision", json={"decision": "accept"})
     w = next(w for w in c.get("/api/conflicts", params={"at": "10:03"}).json()["ml_watchlist"] if w["train_id"] == "T303")
     assert w["resolved_by_plan"] is True and w["reduced_by_plan"] is False and w["plan_wait_min"] == 0
+
+
+def test_scenario_version_changes_on_restart_reset_events_and_decisions(ctx):
+    """Clients cache optimizer results against scenario_version; it must change whenever the
+    server-side scenario could differ: a restart (new store), reset, event or decision."""
+    c, store = ctx
+    v0 = c.get("/api/scenario").json()["scenario_version"]
+    assert c.get("/api/state", params={"at": "10:00"}).json()["scenario_version"] == v0
+    assert c.get("/api/scenario").json()["scenario_version"] == v0          # reads do not bump it
+
+    # "restart": a fresh store (as on API start) gets a new random boot id, even at the same revision
+    restarted = ScenarioStore()
+    assert restarted.version != store.version
+    assert restarted.version.split("-")[0] != v0.split("-")[0]
+
+    assert c.post("/api/events", json=STOPPAGE).status_code == 201
+    v1 = c.get("/api/scenario").json()["scenario_version"]
+    assert v1 != v0
+    opt = c.post("/api/optimize", json={"at": "10:03"}).json()
+    assert opt["scenario_version"] == v1                                     # optimizing does not change it
+    assert c.get("/api/state", params={"at": "10:03"}).json()["scenario_version"] == v1
+
+    dec = c.post(f"/api/recommendation/{opt['recommendation']['recommendation_id']}/decision",
+                 json={"decision": "accept"}).json()
+    v2 = dec["scenario_version"]
+    assert v2 != v1 and c.get("/api/scenario").json()["scenario_version"] == v2
+
+    c.post("/api/whatif", json={"at": "10:20", "events": [{**STOPPAGE, "train_id": "T202", "start_time": "10:15"}]})
+    assert c.get("/api/scenario").json()["scenario_version"] == v2           # a what-if is not a change
+
+    v3 = c.post("/api/scenario/reset", json={"timetable": "reference"}).json()["scenario_version"]
+    assert v3 not in (v0, v1, v2)
+    assert len({v0, v1, v2, v3}) == 4

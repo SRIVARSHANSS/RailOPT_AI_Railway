@@ -67,6 +67,8 @@ export const useSim = create<SimState>()(
 export const minuteMs = (speed: Speed) => 60000 / speed
 
 // Console UI state shared across pages: the alert the user selected, the last optimizer run.
+// The optimizer result is cached with the scenario_version it was computed against; when the API
+// reports another version (restart, reset, event, a decision made elsewhere) the cache is dropped.
 export type Highlight = { section_id: string | null; trains: string[]; key: string } | null
 
 type ConsoleState = {
@@ -74,7 +76,10 @@ type ConsoleState = {
   setHighlight: (h: Highlight) => void
   optimize: OptimizeResult | null
   decided: Record<string, 'accept' | 'reject'>
+  version: string | null // scenario_version the cached optimize/decided belong to
   setOptimize: (r: OptimizeResult | null) => void
+  adoptVersion: (v: string) => void // after this tab's own decision: the cache still applies
+  syncVersion: (v: string) => void // a server version seen in any response
   markDecided: (id: string, d: 'accept' | 'reject') => void
   clear: () => void
 }
@@ -86,10 +91,17 @@ export const useConsole = create<ConsoleState>()(
       setHighlight: (highlight) => set({ highlight }),
       optimize: null,
       decided: {},
-      setOptimize: (optimize) => set({ optimize }),
+      version: null,
+      setOptimize: (optimize) => set({ optimize, version: optimize?.scenario_version ?? null }),
+      adoptVersion: (version) => set({ version }),
+      syncVersion: (v) => set((s) => {
+        if (s.version === v || (!s.optimize && !Object.keys(s.decided).length)) return s.version === v ? s : { version: v }
+        const recSelected = s.highlight?.key.startsWith('rec-')
+        return { optimize: null, decided: {}, version: v, ...(recSelected ? { highlight: null } : {}) }
+      }),
       markDecided: (id, d) => set((s) => ({ decided: { ...s.decided, [id]: d } })),
-      clear: () => set({ highlight: null, optimize: null, decided: {} }),
+      clear: () => set({ highlight: null, optimize: null, decided: {}, version: null }),
     }),
-    { name: 'railopt-console', storage: sessionSafe, partialize: (s) => ({ optimize: s.optimize, decided: s.decided }) },
+    { name: 'railopt-console', storage: sessionSafe, partialize: (s) => ({ optimize: s.optimize, decided: s.decided, version: s.version }) },
   ),
 )

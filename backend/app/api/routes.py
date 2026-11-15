@@ -126,6 +126,7 @@ def reset(req: ResetRequest, store: ScenarioStore = Depends(get_store)):
 def scenario(at: str | None = Query(None, pattern=HHMM, description="clock for the stale-plan check; omit = all posted events"),
              store: ScenarioStore = Depends(get_store)):
     return ScenarioOut(
+        scenario_version=store.version,
         timetable=store.timetable,
         events=[_event_out(e) for e in store.events],
         applied_recommendation=store.applied_recommendation,
@@ -153,7 +154,7 @@ def state(at: str = AtQuery, store: ScenarioStore = Depends(get_store)):
     states = live.train_states(net, store.actual(), t, store.events)   # movement: every posted event
     plan = project_plan(net, t, known, store.route_overrides, store.holds)   # known events + accepted plan
     n_conflicts = len(detect_conflicts(net, plan))
-    return StateOut(at=at, known_events=[e.event_id for e in known], trains=states,
+    return StateOut(scenario_version=store.version, at=at, known_events=[e.event_id for e in known], trains=states,
                     kpis=live.kpis(states, n_conflicts), plan=store.plan_status(t))
 
 
@@ -171,6 +172,7 @@ def conflicts(at: str = AtQuery, store: ScenarioStore = Depends(get_store),
 @router.post("/optimize", response_model=OptimizeOut)
 def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
     t, net = _clock(req.at), store.network()
+    version = store.version
     known = store.known_events(t)
     # re-plan from the CURRENT state: the accepted plan (if any) shapes history
     view = live.optimize_view(net, t, known, store.holds, store.route_overrides)
@@ -181,7 +183,7 @@ def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
         stored = store.add_recommendation(t, rec["strategy"], holds, overrides, rec,
                                           known_event_ids=[e.event_id for e in known])
         rec_out = {"recommendation_id": stored.rec_id, **rec}
-    return OptimizeOut(at=req.at, known_events=[e.event_id for e in known],
+    return OptimizeOut(scenario_version=version, at=req.at, known_events=[e.event_id for e in known],
                        results=view["results"], recommendation=rec_out,
                        replanning_from=store.applied_recommendation)
 
@@ -228,7 +230,7 @@ def decide(rec_id: str, req: DecisionRequest, store: ScenarioStore = Depends(get
         raise HTTPException(status_code=404, detail=f"unknown recommendation {rec_id}")
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    return DecisionOut(recommendation_id=rec_id, decision=req.decision,
+    return DecisionOut(scenario_version=store.version, recommendation_id=rec_id, decision=req.decision,
                        applied_recommendation=store.applied_recommendation, decision_log=store.decision_log)
 
 

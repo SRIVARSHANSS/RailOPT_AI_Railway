@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
+import { useScenarioVersionGuard } from '../../api/hooks'
 import { api, type Health } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import { duration, page, spring } from '../../lib/motion'
@@ -48,6 +49,7 @@ export function AppShell() {
   const { pathname } = useLocation()
   const wide = useWide()
   const collapsed = useSession((s) => s.sidebarCollapsed) || !wide
+  useScenarioVersionGuard()
   return (
     <div className="flex min-h-screen">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:rounded-lg focus:bg-canvas-2 focus:px-4 focus:py-2">

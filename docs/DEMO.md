@@ -29,6 +29,8 @@ Notes before presenting:
 - The API keeps the scenario in memory: restarting it clears events and decisions.
 - The sim clock, its speed and the last optimizer result are kept in the browser tab
   (sessionStorage): a page refresh keeps them; the clock always comes back paused.
+  The optimizer result is tied to the API's scenario version: after an API restart, a reset or
+  a new event it is dropped automatically (within about 5 s), so no outdated recommendation lingers.
 - **Demo reset** (Disruptions -> Scenario) does everything in one click: reference timetable,
   no events, no plan, session state cleared, clock at 09:55.
 
