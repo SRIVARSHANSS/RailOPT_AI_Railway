@@ -71,11 +71,11 @@ export function CorridorMap({ geo, now, next, glideMs, minute, scenario, highlig
                 )}
               </g>
             ))}
-            <text x={sec.labelX} y={sec.labelY} textAnchor="middle" className={cn('font-mono text-[17px]', isClosed ? 'fill-signal-red' : 'fill-ink-muted')}>
+            {sec.showLabel && <text x={sec.labelX} y={sec.labelY} textAnchor="middle" className={cn('font-mono text-[17px]', isClosed ? 'fill-signal-red' : 'fill-ink-muted')}>
               {sec.section_id}
               {sec.alternate ? (isPlanned ? ` - planned route for ${plannedTrains.join(', ')}` : ' - alternate (standby)') : ''}
               {isClosed ? ' - CLOSED' : sec.tracks > 1 ? ` - ${sec.tracks} tracks` : ''}
-            </text>
+            </text>}
           </g>
         )
       })}
@@ -86,8 +86,8 @@ export function CorridorMap({ geo, now, next, glideMs, minute, scenario, highlig
           <circle r={26} className="animate-node-pulse origin-center fill-signal-cyan/10 [transform-box:fill-box]" />
           <circle r={16} className="fill-canvas-1 stroke-signal-cyan" strokeWidth={2.5} />
           <text y={7} textAnchor="middle" className="fill-ink font-display text-[19px] font-bold">{st.code}</text>
-          <text y={-38} textAnchor="middle" className="fill-ink-muted text-[17px]">{st.name}</text>
-          <text y={-60} textAnchor="middle" className="fill-ink-dim font-mono text-[13px] uppercase tracking-wider">{st.platforms} platforms</text>
+          <text y={-38 + st.lift} textAnchor="middle" className="fill-ink-muted text-[17px]">{st.name}</text>
+          <text y={-60 + st.lift} textAnchor="middle" className="fill-ink-dim font-mono text-[13px] uppercase tracking-wider">{st.platforms} platforms</text>
         </g>
       ))}
 

@@ -51,7 +51,8 @@ export function Strategies() {
           <p className="text-sm uppercase tracking-[0.2em] text-signal-cyan">Strategy comparison</p>
           <h1 className="text-3xl font-bold xl:text-4xl">Re-plan the corridor</h1>
           <p className="mt-2 max-w-3xl text-ink-muted">
-            Every plan is replayed through the simulator; the numbers below come from those replays (SIMULATED).
+            Every plan is replayed through the simulator; the numbers below come from those replays
+            ({optimize?.data_label ?? 'SIMULATED'}).
             {optimize && <> Last run at <span className="font-mono text-ink">{optimize.at}</span>, known events: {optimize.known_events.join(', ') || 'none'}.</>}
           </p>
         </div>
@@ -85,10 +86,44 @@ export function Strategies() {
               </div>
             </Panel>
           )}
+          <ReplayNotes result={optimize} />
           <Results result={optimize} />
         </>
       )}
     </motion.div>
+  )
+}
+
+/** REAL replay: strategies not offered (and why), the headway sensitivity, ASSUMED priorities. */
+function ReplayNotes({ result }: { result: OptimizeResult }) {
+  const s = result.sensitivity
+  const un = result.unavailable ?? []
+  if (!s && !un.length && !(result.notes ?? []).length) return null
+  const name = (n: string | null) => (n ? LABEL[n] ?? n : 'none')
+  return (
+    <Panel className="border-signal-violet/40">
+      <div className="flex flex-wrap items-center gap-2">
+        <SignalBadge tone="ai">{result.data_label}</SignalBadge>
+        <SignalBadge tone="warning">Priorities ASSUMED: premium 1, superfast 2, express 3</SignalBadge>
+      </div>
+      {un.length > 0 && (
+        <p className="mt-3 text-ink"><span className="font-semibold">Not offered: {un.map((u) => LABEL[u.name] ?? u.name).join(', ')}.</span> {un[0].reason}</p>
+      )}
+      {s && (
+        <div className="mt-3 text-ink">
+          <p>
+            <span className="font-semibold">Headway sensitivity:</span> with the calibrated {s.headway_min} min headway the
+            recommendation is {name(s.recommended)} (ranking {s.ranking.map(name).join(' > ') || '-'}); with {s.alt_headway_min} min
+            it is {name(s.alt_recommended)} (ranking {s.alt_ranking.map(name).join(' > ') || '-'}).{' '}
+            {s.changed ? <span className="font-semibold text-signal-amber">The choice depends on the headway assumption: both are shown.</span> : 'Unchanged by the headway assumption.'}
+          </p>
+          <p className="mt-1 text-sm text-ink-muted">
+            Weighted delay at {s.alt_headway_min} min: {Object.entries(s.alt_weighted_delay).map(([k, v]) => `${name(k)} ${v ?? 'infeasible'}`).join(', ')}.
+          </p>
+        </div>
+      )}
+      {(result.notes ?? []).map((n) => <p key={n} className="mt-2 text-sm text-ink-muted">{n}</p>)}
+    </Panel>
   )
 }
 

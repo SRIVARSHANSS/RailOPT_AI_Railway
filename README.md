@@ -38,7 +38,11 @@ and is not connected to Indian Railways systems. All results are simulated.
   - Step 2: delay at Madurai predicted from what is known at Dindigul, validated on the last
     week of recorded runs against carry-the-DG-delay and linear baselines
     (`backend/ml/reports/real/model_card_real.md`, pre-registered, all results reported)
-- 103 passing tests. Remaining phases: see `CLAUDE.md`
+  - Step 3: real-day replay (`POST /api/scenario/reset {"timetable": "dg_mdu", "mode": "replay",
+    "date": "2024-09-12"}`): trains move by their recorded times (interpolated between recorded
+    stations), hypothetical events and decisions on top are labelled "HYPOTHETICAL on a real recorded
+    day"; loops per station (ASSUMED), headway calibrated on the recordings, HOLD / RESEQUENCE only
+- 115 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

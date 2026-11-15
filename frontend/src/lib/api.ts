@@ -22,7 +22,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T
 }
 
-export type Health = { data_label: 'SIMULATED'; status: string; timetable: string }
+export type Health = { data_label: 'SIMULATED' | 'REAL' | 'HYPOTHETICAL on a real recorded day'; status: string; timetable: string }
 
 export type NetworkSummary = {
   data_label: 'SIMULATED'

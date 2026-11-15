@@ -49,7 +49,7 @@ class StrategyResult:
 
 
 def weighted_delay(net: RailNetwork, delays: dict[str, int]) -> int:
-    return sum(config.PRIORITY_WEIGHTS[net.trains[t].train_type] * d for t, d in delays.items())
+    return sum(config.weight(net.trains[t]) * d for t, d in delays.items())
 
 
 def _score(net, res: StrategyResult, replay: SimResult, known) -> StrategyResult:
@@ -109,7 +109,8 @@ def describe_actions(net: RailNetwork, sol: SolveResult, replay: SimResult) -> l
 
 def compare(net: RailNetwork, state_time: int, known: list[Disruption],
             risk_buffers: dict | None = None, base_holds: dict | None = None,
-            base_overrides: dict | None = None, **solve_kwargs) -> list[StrategyResult]:
+            base_overrides: dict | None = None, strategies: list[str] | None = None,
+            **solve_kwargs) -> list[StrategyResult]:
     """Both baselines and all four strategies, each scored on its replay.
 
     With an accepted plan (base_*), trips already started stay as that plan made them;
@@ -117,7 +118,8 @@ def compare(net: RailNetwork, state_time: int, known: list[Disruption],
     solve_kwargs.update(base_holds=base_holds, base_overrides=base_overrides)
     results = [run_baseline(net, known, "fcfs", base_holds, base_overrides),
                run_baseline(net, known, "priority", base_holds, base_overrides)]
-    results += [run_strategy(net, state_time, known, s.name, risk_buffers, **solve_kwargs) for s in STRATEGIES]
+    results += [run_strategy(net, state_time, known, s.name, risk_buffers, **solve_kwargs) for s in STRATEGIES
+                if strategies is None or s.name in strategies]
     return results
 
 

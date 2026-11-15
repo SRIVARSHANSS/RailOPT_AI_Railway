@@ -1,4 +1,7 @@
-"""API routes (thin layer: all logic lives in app/services). All data SIMULATED."""
+"""API routes (thin layer: all logic lives in app/services).
+
+Data label per response: SIMULATED (sample corridor), REAL (a recorded day, unchanged) or
+"HYPOTHETICAL on a real recorded day" (anything simulated or decided on top of a replay)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -52,7 +55,17 @@ def _event_out(e) -> EventOut:
 
 def _stations(net: RailNetwork) -> list[dict]:
     return [{"code": s.code, "name": s.name, "km": s.km_from_start, "platforms": s.platforms,
-             "is_junction": s.is_junction} for s in sorted(net.stations.values(), key=lambda s: s.km_from_start)]
+             "is_junction": s.is_junction, "loops": s.loops}
+            for s in sorted(net.stations.values(), key=lambda s: s.km_from_start)]
+
+
+REAL_ML_NOTE = ("The ML models were trained on the SIMULATED sample corridor only and are not applied to "
+                "REAL data (see the real-data model card for delay prediction on this corridor).")
+SENSITIVITY_HEADWAY = 4
+
+
+def _estimated(store: ScenarioStore):
+    return store.day.estimated if store.is_replay else None
 
 
 def _validate_event(net: RailNetwork, req: EventRequest) -> None:
@@ -100,13 +113,24 @@ AtQuery = Query(pattern=HHMM, examples=["10:03"], description="clock time HH:MM"
 # ---- routes -------------------------------------------------------------------------------
 @router.get("/health", response_model=Health)
 def health(store: ScenarioStore = Depends(get_store)):
-    return Health(timetable=store.timetable)
+    return Health(timetable=store.timetable, data_label=store.label())
+
+
+@router.get("/replay/days")
+def replay_days():
+    """REAL recorded days of the DG -> MDU corridor and whether each replays exactly."""
+    from app.services.realdata.replay import DEMO_DAY, day_checks
+    return {"data_label": "REAL", "demo_day": DEMO_DAY, "days": day_checks()}
 
 
 @router.get("/network", response_model=NetworkOut)
 def network(timetable: Timetable = "reference", store: ScenarioStore = Depends(get_store)):
-    net = store.network(timetable)
+    if store.is_replay and timetable == store.timetable:
+        net = store.day.timetable                     # the recorded day's trains, real timetable
+    else:
+        net = store.network(timetable)
     return NetworkOut(
+        data_label="REAL" if timetable == "dg_mdu" else "SIMULATED",
         timetable=timetable,
         stations=_stations(net),
         sections=[vars(s) for s in net.sections.values()],
@@ -121,16 +145,26 @@ def network(timetable: Timetable = "reference", store: ScenarioStore = Depends(g
 
 @router.post("/scenario/reset", response_model=ScenarioOut)
 def reset(req: ResetRequest, store: ScenarioStore = Depends(get_store)):
-    store.reset(req.timetable)
+    try:
+        store.reset(req.timetable, req.mode, req.date)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     return scenario(at=None, store=store)
 
 
 @router.get("/scenario", response_model=ScenarioOut)
 def scenario(at: str | None = Query(None, pattern=HHMM, description="clock for the stale-plan check; omit = all posted events"),
              store: ScenarioStore = Depends(get_store)):
+    replay_info = None
+    if store.is_replay:
+        from app.services.realdata.replay import info
+        replay_info = info(store.day, store.divergence())
     return ScenarioOut(
+        data_label=store.label(),
         scenario_version=store.version,
         timetable=store.timetable,
+        mode=store.mode,
+        replay=replay_info,
         events=[_event_out(e) for e in store.events],
         applied_recommendation=store.applied_recommendation,
         plan=store.plan_status(_clock(at) if at else None),
@@ -147,38 +181,66 @@ def add_event(req: EventRequest, store: ScenarioStore = Depends(get_store)):
     _validate_event(net, req)
     _check_closure(store, req)
     event = store.add_event(req.event_type, req.train_id, req.location, parse_time(req.start_time), req.duration_min)
-    return EventCreated(event=_event_out(event), events=[_event_out(e) for e in store.events])
+    return EventCreated(data_label=store.label(), event=_event_out(event), events=[_event_out(e) for e in store.events])
 
 
 @router.get("/state", response_model=StateOut)
 def state(at: str = AtQuery, store: ScenarioStore = Depends(get_store)):
-    t, net = _clock(at), store.network()
+    t = _clock(at)
     known = store.known_events(t)
-    states = live.train_states(net, store.actual(), t, store.events)   # movement: every posted event
+    est = _estimated(store)
+    # movement: every posted event; in a replay, delays are shown against the real timetable
+    shown = store.day.timetable if store.is_replay else store.network()
+    states = live.train_states(shown, store.actual(), t, store.events, est)
+    net = store.planning_network(t)
     plan = project_plan(net, t, known, store.route_overrides, store.holds)   # known events + accepted plan
-    n_conflicts = len(detect_conflicts(net, plan))
-    return StateOut(scenario_version=store.version, at=at, known_events=[e.event_id for e in known], trains=states,
+    found = detect_conflicts(net, plan)
+    n_conflicts = sum(1 for c in found if live.certainty(net, c, est) == "FIRM")
+    return StateOut(data_label=store.label(), scenario_version=store.version, at=at,
+                    known_events=[e.event_id for e in known], trains=states,
                     kpis=live.kpis(states, n_conflicts), plan=store.plan_status(t))
 
 
 @router.get("/conflicts", response_model=ConflictsOut)
 def conflicts(at: str = AtQuery, store: ScenarioStore = Depends(get_store),
               predictor=Depends(get_predictor_or_none)):
-    t, net = _clock(at), store.network()
+    t = _clock(at)
+    net = store.planning_network(t)
     known = store.known_events(t)
-    view = live.conflicts_view(net, t, known, predictor, store.route_overrides, store.holds,
-                               store.previous_overrides, store.previous_holds)
-    return ConflictsOut(at=at, known_events=[e.event_id for e in known], conflicts=view["conflicts"],
+    view = live.conflicts_view(net, t, known, None if store.is_replay else predictor, store.route_overrides,
+                               store.holds, store.previous_overrides, store.previous_holds,
+                               _estimated(store), REAL_ML_NOTE if store.is_replay else None)
+    return ConflictsOut(data_label=store.label(), at=at, known_events=[e.event_id for e in known],
+                        conflicts=view["conflicts"],
                         ml_watchlist=view["ml_watchlist"], ml_note=view["ml_note"])
 
 
 @router.post("/optimize", response_model=OptimizeOut)
 def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
-    t, net = _clock(req.at), store.network()
+    t = _clock(req.at)
+    net = store.planning_network(t)
     version = store.version
     known = store.known_events(t)
     # re-plan from the CURRENT state: the accepted plan (if any) shapes history
     view = live.optimize_view(net, t, known, store.holds, store.route_overrides)
+    sensitivity, notes = None, []
+    if store.is_replay:
+        from app.services.realdata.replay import with_headway
+        alt = live.optimize_view(with_headway(net, SENSITIVITY_HEADWAY), t, known, store.holds, store.route_overrides)
+        main_rec = view["recommendation"]["strategy"] if view["recommendation"] else None
+        alt_rec = alt["recommendation"]["strategy"] if alt["recommendation"] else None
+        sensitivity = {
+            "headway_min": net.sections[next(iter(net.sections))].min_headway_min,
+            "alt_headway_min": SENSITIVITY_HEADWAY,
+            "recommended": main_rec, "alt_recommended": alt_rec,
+            "ranking": view["ranking"], "alt_ranking": alt["ranking"],
+            "alt_weighted_delay": {r["name"]: r["weighted_delay"] for r in alt["results"]},
+            "changed": main_rec != alt_rec or view["ranking"] != alt["ranking"],
+        }
+        notes = ["HYPOTHETICAL on a real recorded day: delays are minutes added to the expected movement "
+                 "(recorded so far, then the timetable with current delays carried forward).",
+                 "Priorities ASSUMED: PREMIUM 1, SUPERFAST 2, EXPRESS 3 (objective weights 3/2/1).",
+                 REAL_ML_NOTE]
     rec_out = None
     rec = view["recommendation"]
     if rec is not None:
@@ -186,9 +248,11 @@ def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
         stored = store.add_recommendation(t, rec["strategy"], holds, overrides, rec,
                                           known_event_ids=[e.event_id for e in known])
         rec_out = {"recommendation_id": stored.rec_id, **rec}
-    return OptimizeOut(scenario_version=version, at=req.at, known_events=[e.event_id for e in known],
+    return OptimizeOut(data_label=store.label(decision=True), scenario_version=version, at=req.at,
+                       known_events=[e.event_id for e in known],
                        results=view["results"], recommendation=rec_out,
-                       replanning_from=store.applied_recommendation)
+                       replanning_from=store.applied_recommendation, unavailable=view["unavailable"],
+                       sensitivity=sensitivity, notes=notes)
 
 
 @router.post("/whatif", response_model=WhatIfOut)
@@ -198,6 +262,7 @@ def whatif(req: WhatIfRequest, store: ScenarioStore = Depends(get_store),
     compare it with the current one. The live store is never touched."""
     t, net = _clock(req.at), store.network()
     copy = store.copy_for_whatif()
+    est = _estimated(store)
     added = []
     for n, ev in enumerate(req.events, start=1):
         try:
@@ -209,19 +274,21 @@ def whatif(req: WhatIfRequest, store: ScenarioStore = Depends(get_store),
                                     ev.duration_min, prefix="H"))
 
     def side(scn: ScenarioStore, known: list) -> dict:
-        cv = live.conflicts_view(net, t, known, predictor, scn.route_overrides, scn.holds,
-                                 scn.previous_overrides, scn.previous_holds)
-        ov = live.optimize_view(net, t, known, scn.holds, scn.route_overrides)
+        pnet = scn.planning_network(t)
+        cv = live.conflicts_view(pnet, t, known, None if scn.is_replay else predictor, scn.route_overrides,
+                                 scn.holds, scn.previous_overrides, scn.previous_holds, est,
+                                 REAL_ML_NOTE if scn.is_replay else None)
+        ov = live.optimize_view(pnet, t, known, scn.holds, scn.route_overrides)
         rec = ov["recommendation"]
         if rec is not None:
             rec = {k: v for k, v in rec.items() if not k.startswith("_")}
         return {"known_events": [e.event_id for e in known], "conflicts": cv["conflicts"],
                 "ml_watchlist": cv["ml_watchlist"], "ml_note": cv["ml_note"],
-                "results": ov["results"], "recommendation": rec}
+                "results": ov["results"], "recommendation": rec, "unavailable": ov["unavailable"]}
 
     current_known = store.known_events(t)
     hypothetical_known = current_known + added          # hypothetical events count as known at `at`
-    return WhatIfOut(at=req.at, hypothetical_events=[_event_out(e) for e in added],
+    return WhatIfOut(data_label=store.label(decision=True), at=req.at, hypothetical_events=[_event_out(e) for e in added],
                      current=side(store, current_known), hypothetical=side(copy, hypothetical_known))
 
 
@@ -233,7 +300,8 @@ def decide(rec_id: str, req: DecisionRequest, store: ScenarioStore = Depends(get
         raise HTTPException(status_code=404, detail=f"unknown recommendation {rec_id}")
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
-    return DecisionOut(scenario_version=store.version, recommendation_id=rec_id, decision=req.decision,
+    return DecisionOut(data_label=store.label(decision=True), scenario_version=store.version,
+                       recommendation_id=rec_id, decision=req.decision,
                        applied_recommendation=store.applied_recommendation, decision_log=store.decision_log)
 
 
@@ -244,12 +312,22 @@ def timeline(store: ScenarioStore = Depends(get_store)):
     nothing); null while no plan is accepted."""
     net = store.network()
     before = None
-    if store.applied_recommendation is not None:
-        replay = simulate(net, store.events, route_overrides=store.previous_overrides or None,
-                          holds=store.previous_holds or None)
-        before = live.timeline_rows(net, replay, store.events)
-    return TimelineOut(timetable=store.timetable, stations=_stations(net),
-                       planned=live.planned_timeline(net), actual=live.timeline_rows(net, store.actual(), store.events),
+    if store.is_replay:
+        from app.services.realdata.replay import frozen_movement, planned_rows
+        day, est = store.day, store.day.estimated
+        if store.applied_recommendation is not None:
+            prev = simulate(frozen_movement(day, store.divergence() or 0), store.events,
+                            route_overrides=store.previous_overrides or None, holds=store.previous_holds or None)
+            before = live.timeline_rows(day.timetable, prev, store.events, est)
+        planned, actual = planned_rows(day), live.timeline_rows(day.timetable, store.actual(), store.events, est)
+    else:
+        if store.applied_recommendation is not None:
+            replay = simulate(net, store.events, route_overrides=store.previous_overrides or None,
+                              holds=store.previous_holds or None)
+            before = live.timeline_rows(net, replay, store.events)
+        planned, actual = live.planned_timeline(net), live.timeline_rows(net, store.actual(), store.events)
+    return TimelineOut(data_label=store.label(), timetable=store.timetable, stations=_stations(net),
+                       planned=planned, actual=actual,
                        before_plan=before, closures=live.closure_blocks(net, store.events),
                        applied_recommendation=store.applied_recommendation,
                        previous_plan=next((d["replaces"] for d in reversed(store.decision_log) if d["decision"] == "accept"), None)

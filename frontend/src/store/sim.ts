@@ -8,6 +8,9 @@ import type { OptimizeResult } from '../api/types'
 export type Speed = 1 | 10 | 60
 
 export const DEMO_START = 9 * 60 + 55
+/** Real day replay demo (docs/DEMO.md): 2024-09-12, clock 08:30 before the 22627 / 16343 overtake. */
+export const REPLAY_DEMO_DAY = '2024-09-12'
+export const REPLAY_DEMO_START = 8 * 60 + 30
 
 /** sessionStorage can throw (privacy modes, blocked storage): fall back to memory. */
 const sessionSafe = createJSONStorage((): StateStorage => {

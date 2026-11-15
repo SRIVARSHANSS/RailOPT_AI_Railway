@@ -121,6 +121,9 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
 
     m = cp_model.CpModel()
     by_section: dict[str, list[tuple]] = {}      # section -> [(interval incl. headway, sched_key, entry, presence)]
+    standing: dict[str, list] = {}                # station with loops -> [interval a train stands there]
+    fixed_block: dict[str, tuple[int, int, str]] = {}   # section -> latest fixed (history) trip incl. headway
+    loops = {c: s.loops for c, s in net.stations.items() if s.loops is not None}
     objective_terms = []
     decision: list[dict] = []                    # one per decision trip
 
@@ -139,8 +142,15 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
                 sec = net.sections[actual.section_id]
                 end = actual.exit + sec.min_headway_min
                 if end > state_time:
-                    iv = m.NewIntervalVar(actual.entry, end - actual.entry, end, f"fixed_{train_id}_{i}")
-                    by_section.setdefault(sec.section_id, []).append((iv, None, actual.entry, None))
+                    if sec.tracks == 1:
+                        # history cannot change: on a single track only the latest fixed trip blocks
+                        # new ones (two recorded trips never constrain each other)
+                        last = fixed_block.get(sec.section_id)
+                        if last is None or end > last[1]:
+                            fixed_block[sec.section_id] = (actual.entry, end, f"fixed_{train_id}_{i}")
+                    else:
+                        iv = m.NewIntervalVar(actual.entry, end - actual.entry, end, f"fixed_{train_id}_{i}")
+                        by_section.setdefault(sec.section_id, []).append((iv, None, actual.entry, None))
                 fixed.append(PlannedTrip(train_id, i, sec.section_id, actual.entry, actual.exit,
                                          sec.section_id != primary.section_id))
                 prev_exit = actual.exit
@@ -190,6 +200,14 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
                 m.AddExactlyOne(list(presences.values()))
             decision.append({"train_id": train_id, "i": i, "entry": entry, "exit": exit_,
                              "presences": presences, "primary": primary.section_id})
+            if i > 0 and here.station in loops and prev_exit is not None:
+                # at an intermediate station from arrival to departure; a passing train holds a line
+                # for its arrival minute (so it can never pass a standing train without a free loop)
+                size = m.NewIntVar(1, hi - lo + 2 * config.PLANNING_WINDOW_MIN, f"stand_{train_id}_{i}")
+                m.AddMaxEquality(size, [entry - prev_exit, 1])
+                end = m.NewIntVar(-10**6, 10**6, f"stand_end_{train_id}_{i}")
+                standing.setdefault(here.station, []).append(
+                    m.NewIntervalVar(prev_exit, size, end, f"stand_iv_{train_id}_{i}"))
             prev_exit = exit_
             last_trip = (i, exit_)
 
@@ -197,7 +215,10 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
             i, exit_ = last_trip
             late = m.NewIntVar(0, config.PLANNING_WINDOW_MIN * 2, f"late_{train_id}")
             m.AddMaxEquality(late, [0, exit_ - stops[i + 1].sched_arr])
-            objective_terms.append(config.PRIORITY_WEIGHTS[train.train_type] * late)
+            objective_terms.append(config.weight(train) * late)
+
+    for sid, (start, end, name) in fixed_block.items():
+        by_section.setdefault(sid, []).append((m.NewIntervalVar(start, end - start, end, name), None, start, None))
 
     # capacity
     for sid, items in by_section.items():
@@ -214,6 +235,11 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
                     _, _, ea, pa = ordered[a]
                     _, _, eb, pb = ordered[b]
                     m.Add(eb >= ea).OnlyEnforceIf([pa, pb])
+
+    # stations with loops: at most loops + 1 trains (main line + loops) at any minute, so a train
+    # can only be passed where a loop is free (no overtaking at all where loops = 0)
+    for code, ivs in standing.items():
+        m.AddCumulative(ivs, [1] * len(ivs), loops[code] + 1)
 
     m.Minimize(sum(objective_terms))
 
@@ -233,6 +259,9 @@ def solve(net: RailNetwork, state_time: int, known_events: list[Disruption] | No
             "UNKNOWN": f"No solution found within the {time_limit_s} s time limit.",
             "MODEL_INVALID": "The model is invalid (please report this as a bug).",
         }.get(status, status)
+        if status == "INFEASIBLE" and loops and spec.fixed_order:
+            result.message += (" Keeping the timetable order here would need a train to be overtaken "
+                               "where no loop is free.")
         return result
 
     result.objective = int(solver.ObjectiveValue())

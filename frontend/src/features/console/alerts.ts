@@ -32,6 +32,7 @@ export function buildAlerts(c: ConflictsAt | undefined, opt: OptimizeResult | nu
     })
   }
   for (const k of c?.conflicts ?? []) {
+    if (k.certainty === 'ESTIMATED') continue // REAL replay: rests on interpolated times, listed separately
     out.push({
       key: `c-${k.conflict_id}-${k.section_id}-${k.later_train}`, level: k.severity,
       title: `${k.severity}: ${k.later_train} ${k.conflict_type.toLowerCase()} on ${k.section_id}`,

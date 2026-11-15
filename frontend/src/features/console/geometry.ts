@@ -9,15 +9,20 @@ const LANE = 13
 const X0 = 95
 const X1 = 1105
 
-export type StationGeo = { code: string; name: string; x: number; y: number; platforms: number }
-export type SectionGeo = Section & { lanes: string[]; alternate: boolean; labelX: number; labelY: number }
+export type StationGeo = { code: string; name: string; x: number; y: number; platforms: number; lift: number }
+export type SectionGeo = Section & { lanes: string[]; alternate: boolean; labelX: number; labelY: number; showLabel: boolean }
 export type Geometry = { stations: Record<string, StationGeo>; sections: Record<string, SectionGeo> }
 
 export function buildGeometry(net: Network): Geometry {
   const maxKm = Math.max(...net.stations.map((s) => s.km))
   const stations: Record<string, StationGeo> = {}
   for (const s of net.stations) {
-    stations[s.code] = { code: s.code, name: s.name, x: X0 + (s.km / maxKm) * (X1 - X0), y: MAIN_Y, platforms: s.platforms }
+    stations[s.code] = { code: s.code, name: s.name, x: X0 + (s.km / maxKm) * (X1 - X0), y: MAIN_Y, platforms: s.platforms, lift: 0 }
+  }
+  // stations closer than a label's width (e.g. KON and MDU, 3.75 km apart): lift every other label
+  const byX = Object.values(stations).sort((a, b) => a.x - b.x)
+  for (let i = 1; i < byX.length; i++) {
+    if (byX[i].x - byX[i - 1].x < 130 && byX[i - 1].lift === 0) byX[i].lift = -48
   }
   const sections: Record<string, SectionGeo> = {}
   for (const sec of net.sections) {
@@ -38,7 +43,7 @@ export function buildGeometry(net: Network): Geometry {
       lanes = [`M ${a.x} ${a.y} L ${b.x} ${b.y}`]
     }
     sections[sec.section_id] = {
-      ...sec, lanes, alternate,
+      ...sec, lanes, alternate, showLabel: Math.abs(b.x - a.x) >= 90,
       // single-track labels sit below the line near the far end, clear of train labels
       labelX: !alternate && sec.tracks === 1 ? a.x + (b.x - a.x) * 0.84 : (a.x + b.x) / 2,
       labelY: alternate ? a.y + 122 : sec.tracks > 1 ? a.y - 56 : a.y + 34,

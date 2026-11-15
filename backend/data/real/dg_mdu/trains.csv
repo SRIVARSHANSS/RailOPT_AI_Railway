@@ -1,45 +1,45 @@
-train_id,train_no,train_name,train_type,priority,runs_on,terminates_at_mdu,timetable_source,source,date_checked
-R11021,11021,Dadar Ten Express,EXPRESS,1,"Mon,Thu,Fri",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12631,12631,Nellai Sf Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12633,12633,Kanyakumari Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12635,12635,Vaigai Sf Express,SUPERFAST,1,daily,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12637,12637,Pandian Sf Express,SUPERFAST,1,daily,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12642,12642,Nzm Cape Sf Express,SUPERFAST,1,"Tue,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12652,12652,Smpark Krnt Express,SUPERFAST,1,"Wed,Fri",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12661,12661,Pothigai Sf Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12665,12665,Hwh Cape Sf Express,SUPERFAST,1,Wed,no,DATASET_RECORDS,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12667,12667,Ms Ncj Sf Express,SUPERFAST,1,Fri,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12688,12688,Cdg Mdu Sf Express,SUPERFAST,1,Sun,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12689,12689,Mas Ncj Sf Express,SUPERFAST,1,Sat,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R12693,12693,Pearl City Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16101,16101,Ms Qln Express,EXPRESS,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16127,16127,Ms Guruvayur Express,EXPRESS,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16236,16236,Tuticorin Express,EXPRESS,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16339,16339,Nagarcoil Express,EXPRESS,1,"Mon,Thu,Fri,Sat",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16343,16343,Amritha Express,EXPRESS,1,daily,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16351,16351,Nagarcoil Express,EXPRESS,1,"Wed,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16353,16353,Kcg Ncj Express,EXPRESS,1,Mon,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16368,16368,Kashi Tamil Express,EXPRESS,1,Tue,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16734,16734,Okha Rmm Express,EXPRESS,1,Thu,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16765,16765,Mtp Tn Express,EXPRESS,1,"Mon,Sat",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16779,16779,Tpty Rmm Express,EXPRESS,1,"Tue,Sat,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R16788,16788,Navyug Express,EXPRESS,1,Sun,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R17235,17235,Nagercoil Express,EXPRESS,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R19568,19568,Vivek Express,EXPRESS,1,Sat,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R20494,20494,Cdg Mdu Sf Express,SUPERFAST,1,"Wed,Sun",yes,DATASET_RECORDS,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R20601,20601,Mas Bdnk Sf Express,SUPERFAST,1,"Tue,Sat",no,DATASET_RECORDS,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R20605,20605,Ms Tcn Sf Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R20627,20627,Ms Ncj Vb Express,SUPERFAST,1,"Mon,Tue,Thu,Fri,Sat,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R20635,20635,Anantapuri Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R20665,20665,Ten Vandebharat,PREMIUM,1,"Mon,Wed,Thu,Fri,Sat,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R20672,20672,Mdu Vande Bharat,PREMIUM,1,"Mon,Wed,Thu,Fri,Sat,Sun",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22101,22101,Ltt Madurai Express,SUPERFAST,1,Thu,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22605,22605,Prr Ten Sf Express,SUPERFAST,1,"Wed,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22623,22623,Ms Mdu Sf Express,SUPERFAST,1,"Mon,Sat",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22627,22627,Tpj Tvc Sf Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22629,22629,Dadar Ten Express,SUPERFAST,1,Sat,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22632,22632,Bkn Mdu Sf Express,SUPERFAST,1,Tue,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22657,22657,Tbm Ncj Sf Express,SUPERFAST,1,"Mon,Tue,Thu",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22668,22668,Cbe Ncj Sf Express,SUPERFAST,1,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22671,22671,Tejas Express,PREMIUM,1,"Mon,Tue,Wed,Fri,Sat,Sun",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
-R22715,22715,Kcg Mdu Sf Express,SUPERFAST,1,Sun,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+train_id,train_no,train_name,train_type,priority,priority_source,runs_on,terminates_at_mdu,timetable_source,source,date_checked
+R11021,11021,Dadar Ten Express,EXPRESS,3,ASSUMED,"Mon,Thu,Fri",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12631,12631,Nellai Sf Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12633,12633,Kanyakumari Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12635,12635,Vaigai Sf Express,SUPERFAST,2,ASSUMED,daily,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12637,12637,Pandian Sf Express,SUPERFAST,2,ASSUMED,daily,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12642,12642,Nzm Cape Sf Express,SUPERFAST,2,ASSUMED,"Tue,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12652,12652,Smpark Krnt Express,SUPERFAST,2,ASSUMED,"Wed,Fri",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12661,12661,Pothigai Sf Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12665,12665,Hwh Cape Sf Express,SUPERFAST,2,ASSUMED,Wed,no,DATASET_RECORDS,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12667,12667,Ms Ncj Sf Express,SUPERFAST,2,ASSUMED,Fri,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12688,12688,Cdg Mdu Sf Express,SUPERFAST,2,ASSUMED,Sun,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12689,12689,Mas Ncj Sf Express,SUPERFAST,2,ASSUMED,Sat,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R12693,12693,Pearl City Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16101,16101,Ms Qln Express,EXPRESS,3,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16127,16127,Ms Guruvayur Express,EXPRESS,3,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16236,16236,Tuticorin Express,EXPRESS,3,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16339,16339,Nagarcoil Express,EXPRESS,3,ASSUMED,"Mon,Thu,Fri,Sat",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16343,16343,Amritha Express,EXPRESS,3,ASSUMED,daily,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16351,16351,Nagarcoil Express,EXPRESS,3,ASSUMED,"Wed,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16353,16353,Kcg Ncj Express,EXPRESS,3,ASSUMED,Mon,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16368,16368,Kashi Tamil Express,EXPRESS,3,ASSUMED,Tue,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16734,16734,Okha Rmm Express,EXPRESS,3,ASSUMED,Thu,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16765,16765,Mtp Tn Express,EXPRESS,3,ASSUMED,"Mon,Sat",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16779,16779,Tpty Rmm Express,EXPRESS,3,ASSUMED,"Tue,Sat,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R16788,16788,Navyug Express,EXPRESS,3,ASSUMED,Sun,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R17235,17235,Nagercoil Express,EXPRESS,3,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R19568,19568,Vivek Express,EXPRESS,3,ASSUMED,Sat,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R20494,20494,Cdg Mdu Sf Express,SUPERFAST,2,ASSUMED,"Wed,Sun",yes,DATASET_RECORDS,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R20601,20601,Mas Bdnk Sf Express,SUPERFAST,2,ASSUMED,"Tue,Sat",no,DATASET_RECORDS,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R20605,20605,Ms Tcn Sf Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R20627,20627,Ms Ncj Vb Express,PREMIUM,1,ASSUMED,"Mon,Tue,Thu,Fri,Sat,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R20635,20635,Anantapuri Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R20665,20665,Ten Vandebharat,PREMIUM,1,ASSUMED,"Mon,Wed,Thu,Fri,Sat,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R20672,20672,Mdu Vande Bharat,PREMIUM,1,ASSUMED,"Mon,Wed,Thu,Fri,Sat,Sun",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22101,22101,Ltt Madurai Express,SUPERFAST,2,ASSUMED,Thu,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22605,22605,Prr Ten Sf Express,SUPERFAST,2,ASSUMED,"Wed,Sun",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22623,22623,Ms Mdu Sf Express,SUPERFAST,2,ASSUMED,"Mon,Sat",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22627,22627,Tpj Tvc Sf Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22629,22629,Dadar Ten Express,SUPERFAST,2,ASSUMED,Sat,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22632,22632,Bkn Mdu Sf Express,SUPERFAST,2,ASSUMED,Tue,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22657,22657,Tbm Ncj Sf Express,SUPERFAST,2,ASSUMED,"Mon,Tue,Thu",no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22668,22668,Cbe Ncj Sf Express,SUPERFAST,2,ASSUMED,daily,no,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22671,22671,Tejas Express,PREMIUM,1,ASSUMED,"Mon,Tue,Wed,Fri,Sat,Sun",yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15
+R22715,22715,Kcg Mdu Sf Express,SUPERFAST,2,ASSUMED,Sun,yes,DATASET_ROUTE,RSTGCN train_routes_Sep2024.csv,2026-11-15

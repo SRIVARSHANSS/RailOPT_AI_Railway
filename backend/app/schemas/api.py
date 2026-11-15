@@ -1,17 +1,21 @@
-"""Pydantic request / response models. Every response carries data_label = SIMULATED."""
+"""Pydantic request / response models. Every response carries a data_label: SIMULATED (sample
+corridor), REAL (a recorded day replayed unchanged) or "HYPOTHETICAL on a real recorded day"."""
 from __future__ import annotations
 
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-HHMM = r"^([01]\d|2[0-3]):[0-5]\d$"
-Timetable = Literal["reference", "full_day"]
+# a REAL replay day can run past midnight ('24:35' = 00:35 the next day), up to 47:59
+HHMM = r"^([0-3]\d|4[0-7]):[0-5]\d$"
+DATE = r"^\d{4}-\d{2}-\d{2}$"
+Timetable = Literal["reference", "full_day", "dg_mdu"]
+DataLabel = Literal["SIMULATED", "REAL", "HYPOTHETICAL on a real recorded day"]
 EventType = Literal["STOPPAGE", "DELAY", "TRACK_UNAVAILABLE", "PLATFORM_UNAVAILABLE"]
 
 
 class Labelled(BaseModel):
-    data_label: Literal["SIMULATED"] = "SIMULATED"
+    data_label: DataLabel = "SIMULATED"
 
 
 VERSION_DOC = ("'<server boot id>-<revision>': changes on every API start, reset, event and decision; "
@@ -21,6 +25,8 @@ VERSION_DOC = ("'<server boot id>-<revision>': changes on every API start, reset
 # ---- requests ------------------------------------------------------------------------
 class ResetRequest(BaseModel):
     timetable: Timetable = "reference"
+    mode: Literal["live", "replay"] = Field("live", description="replay = one REAL recorded day (timetable dg_mdu)")
+    date: str | None = Field(None, pattern=DATE, examples=["2024-09-12"], description="recorded DG date for replay")
 
 
 class EventRequest(BaseModel):
@@ -57,6 +63,7 @@ class StationOut(BaseModel):
     km: float
     platforms: int
     is_junction: bool
+    loops: int | None = Field(None, description="loop lines (REAL corridor, ASSUMED); null = not modelled")
 
 
 class SectionOut(BaseModel):
@@ -116,9 +123,28 @@ class PlanStatus(BaseModel):
     basis_at: int | None = Field(description="clock time (minutes) the accepted plan was computed for")
 
 
+class ReplayInfo(BaseModel):
+    date: str
+    weekday: str
+    header: str = Field(description="REAL RECORDED MOVEMENTS - <date> - source")
+    source: str
+    window_start: int
+    window_end: int
+    trains: int
+    divergence: str | None = Field(description="first minute the hypothetical differs from the recording; null = unchanged")
+    recorded_overtakes: list[dict[str, Any]]
+    placed_waits: list[dict[str, Any]] = Field(description="INTERPOLATED waits placed so the movement fits the model")
+    unreliable: list[dict[str, Any]]
+    unresolved: list[str]
+    flagged_mdu: list[str]
+    notes: list[str]
+
+
 class ScenarioOut(Labelled):
     scenario_version: str = Field(description=VERSION_DOC)
     timetable: str
+    mode: Literal["live", "replay"] = "live"
+    replay: ReplayInfo | None = None
     events: list[EventOut]
     applied_recommendation: str | None
     plan: PlanStatus
@@ -137,6 +163,7 @@ class TrainState(BaseModel):
     next_station: str | None
     current_delay_min: int
     stopped: bool = Field(False, description="standing still inside the section during a stoppage")
+    interpolated: bool = Field(False, description="REAL replay: the position comes from interpolated times")
 
 
 class Kpis(BaseModel):
@@ -182,6 +209,8 @@ class ConflictOut(BaseModel):
     severity: Literal["CRITICAL", "WARNING"]
     event_id: str | None
     prediction: Prediction | None
+    certainty: Literal["FIRM", "ESTIMATED"] = Field(
+        "FIRM", description="REAL replay: ESTIMATED = depends on interpolated/estimated times (uncertain, not an alert)")
 
 
 class WatchItem(Prediction):
@@ -244,6 +273,11 @@ class RecommendationOut(RecommendationBase):
     recommendation_id: str
 
 
+class Unavailable(BaseModel):
+    name: str
+    reason: str
+
+
 class OptimizeOut(Labelled):
     scenario_version: str = Field(description="version this run was computed against")
     at: str
@@ -251,6 +285,9 @@ class OptimizeOut(Labelled):
     results: list[StrategyRow]
     recommendation: RecommendationOut | None
     replanning_from: str | None = Field(None, description="accepted plan this run re-plans on top of")
+    unavailable: list[Unavailable] = Field(default_factory=list, description="strategies not offered here, and why")
+    sensitivity: dict[str, Any] | None = Field(None, description="REAL replay: the same run with the other headway")
+    notes: list[str] = Field(default_factory=list)
 
 
 class WhatIfSide(BaseModel):
@@ -260,6 +297,7 @@ class WhatIfSide(BaseModel):
     ml_note: str | None
     results: list[StrategyRow]
     recommendation: RecommendationBase | None = Field(description="not stored: a what-if cannot be accepted")
+    unavailable: list[Unavailable] = Field(default_factory=list)
 
 
 class WhatIfOut(Labelled):
@@ -295,6 +333,7 @@ class TimelineRow(BaseModel):
     stops: list[StopWindow] = Field(default_factory=list, description="stood still inside the section")
     delay_min: int | None = Field(None, description="exit vs timetabled arrival at to_station")
     alternate: bool = Field(False, description="ran on a standby (alternate) line")
+    interpolated: bool = Field(False, description="REAL replay: entry or exit time interpolated")
 
 
 class StopWindow(BaseModel):

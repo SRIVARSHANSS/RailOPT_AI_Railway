@@ -1,0 +1,355 @@
+{
+  "data_label": "REAL",
+  "occupancies": 4575,
+  "train_days": 682,
+  "candidates": {
+    "0": {
+      "total": 330,
+      "recorded": 0,
+      "estimated": 330,
+      "by_type": {
+        "OVERLAP": {
+          "RECORDED": 0,
+          "ESTIMATED": 330
+        }
+      },
+      "by_section": {
+        "S_DG_ABI": {
+          "RECORDED": 0,
+          "ESTIMATED": 56
+        },
+        "S_ABI_KQN": {
+          "RECORDED": 0,
+          "ESTIMATED": 67
+        },
+        "S_KQN_VDP": {
+          "RECORDED": 0,
+          "ESTIMATED": 69
+        },
+        "S_VDP_SDN": {
+          "RECORDED": 0,
+          "ESTIMATED": 50
+        },
+        "S_SDN_SER": {
+          "RECORDED": 0,
+          "ESTIMATED": 46
+        },
+        "S_SER_KON": {
+          "RECORDED": 0,
+          "ESTIMATED": 35
+        },
+        "S_KON_MDU": {
+          "RECORDED": 0,
+          "ESTIMATED": 7
+        }
+      }
+    },
+    "1": {
+      "total": 380,
+      "recorded": 1,
+      "estimated": 379,
+      "by_type": {
+        "OVERLAP": {
+          "RECORDED": 0,
+          "ESTIMATED": 330
+        },
+        "HEADWAY": {
+          "RECORDED": 1,
+          "ESTIMATED": 49
+        }
+      },
+      "by_section": {
+        "S_DG_ABI": {
+          "RECORDED": 1,
+          "ESTIMATED": 68
+        },
+        "S_ABI_KQN": {
+          "RECORDED": 0,
+          "ESTIMATED": 76
+        },
+        "S_KQN_VDP": {
+          "RECORDED": 0,
+          "ESTIMATED": 78
+        },
+        "S_VDP_SDN": {
+          "RECORDED": 0,
+          "ESTIMATED": 55
+        },
+        "S_SDN_SER": {
+          "RECORDED": 0,
+          "ESTIMATED": 52
+        },
+        "S_SER_KON": {
+          "RECORDED": 0,
+          "ESTIMATED": 38
+        },
+        "S_KON_MDU": {
+          "RECORDED": 0,
+          "ESTIMATED": 12
+        }
+      }
+    },
+    "2": {
+      "total": 448,
+      "recorded": 1,
+      "estimated": 447,
+      "by_type": {
+        "OVERLAP": {
+          "RECORDED": 0,
+          "ESTIMATED": 330
+        },
+        "HEADWAY": {
+          "RECORDED": 1,
+          "ESTIMATED": 117
+        }
+      },
+      "by_section": {
+        "S_DG_ABI": {
+          "RECORDED": 1,
+          "ESTIMATED": 83
+        },
+        "S_ABI_KQN": {
+          "RECORDED": 0,
+          "ESTIMATED": 87
+        },
+        "S_KQN_VDP": {
+          "RECORDED": 0,
+          "ESTIMATED": 91
+        },
+        "S_VDP_SDN": {
+          "RECORDED": 0,
+          "ESTIMATED": 59
+        },
+        "S_SDN_SER": {
+          "RECORDED": 0,
+          "ESTIMATED": 59
+        },
+        "S_SER_KON": {
+          "RECORDED": 0,
+          "ESTIMATED": 51
+        },
+        "S_KON_MDU": {
+          "RECORDED": 0,
+          "ESTIMATED": 17
+        }
+      }
+    },
+    "3": {
+      "total": 522,
+      "recorded": 1,
+      "estimated": 521,
+      "by_type": {
+        "OVERLAP": {
+          "RECORDED": 0,
+          "ESTIMATED": 330
+        },
+        "HEADWAY": {
+          "RECORDED": 1,
+          "ESTIMATED": 191
+        }
+      },
+      "by_section": {
+        "S_DG_ABI": {
+          "RECORDED": 1,
+          "ESTIMATED": 96
+        },
+        "S_ABI_KQN": {
+          "RECORDED": 0,
+          "ESTIMATED": 102
+        },
+        "S_KQN_VDP": {
+          "RECORDED": 0,
+          "ESTIMATED": 107
+        },
+        "S_VDP_SDN": {
+          "RECORDED": 0,
+          "ESTIMATED": 66
+        },
+        "S_SDN_SER": {
+          "RECORDED": 0,
+          "ESTIMATED": 71
+        },
+        "S_SER_KON": {
+          "RECORDED": 0,
+          "ESTIMATED": 59
+        },
+        "S_KON_MDU": {
+          "RECORDED": 0,
+          "ESTIMATED": 20
+        }
+      }
+    },
+    "4": {
+      "total": 605,
+      "recorded": 1,
+      "estimated": 604,
+      "by_type": {
+        "OVERLAP": {
+          "RECORDED": 0,
+          "ESTIMATED": 330
+        },
+        "HEADWAY": {
+          "RECORDED": 1,
+          "ESTIMATED": 274
+        }
+      },
+      "by_section": {
+        "S_DG_ABI": {
+          "RECORDED": 1,
+          "ESTIMATED": 114
+        },
+        "S_ABI_KQN": {
+          "RECORDED": 0,
+          "ESTIMATED": 117
+        },
+        "S_KQN_VDP": {
+          "RECORDED": 0,
+          "ESTIMATED": 120
+        },
+        "S_VDP_SDN": {
+          "RECORDED": 0,
+          "ESTIMATED": 75
+        },
+        "S_SDN_SER": {
+          "RECORDED": 0,
+          "ESTIMATED": 84
+        },
+        "S_SER_KON": {
+          "RECORDED": 0,
+          "ESTIMATED": 69
+        },
+        "S_KON_MDU": {
+          "RECORDED": 0,
+          "ESTIMATED": 25
+        }
+      }
+    },
+    "5": {
+      "total": 675,
+      "recorded": 2,
+      "estimated": 673,
+      "by_type": {
+        "OVERLAP": {
+          "RECORDED": 0,
+          "ESTIMATED": 330
+        },
+        "HEADWAY": {
+          "RECORDED": 2,
+          "ESTIMATED": 343
+        }
+      },
+      "by_section": {
+        "S_DG_ABI": {
+          "RECORDED": 1,
+          "ESTIMATED": 128
+        },
+        "S_ABI_KQN": {
+          "RECORDED": 1,
+          "ESTIMATED": 125
+        },
+        "S_KQN_VDP": {
+          "RECORDED": 0,
+          "ESTIMATED": 132
+        },
+        "S_VDP_SDN": {
+          "RECORDED": 0,
+          "ESTIMATED": 87
+        },
+        "S_SDN_SER": {
+          "RECORDED": 0,
+          "ESTIMATED": 97
+        },
+        "S_SER_KON": {
+          "RECORDED": 0,
+          "ESTIMATED": 79
+        },
+        "S_KON_MDU": {
+          "RECORDED": 0,
+          "ESTIMATED": 25
+        }
+      }
+    }
+  },
+  "recorded_gaps": {
+    "pairs": 75,
+    "min": 0.0,
+    "smallest": [
+      {
+        "section": "S_DG_ABI",
+        "gap": 0,
+        "earlier": "12637@2024-09-28",
+        "later": "16339@2024-09-28"
+      },
+      {
+        "section": "S_ABI_KQN",
+        "gap": 4,
+        "earlier": "22715@2024-09-08",
+        "later": "12637@2024-09-08"
+      },
+      {
+        "section": "S_ABI_KQN",
+        "gap": 7,
+        "earlier": "22715@2024-09-22",
+        "later": "12637@2024-09-22"
+      },
+      {
+        "section": "S_DG_ABI",
+        "gap": 9,
+        "earlier": "12637@2024-09-14",
+        "later": "12689@2024-09-14"
+      },
+      {
+        "section": "S_ABI_KQN",
+        "gap": 10,
+        "earlier": "22715@2024-09-29",
+        "later": "12637@2024-09-29"
+      },
+      {
+        "section": "S_ABI_KQN",
+        "gap": 15,
+        "earlier": "22715@2024-09-15",
+        "later": "12637@2024-09-15"
+      },
+      {
+        "section": "S_DG_ABI",
+        "gap": 24,
+        "earlier": "12637@2024-09-04",
+        "later": "22632@2024-09-03"
+      },
+      {
+        "section": "S_ABI_KQN",
+        "gap": 26,
+        "earlier": "16339@2024-09-26",
+        "later": "12637@2024-09-26"
+      }
+    ],
+    "negative": 0
+  },
+  "largest_headway_respected_by_recorded_pairs": 0,
+  "overtakes_by_station": {
+    "ABI": {
+      "RECORDED": 0,
+      "ESTIMATED": 0
+    },
+    "KQN": {
+      "RECORDED": 0,
+      "ESTIMATED": 0
+    },
+    "VDP": {
+      "RECORDED": 0,
+      "ESTIMATED": 0
+    },
+    "SDN": {
+      "RECORDED": 0,
+      "ESTIMATED": 0
+    },
+    "SER": {
+      "RECORDED": 0,
+      "ESTIMATED": 0
+    },
+    "KON": {
+      "RECORDED": 0,
+      "ESTIMATED": 0
+    }
+  }
+}

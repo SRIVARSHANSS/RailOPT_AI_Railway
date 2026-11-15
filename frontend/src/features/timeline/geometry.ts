@@ -62,4 +62,7 @@ export const TYPE_COLOR: Record<string, string> = {
   EXPRESS: 'rgb(var(--c-express))',
   PASSENGER: 'rgb(var(--c-passenger))',
   FREIGHT: 'rgb(var(--c-freight))',
+  // REAL corridor types (all expresses), told apart by tone; the legend names the type
+  SUPERFAST: 'rgb(var(--c-cyan))',
+  PREMIUM: 'rgb(var(--c-violet))',
 }

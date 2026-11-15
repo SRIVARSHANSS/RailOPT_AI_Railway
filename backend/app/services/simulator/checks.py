@@ -69,15 +69,20 @@ def find_violations(net: RailNetwork, result: SimResult,
                     disruptions: list[Disruption] | None = None) -> list[str]:
     problems: list[str] = []
     by_section = group_by_section(result.occupancies)
+    since = net.frozen_before if net.frozen_before is not None else -10**9   # REAL replay: history is as recorded
 
     for sid, occs in by_section.items():
         sec = net.sections[sid]
         for c in track_clashes(occs, sec.tracks, sec.min_headway_min):
+            if c.later.entry < since:
+                continue
             problems.append(f"{sid}: {c.later.train_id} entered at {format_time(c.later.entry)} but "
                             f"{c.earlier.train_id} held the track until {format_time(c.free_from)} "
                             f"(capacity {sec.tracks}, headway {sec.min_headway_min} min)")
 
         for o in occs:
+            if o.entry < since:
+                continue
             if o.exit - o.entry < sec.min_run_min:
                 problems.append(f"{o.train_id} ran {sid} faster than the minimum running time")
 
@@ -92,4 +97,28 @@ def find_violations(net: RailNetwork, result: SimResult,
         if c.dep is not None and c.sched_dep is not None and c.dep < c.sched_dep:
             problems.append(f"{c.train_id} left {c.station} before its scheduled time")
 
+    problems += loop_violations(net, result)
+    return problems
+
+
+def loop_violations(net: RailNetwork, result: SimResult) -> list[str]:
+    """Stations with `loops` (REAL corridor): when a train arrives, at most `loops` other trains
+    may be standing there; a train may overtake a standing train only where a loop is free."""
+    problems: list[str] = []
+    since = net.frozen_before if net.frozen_before is not None else -10**9
+    for code, st in net.stations.items():
+        if st.loops is None:
+            continue
+        here = [c for c in result.calls if c.station == code and c.arr is not None and c.dep is not None]
+        for b in here:
+            if b.arr < since and b.dep < since:
+                continue
+            others = [a for a in here if a is not b and a.arr <= b.arr < a.dep]
+            if len(others) > st.loops:
+                problems.append(f"{b.train_id} arrived at {code} at {format_time(b.arr)} with "
+                                f"{len(others)} train(s) standing and {st.loops} loop(s)")
+            overtaken = [a for a in here if a.arr < b.arr and b.dep < a.dep]
+            if len(overtaken) > st.loops:
+                problems.append(f"{b.train_id} overtook {', '.join(a.train_id for a in overtaken)} at {code} "
+                                f"with {st.loops} loop(s)")
     return problems

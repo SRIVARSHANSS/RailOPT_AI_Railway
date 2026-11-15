@@ -3,7 +3,7 @@ import {
   CircleCheck, CircleSlash, CircleX, Clock4, Construction, History, OctagonPause, RotateCcw, Sparkles, Zap,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { useAddEvent, useNetwork, useResetScenario, useScenario, type NewEvent } from '../api/hooks'
+import { useAddEvent, useNetwork, useReplayDays, useResetScenario, useScenario, type NewEvent } from '../api/hooks'
 import type { Network, Scenario, Timetable } from '../api/types'
 import { SignalBadge } from '../components/ui/Badges'
 import { Button } from '../components/ui/Button'
@@ -17,10 +17,12 @@ import { ease, fadeUp, staggerContainer } from '../lib/motion'
 import { EventFields } from '../features/events/EventFields'
 import { inputCls } from '../features/events/inputCls'
 import { fmt } from '../lib/time'
-import { DEMO_START, useConsole, useSim } from '../store/sim'
+import { DEMO_START, REPLAY_DEMO_DAY, REPLAY_DEMO_START, useConsole, useSim } from '../store/sim'
 import { toast } from '../store/toast'
 
 const PRESET: NewEvent = { event_type: 'STOPPAGE', train_id: 'T101', location: 'S_BC', start_time: '10:03', duration_min: 15 }
+// Real day replay demo (docs/DEMO.md): a HYPOTHETICAL stoppage on the recorded 2024-09-12
+const REAL_PRESET: NewEvent = { event_type: 'STOPPAGE', train_id: 'R22627', location: 'S_ABI_KQN', start_time: '08:53', duration_min: 25 }
 
 export function Disruptions() {
   const scenario = useScenario()
@@ -65,13 +67,16 @@ function PresetCard({ scenario }: { scenario: Scenario | undefined }) {
   const add = useAddEvent()
   const reduce = useReducedMotion()
   const [fired, setFired] = useState(0)
-  const exists = scenario?.events.some((e) => e.event_type === 'STOPPAGE' && e.train_id === 'T101' && e.location === 'S_BC' && e.start_time === '10:03')
+  const real = scenario?.mode === 'replay' && scenario.replay?.date === REPLAY_DEMO_DAY
+  const p = real ? REAL_PRESET : PRESET
+  const exists = scenario?.events.some((e) => e.event_type === p.event_type && e.train_id === p.train_id && e.location === p.location && e.start_time === p.start_time)
+  const text = real ? 'HYPOTHETICAL: 22627 stops in ABI-KQN at 08:53 for 25 min' : 'T101 stops in B-C at 10:03 for 15 min'
 
   const inject = () =>
-    add.mutate(PRESET, {
+    add.mutate(p, {
       onSuccess: (r) => {
         setFired((n) => n + 1)
-        toast({ tone: 'critical', title: `Event ${r.event.event_id} injected`, description: `T101 stops in B-C at 10:03 for 15 min. Known to the console from ${r.event.known_from}.` })
+        toast({ tone: 'critical', title: `Event ${r.event.event_id} injected`, description: `${text}. Known to the console from ${r.event.known_from}.` })
       },
       onError: (e) => toast({ tone: 'warning', title: 'Event not added', description: e instanceof ApiError ? e.message : 'Request failed' }),
     })
@@ -94,17 +99,21 @@ function PresetCard({ scenario }: { scenario: Scenario | undefined }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-xl font-semibold">Reference scenario</h2>
+            <h2 className="text-xl font-semibold">{real ? 'Real day replay (hypothetical event)' : 'Reference scenario'}</h2>
             <SignalBadge tone="critical">Stoppage</SignalBadge>
           </div>
-          <p className="mt-1 text-lg text-ink">T101 stops in B-C at <span className="font-mono">10:03</span> for <span className="font-mono">15 min</span></p>
-          <MiniCorridor fired={fired} />
+          {real ? (
+            <p className="mt-1 text-lg text-ink">22627 stops in ABI-KQN at <span className="font-mono">08:53</span> for <span className="font-mono">25 min</span> <span className="text-sm text-ink-muted">(hypothetical, on the recorded 2024-09-12)</span></p>
+          ) : (
+            <p className="mt-1 text-lg text-ink">T101 stops in B-C at <span className="font-mono">10:03</span> for <span className="font-mono">15 min</span></p>
+          )}
+          {!real && <MiniCorridor fired={fired} />}
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button variant="danger" size="lg" icon={<Zap className="h-5 w-5" aria-hidden />} onClick={inject}
               loading={add.isPending} disabled={exists || !scenario}>
               {exists ? 'Already injected' : 'Inject event'}
             </Button>
-            <span className="text-sm text-ink-muted">Becomes known to the console at 10:03 (sim time).</span>
+            <span className="text-sm text-ink-muted">Becomes known to the console at {p.start_time} (sim time).</span>
           </div>
         </div>
       </div>
@@ -155,7 +164,7 @@ function EventForm({ network }: { network: Network | undefined }) {
 // ---- reset ----------------------------------------------------------------------------------------
 function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
   const reset = useResetScenario()
-  const { setMinute, setPlaying } = useSim()
+  const { setMinute, setPlaying, setRange } = useSim()
   const clearConsole = useConsole((s) => s.clear)
   const [open, setOpen] = useState(false)
   const [choice, setChoice] = useState<Timetable>('reference')
@@ -169,7 +178,7 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
 
   /** One click before a demo: reference timetable, no events, clean session, clock 09:55. */
   const demoReset = () =>
-    reset.mutate('reference', {
+    reset.mutate({ timetable: 'reference' }, {
       onSuccess: () => {
         clearSession()
         setDemoDone(true)
@@ -179,8 +188,22 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
       onError: () => toast({ tone: 'warning', title: 'Reset failed', description: 'Is the API running on port 8000?' }),
     })
 
+  const replayDays = useReplayDays()
+  const [day, setDay] = useState(REPLAY_DEMO_DAY)
+  const loadReal = () =>
+    reset.mutate({ timetable: 'dg_mdu', mode: 'replay', date: day }, {
+      onSuccess: (s) => {
+        setPlaying(false)
+        if (s.replay) setRange([s.replay.window_start, s.replay.window_end]) // before the minute: it is clamped to the range
+        setMinute(day === REPLAY_DEMO_DAY ? REPLAY_DEMO_START : s.replay?.window_start ?? 0)
+        clearConsole()
+        toast({ tone: 'success', title: 'Real day loaded', description: `REAL recorded movements, Dindigul -> Madurai, ${day}.` })
+      },
+      onError: (e) => toast({ tone: 'warning', title: 'Replay not loaded', description: e instanceof ApiError ? e.message : 'Request failed' }),
+    })
+
   const confirm = () =>
-    reset.mutate(choice, {
+    reset.mutate({ timetable: choice }, {
       onSuccess: () => {
         clearSession()
         setOpen(false)
@@ -190,7 +213,7 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
 
   return (
     <Panel>
-      <PanelTitle hint={timetable ? `current: ${timetable === 'full_day' ? 'full day' : 'reference'}` : undefined}>Scenario</PanelTitle>
+      <PanelTitle hint={timetable ? `current: ${timetable === 'dg_mdu' ? 'real day replay' : timetable === 'full_day' ? 'full day' : 'reference'}` : undefined}>Scenario</PanelTitle>
       <p className="text-ink-muted">Start over: clears events, the accepted plan and the decision log.</p>
       <div className="mt-4">
         <Button variant="primary" size="lg" icon={<Sparkles className="h-5 w-5" aria-hidden />} onClick={demoReset}
@@ -205,6 +228,20 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
           <option value="full_day">Full day (12 trains)</option>
         </select>
         <Button icon={<RotateCcw className="h-4 w-4" aria-hidden />} onClick={() => setOpen(true)}>Reset scenario</Button>
+      </div>
+      <div className="mt-5 border-t border-line/10 pt-5">
+        <p className="font-semibold">Real day replay - Dindigul to Madurai</p>
+        <p className="mt-1 text-sm text-ink-muted">Recorded running times (RSTGCN Sept 2024, CC BY-SA 4.0). Trains move as recorded; anything you add is HYPOTHETICAL.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <select value={day} onChange={(e) => setDay(e.target.value)} aria-label="Recorded day" className={cn(inputCls, 'w-auto')}>
+            {(replayDays.data?.days ?? [{ date: REPLAY_DEMO_DAY, weekday: 'Thu', trains: 22, reproduced_exactly: true, recorded_overtakes: 1 }]).map((d) => (
+              <option key={d.date} value={d.date}>
+                {d.date} {d.weekday} - {d.trains} trains{d.date === (replayDays.data?.demo_day ?? REPLAY_DEMO_DAY) ? ' (demo day)' : ''}{d.reproduced_exactly ? '' : ' - interpolation unresolved in places'}
+              </option>
+            ))}
+          </select>
+          <Button icon={<RotateCcw className="h-4 w-4" aria-hidden />} onClick={loadReal} loading={reset.isPending && !open}>Load real day</Button>
+        </div>
       </div>
       <Dialog open={open} onOpenChange={setOpen} title="Reset the scenario?" description="Events, the accepted plan and the decision log are cleared. This cannot be undone.">
         <div className="flex justify-end gap-3">

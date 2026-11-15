@@ -28,6 +28,29 @@ export function TrainChip({ id, type }: { id: string; type: string }) {
   )
 }
 
+const DATA_BADGE: Record<string, { cls: string; dot: string; full: string; short: string; title: string }> = {
+  SIMULATED: { cls: 'border-signal-amber/50 bg-signal-amber/10 text-signal-amber', dot: 'bg-signal-amber',
+    full: 'Simulated data - decision support only', short: 'Simulated',
+    title: 'All data is simulated on a sample corridor. RailOpt AI advises a human controller and controls nothing.' },
+  REAL: { cls: 'border-signal-green/50 bg-signal-green/10 text-signal-green', dot: 'bg-signal-green',
+    full: 'Real recorded day - replay only', short: 'Real data',
+    title: 'Recorded running times (RSTGCN Sept 2024 dataset). A replay: RailOpt AI controls nothing.' },
+  'HYPOTHETICAL on a real recorded day': { cls: 'border-signal-violet/50 bg-signal-violet/10 text-signal-violet', dot: 'bg-signal-violet',
+    full: 'Hypothetical on a real recorded day', short: 'Hypothetical',
+    title: 'Recorded until the first hypothetical event or decision, simulated after it. Decision support only.' },
+}
+
+/** Permanent label of what the screen shows: SIMULATED, REAL or HYPOTHETICAL on a real day. */
+export function DataBadge({ label, compact = false }: { label: string | undefined; compact?: boolean }) {
+  const b = DATA_BADGE[label ?? 'SIMULATED'] ?? DATA_BADGE.SIMULATED
+  return (
+    <span className={cn('inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider', b.cls)} title={b.title}>
+      <span className={cn('h-1.5 w-1.5 rounded-full animate-pulse-dot', b.dot)} aria-hidden />
+      {compact ? b.short : b.full}
+    </span>
+  )
+}
+
 /** Permanent label: everything on screen is simulated decision support. */
 export function SimulatedBadge({ compact = false }: { compact?: boolean }) {
   return (

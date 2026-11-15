@@ -176,7 +176,7 @@ def build_timetable(routes: pd.DataFrame, recs: pd.DataFrame, km: dict[str, floa
             })
         trains.append({
             "train_id": f"R{t}", "train_no": t, "train_name": name, "train_type": ttype,
-            "priority": C.PRIORITY[ttype], "runs_on": "", "terminates_at_mdu": "yes" if terminal else "no",
+            "priority": C.PRIORITY[ttype], "priority_source": "ASSUMED", "runs_on": "", "terminates_at_mdu": "yes" if terminal else "no",
             "timetable_source": source, "source": "RSTGCN train_routes_Sep2024.csv",
             "date_checked": CHECKED,
         })
@@ -281,8 +281,9 @@ def extract(zip_path: Path = RAW_ZIP, out_dir: Path = OUT_DIR) -> dict:
         "station_code": s, "station_name": C.STATION_NAMES[s], "km_from_start": km[s],
         "platforms": C.ASSUMED_PLATFORMS[s], "is_junction": "yes" if s in C.JUNCTIONS else "no",
         "chainage_km": ch[s].km, "chainage_source": ch[s].method, "platforms_source": "ASSUMED",
+        "loops": C.ASSUMED_LOOPS[s], "loops_source": "ASSUMED",
     } for s in C.ORDER])
-    write_csv(out_dir / "sections.csv", [dict(r, run_headway_source="ASSUMED") for r in C.sections(km)])
+    write_csv(out_dir / "sections.csv", C.sections(km))
     write_csv(out_dir / "trains.csv", trains)
     write_csv(out_dir / "schedule.csv", sched)
     write_csv(out_dir / "records.csv", rows)

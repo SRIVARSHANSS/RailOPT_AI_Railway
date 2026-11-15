@@ -11,13 +11,23 @@ from app.services.optimizer.solver import STRATEGIES
 from app.services.simulator import Disruption, SimResult, simulate
 
 STRATEGY_ORDER = {s.name: k for k, s in enumerate(STRATEGIES)}
+NO_ALTERNATE_REASON = ("No alternate line on this corridor (one track per direction between Dindigul and "
+                       "Madurai), so rerouting is not possible; only HOLD and RESEQUENCE are offered.")
+
+
+def available_strategies(net: RailNetwork) -> tuple[list[str] | None, list[dict]]:
+    """REROUTE / COMBINED only where a standby (alternate) section exists."""
+    if any(s.status == "standby" for s in net.sections.values()):
+        return None, []
+    return ["HOLD", "RESEQUENCE"], [{"name": n, "reason": NO_ALTERNATE_REASON} for n in ("REROUTE", "COMBINED")]
 
 
 # ---------------------------------------------------------------------------
 # train states
 # ---------------------------------------------------------------------------
 def train_states(net: RailNetwork, result: SimResult, at: int,
-                 disruptions: list[Disruption] | None = None) -> list[dict]:
+                 disruptions: list[Disruption] | None = None,
+                 estimated: set[tuple[str, str]] | None = None) -> list[dict]:
     """Where every train is at `at` in a simulated timeline, and how late it is.
 
     progress (in a section) is the share of the RUNNING time covered: minutes spent
@@ -57,6 +67,11 @@ def train_states(net: RailNetwork, result: SimResult, at: int,
                     break
             if state is None:
                 state = _state(train, "arrived", stops[-1].station, None, result.final_delay(train_id))
+        if estimated:
+            here = state["location"] if state["status"] != "in_section" else net.sections[state["location"]].from_station
+            nxt = state["next_station"] or here
+            state["interpolated"] = state["status"] not in ("not_started", "arrived") and (
+                (train_id, here) in estimated or (train_id, nxt) in estimated)
         states.append(state)
     return states
 
@@ -90,7 +105,8 @@ def kpis(states: list[dict], conflicts: int) -> dict:
 # ---------------------------------------------------------------------------
 def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor=None,
                    route_overrides: dict | None = None, holds: dict | None = None,
-                   previous_overrides: dict | None = None, previous_holds: dict | None = None) -> dict:
+                   previous_overrides: dict | None = None, previous_holds: dict | None = None,
+                   estimated: set[tuple[str, str]] | None = None, ml_off_note: str | None = None) -> dict:
     """Detector on the plan (timetable + known events + any accepted controller plan).
 
     ML features describe the unchanged timetable plan, as in training."""
@@ -98,7 +114,9 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
     conflicts = detect_conflicts(net, plan)
     rows, ml_note = {}, None
     disruptions = sorted(known, key=lambda d: d.start)
-    if predictor is None:
+    if ml_off_note:
+        ml_note = ml_off_note
+    elif predictor is None:
         ml_note = "predictor models not found; run python -m ml.train"
     elif not disruptions:
         ml_note = "no disruption known at this time; the model is trained on disrupted runs only"
@@ -124,6 +142,7 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
             "minutes_short": c.minutes_short, "time_to_conflict_min": c.time_to_conflict,
             "severity": c.severity, "event_id": c.event_id,
             "prediction": prediction((c.later, c.section_id)),
+            "certainty": certainty(net, c, estimated),
         })
     flagged_by_rules = {(c.later, c.section_id) for c in conflicts}
     watchlist = []
@@ -158,7 +177,7 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
             item["resolved_by_plan"] = item["plan_wait_min"] == 0
             item["reduced_by_plan"] = 0 < item["plan_wait_min"] < item["baseline_wait_min"]
     watchlist.sort(key=lambda w: (w["resolved_by_plan"], w["reduced_by_plan"], -w["conflict_probability"]))
-    if ml_note is None and (route_overrides or holds):
+    if ml_note is None and ml_off_note is None and (route_overrides or holds):
         ml_note = ("an accepted plan is in force; the model's features describe the timetable plan "
                    "without it (it was trained on runs with no re-planning), so its flags may be outdated")
     return {"conflicts": out, "ml_watchlist": watchlist, "ml_note": ml_note, "_raw": conflicts}
@@ -167,11 +186,22 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
 # ---------------------------------------------------------------------------
 # optimisation + recommendation
 # ---------------------------------------------------------------------------
+def certainty(net: RailNetwork, c, estimated: set[tuple[str, str]] | None) -> str:
+    """FIRM, or ESTIMATED when the clash rests on an interpolated / estimated time (REAL replay)."""
+    if not estimated:
+        return "FIRM"
+    sec = net.sections[c.section_id]
+    keys = [(c.later, sec.from_station)] + ([(c.earlier, sec.to_station)] if c.earlier else [(c.later, sec.to_station)])
+    return "ESTIMATED" if any(k in estimated for k in keys) else "FIRM"
+
+
 def optimize_view(net: RailNetwork, at: int, known: list[Disruption],
                   base_holds: dict | None = None, base_overrides: dict | None = None) -> dict:
     """Compare strategies at `at`. With an accepted plan (base_*), started trips stay as that
     plan made them and the baselines keep it; the strategies re-plan the future."""
-    results = compare(net, at, known, base_holds=base_holds or None, base_overrides=base_overrides or None)
+    allowed, unavailable = available_strategies(net)
+    results = compare(net, at, known, base_holds=base_holds or None, base_overrides=base_overrides or None,
+                      strategies=allowed)
     rows = [_result_row(r) for r in results]
     base = next(r for r in results if r.name == "NO_REPLANNING")
     candidates = [r for r in results if r.kind == "strategy" and r.replay is not None]
@@ -184,7 +214,9 @@ def optimize_view(net: RailNetwork, at: int, known: list[Disruption],
                "delays": best.delays,
                "explanation": explain(net, best, base, conflicts),
                "_holds": best.holds, "_route_overrides": best.route_overrides}
-    return {"results": rows, "recommendation": rec}
+    return {"results": rows, "recommendation": rec, "unavailable": unavailable,
+            "ranking": [r.name for r in sorted(candidates, key=lambda r: (r.weighted_delay, len(r.actions),
+                                                                           STRATEGY_ORDER[r.name]))]}
 
 
 def _result_row(r) -> dict:
@@ -231,7 +263,8 @@ def explain(net: RailNetwork, best, base, conflicts) -> dict:
 # ---------------------------------------------------------------------------
 # timeline
 # ---------------------------------------------------------------------------
-def timeline_rows(net: RailNetwork, result: SimResult, disruptions: list[Disruption] | None = None) -> list[dict]:
+def timeline_rows(net: RailNetwork, result: SimResult, disruptions: list[Disruption] | None = None,
+                  estimated: set[tuple[str, str]] | None = None) -> list[dict]:
     """One row per section trip, ready to draw on a time-distance chart.
 
     stops      [start, end) windows the train stood still inside the section (stoppages)
@@ -251,7 +284,9 @@ def timeline_rows(net: RailNetwork, result: SimResult, disruptions: list[Disrupt
                      "wait_min": o.wait, "stopped_min": o.stopped_min,
                      "stops": [{"start_min": s, "end_min": e} for s, e in _stop_windows(o, disruptions or [])],
                      "delay_min": None if sched_arr is None else o.exit - sched_arr,
-                     "alternate": sec.status == "standby"})
+                     "alternate": sec.status == "standby",
+                     "interpolated": bool(estimated) and ((o.train_id, sec.from_station) in estimated
+                                                          or (o.train_id, sec.to_station) in estimated)})
     return rows
 
 

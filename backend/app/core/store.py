@@ -12,7 +12,11 @@ The simulated movement of trains (`actual`) always uses every posted event,
 because that is what really happens; only detection, prediction and
 re-planning are limited to what is known at `at`.
 
-All data here is SIMULATED.
+Data label: SIMULATED on the sample corridor. In REAL replay mode (timetable "dg_mdu", one
+recorded day) trains move by their recorded times; once a hypothetical event or an accepted plan
+exists, movement before its start stays as recorded and the rest is simulated ("HYPOTHETICAL on
+a real recorded day"). Detection and re-planning then see `forecast(at)`: the movement up to
+`at` plus the timetable with current delays carried forward.
 """
 from __future__ import annotations
 
@@ -23,6 +27,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from app.services.network import RailNetwork, load_network
+from app.services.network.model import REAL_TIMETABLES
 from app.services.simulator import Disruption, SimResult, simulate
 
 log = logging.getLogger("railopt.decisions")
@@ -45,6 +50,9 @@ class Recommendation:
 @dataclass
 class ScenarioStore:
     timetable: str = "reference"
+    mode: str = "live"                            # live (SIMULATED) | replay (REAL recorded day)
+    replay_date: str | None = None
+    _day: object | None = field(default=None, repr=False)   # replay.ReplayDay
     events: list[Disruption] = field(default_factory=list)
     holds: dict[tuple[str, str], int] = field(default_factory=dict)
     route_overrides: dict[tuple[str, str], str] = field(default_factory=dict)
@@ -65,6 +73,8 @@ class ScenarioStore:
     # ---- network ---------------------------------------------------------------
     def network(self, timetable: str | None = None) -> RailNetwork:
         name = timetable or self.timetable
+        if self.is_replay and name == self.timetable:
+            return self._day.movement
         if name not in self._nets:
             self._nets[name] = load_network(timetable=name)
         return self._nets[name]
@@ -74,9 +84,34 @@ class ScenarioStore:
     def version(self) -> str:
         return f"{self.boot_id}-{self.revision}"
 
-    def reset(self, timetable: str) -> None:
-        self.network(timetable)                 # validates the name
+    @property
+    def is_replay(self) -> bool:
+        return self.mode == "replay"
+
+    @property
+    def day(self):
+        return self._day
+
+    def label(self, decision: bool = False) -> str:
+        """SIMULATED | REAL | HYPOTHETICAL on a real recorded day."""
+        if not self.is_replay:
+            return "SIMULATED"
+        from app.services.realdata.replay import HYPOTHETICAL_LABEL, REAL_LABEL
+        return HYPOTHETICAL_LABEL if (decision or self.events or self.holds) else REAL_LABEL
+
+    def reset(self, timetable: str, mode: str = "live", date: str | None = None) -> None:
+        day = None
+        if timetable in REAL_TIMETABLES or mode == "replay":
+            if timetable not in REAL_TIMETABLES or mode != "replay" or not date:
+                raise ValueError("the REAL timetable 'dg_mdu' runs only in replay mode with a recorded date")
+            from app.services.realdata.replay import get_day
+            day = get_day(date)                  # raises ValueError for a date without records
+        else:
+            self.network(timetable)              # validates the name
         with self._lock:
+            self.mode = "replay" if day is not None else "live"
+            self.replay_date = date if day is not None else None
+            self._day = day
             self.timetable = timetable
             self.events.clear()
             self.holds.clear()
@@ -103,9 +138,28 @@ class ScenarioStore:
         """Events the controller knows about at clock time `at`."""
         return [e for e in self.events if e.event_type in PLANNED_EVENT_TYPES or e.start <= at]
 
+    def divergence(self) -> int | None:
+        """REAL replay: first minute the hypothetical can differ from the recording."""
+        starts = [e.start for e in self.events] + ([self.plan_basis_at] if self.plan_basis_at is not None else [])
+        return min(starts) if starts else None
+
     def actual(self) -> SimResult:
         """What happens: every posted event, plus the accepted plan (holds / reroutes)."""
+        if self.is_replay:
+            t = self.divergence()
+            if t is None and not self.holds and not self.route_overrides:
+                return self._day.recorded
+            from app.services.realdata.replay import frozen_movement
+            net = frozen_movement(self._day, t if t is not None else 0)
+            return simulate(net, self.events, route_overrides=self.route_overrides, holds=self.holds)
         return simulate(self.network(), self.events, route_overrides=self.route_overrides, holds=self.holds)
+
+    def planning_network(self, at: int) -> RailNetwork:
+        """The network detection and re-planning use at `at` (REAL replay: what is known then)."""
+        if not self.is_replay:
+            return self.network()
+        from app.services.realdata.replay import forecast
+        return forecast(self._day, at, self.actual())
 
     def plan_status(self, at: int | None = None) -> dict:
         """Is the accepted plan stale? It is when an event is known now that the plan's
@@ -122,7 +176,8 @@ class ScenarioStore:
         """Independent copy of events + accepted plan (networks are shared, read-only)."""
         with self._lock:
             return ScenarioStore(
-                timetable=self.timetable, events=list(self.events), holds=dict(self.holds),
+                timetable=self.timetable, mode=self.mode, replay_date=self.replay_date, _day=self._day,
+                events=list(self.events), holds=dict(self.holds),
                 route_overrides=dict(self.route_overrides), applied_recommendation=self.applied_recommendation,
                 plan_basis_at=self.plan_basis_at, plan_basis_events=list(self.plan_basis_events),
                 previous_holds=dict(self.previous_holds), previous_overrides=dict(self.previous_overrides),

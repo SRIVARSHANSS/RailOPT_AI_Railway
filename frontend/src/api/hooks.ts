@@ -2,8 +2,8 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef } from 'react'
 import { api } from '../lib/api'
-import { fmt } from '../lib/time'
-import { useConsole } from '../store/sim'
+import { fmt, toMin } from '../lib/time'
+import { useConsole, useSim } from '../store/sim'
 import type {
   ConflictsAt, DecisionResult, Evaluation, EventType, ModelResults, Network, OptimizeResult, Scenario, StateAt, Timeline, Timetable, WhatIfResult,
 } from './types'
@@ -62,15 +62,31 @@ function useInvalidateScenario() {
     qc.invalidateQueries({ queryKey: ['state'] })
     qc.invalidateQueries({ queryKey: ['conflicts'] })
     qc.invalidateQueries({ queryKey: qk.timeline })
+    qc.invalidateQueries({ queryKey: ['health'] })
   }, [qc])
 }
 
+export type ResetArgs = { timetable: Timetable; mode?: 'live' | 'replay'; date?: string }
+
+/** REAL recorded days of the DG -> MDU corridor (GET /api/replay/days). */
+export const useReplayDays = () =>
+  useQuery({
+    queryKey: ['replay-days'],
+    queryFn: () => api<{ demo_day: string; days: { date: string; weekday: string; trains: number; reproduced_exactly: boolean; recorded_overtakes: number }[] }>('/api/replay/days'),
+    staleTime: Infinity,
+    retry: false,
+  })
+
 export function useResetScenario() {
   const invalidate = useInvalidateScenario()
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: (timetable: Timetable) =>
-      api<Scenario>('/api/scenario/reset', { method: 'POST', body: JSON.stringify({ timetable }) }),
-    onSuccess: invalidate,
+    mutationFn: (args: ResetArgs) =>
+      api<Scenario>('/api/scenario/reset', { method: 'POST', body: JSON.stringify(args) }),
+    onSuccess: () => {
+      qc.removeQueries({ queryKey: ['network'] }) // a replay day has its own trains
+      invalidate()
+    },
   })
 }
 
@@ -127,3 +143,15 @@ export const useWhatIf = () =>
     mutationFn: ({ minute, events }: { minute: number; events: NewEvent[] }) =>
       api<WhatIfResult>('/api/whatif', { method: 'POST', body: JSON.stringify({ at: fmt(minute), events }) }),
   })
+
+/** Scrubber range on every page: first timetabled time - 10 to last + 10 (display only). */
+export function useClockRange() {
+  const scenario = useScenario()
+  const network = useNetwork(scenario.data?.timetable)
+  const setRange = useSim((s) => s.setRange)
+  useEffect(() => {
+    if (!network.data) return
+    const times = network.data.schedule.flatMap((s) => [s.sched_dep, s.sched_arr]).filter(Boolean).map((x) => toMin(x as string))
+    if (times.length) setRange([Math.min(...times) - 10, Math.max(...times) + 10])
+  }, [network.data, setRange])
+}

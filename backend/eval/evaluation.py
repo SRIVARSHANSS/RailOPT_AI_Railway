@@ -119,7 +119,7 @@ class Plan:
 
 
 def weighted(net: RailNetwork, sim: SimResult) -> int:
-    return sum(config.PRIORITY_WEIGHTS[net.trains[t].train_type] * sim.final_delay(t) for t in net.schedules)
+    return sum(config.weight(net.trains[t]) * sim.final_delay(t) for t in net.schedules)
 
 
 def _solve(net, t, known, buffers, holds, overrides) -> tuple[dict, object]:

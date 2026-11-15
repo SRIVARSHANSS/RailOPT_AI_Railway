@@ -53,6 +53,10 @@ Per-train source and date checked are in `backend/data/real/dg_mdu/trains.csv`
 - `backend/ml/reports/real/` (Step 2 delay model validation): computed only from the corridor
   extract above; `predictions_real.csv` contains derived REAL rows (CC BY-SA 4.0, same attribution).
 
+- `backend/data/real/dg_mdu/calibration.json` (headway calibration on the recorded days) and the
+  replay days built from the extract at run time (`app/services/realdata/replay.py`): REAL, with
+  INTERPOLATED times marked; nothing is fetched from any website.
+
 ## Not used
 
 - NTES, IRCTC and other live-status or booking websites: not scraped, not used.

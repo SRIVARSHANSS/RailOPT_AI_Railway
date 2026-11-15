@@ -1,9 +1,9 @@
-station_code,station_name,km_from_start,platforms,is_junction,chainage_km,chainage_source,platforms_source
-DG,Dindigul Jn,0.0,5,yes,433.02,DERIVED,ASSUMED
-ABI,Ambaturai,11.0,2,no,444.02,MAP_2024,ASSUMED
-KQN,Kodaikanal Road,21.83,2,no,454.85,MAP_2024,ASSUMED
-VDP,Vadipatti,32.9,2,no,465.92,MAP_2024,ASSUMED
-SDN,Sholavandan,40.64,2,no,473.66,MAP_2024,ASSUMED
-SER,Samayanallur,49.43,2,no,482.45,MAP_2024,ASSUMED
-KON,Koodal Nagar,58.18,2,no,491.2,MAP_2024,ASSUMED
-MDU,Madurai Jn,61.93,7,yes,494.95,MAP_2024,ASSUMED
+station_code,station_name,km_from_start,platforms,is_junction,chainage_km,chainage_source,platforms_source,loops,loops_source
+DG,Dindigul Jn,0.0,5,yes,433.02,DERIVED,ASSUMED,4,ASSUMED
+ABI,Ambaturai,11.0,2,no,444.02,MAP_2024,ASSUMED,1,ASSUMED
+KQN,Kodaikanal Road,21.83,2,no,454.85,MAP_2024,ASSUMED,2,ASSUMED
+VDP,Vadipatti,32.9,2,no,465.92,MAP_2024,ASSUMED,1,ASSUMED
+SDN,Sholavandan,40.64,2,no,473.66,MAP_2024,ASSUMED,2,ASSUMED
+SER,Samayanallur,49.43,2,no,482.45,MAP_2024,ASSUMED,1,ASSUMED
+KON,Koodal Nagar,58.18,2,no,491.2,MAP_2024,ASSUMED,0,ASSUMED
+MDU,Madurai Jn,61.93,7,yes,494.95,MAP_2024,ASSUMED,4,ASSUMED

@@ -59,7 +59,7 @@ export function Timeline() {
             the time axis, drag to pan, click a train to follow it.
           </p>
         </div>
-        <SignalBadge tone="info">SIMULATED</SignalBadge>
+        <SignalBadge tone="info">{tl.data?.data_label ?? 'SIMULATED'}</SignalBadge>
       </motion.div>
 
       <motion.div variants={fadeUp}><ClockBar resetTo={DEMO_START} /></motion.div>

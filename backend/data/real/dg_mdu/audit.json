@@ -23,9 +23,9 @@
   "timetable": {
     "regular_trains": 44,
     "by_type": {
-      "SUPERFAST": 26,
+      "SUPERFAST": 25,
       "EXPRESS": 15,
-      "PREMIUM": 3
+      "PREMIUM": 4
     },
     "excluded": [
       {

@@ -11,6 +11,8 @@ const fill: Record<string, string> = {
   PASSENGER: 'rgb(var(--c-passenger))',
   FREIGHT: 'rgb(var(--c-freight))',
 }
+// REAL corridor types are all expresses: drawn in the express colour (the train strip names the type)
+const look = (type: string) => (type in fill ? type : 'EXPRESS')
 
 /** One train. Shows `now` (the API state at the clock minute); while playing and the next
  *  minute's state is known, glides along the track to `next` in the time left in this minute.
@@ -60,19 +62,23 @@ export function TrainSprite({ now, next, geo, glideMs, minute, dimmed, highlight
   const waiting = now.status === 'waiting_at_signal'
   const arrived = now.status === 'arrived'
   const stopped = now.stopped
-  const colour = fill[now.train_type] ?? 'rgb(var(--c-ink))'
+  const colour = fill[look(now.train_type)]
 
   return (
     <g className={cn('transition-opacity duration-300', dimmed && 'opacity-25', arrived && 'opacity-50')}
        role="img" aria-label={`${now.train_id} ${now.train_type.toLowerCase()}, ${stopped ? 'stopped in' : now.status.replace(/_/g, ' ')} ${now.location}${delayed ? `, ${now.current_delay_min} min late` : ''}`}>
       <g ref={body}>
         {/* motion trail */}
-        <rect x={-46} y={-4} width={34} height={8} rx={4} fill={`url(#trail-${now.train_type})`} opacity={waiting || arrived || stopped ? 0 : 0.9} />
+        <rect x={-46} y={-4} width={34} height={8} rx={4} fill={`url(#trail-${look(now.train_type)})`} opacity={waiting || arrived || stopped ? 0 : 0.9} />
         {highlighted && <rect x={-20} y={-11} width={40} height={22} rx={11} fill="none" stroke="rgb(var(--c-cyan))" strokeWidth={2} />}
         <rect x={-15} y={-7} width={30} height={14} rx={7} fill={colour} filter="url(#train-glow)" />
         <rect x={6} y={-4} width={5} height={8} rx={2} fill="rgb(var(--c-canvas-0))" opacity={0.55} />
         {delayed && (
           <circle r={17} fill="none" stroke="rgb(var(--c-red))" strokeWidth={2.5} className="origin-center animate-ring-pulse [transform-box:fill-box]" />
+        )}
+        {now.interpolated && (
+          // REAL replay: this position comes from interpolated times, not a recorded one
+          <circle r={22} fill="none" stroke="rgb(var(--c-ink) / 0.55)" strokeWidth={1.5} strokeDasharray="4 4" />
         )}
       </g>
       {/* arrived trains drop their labels so the terminal stays readable (the train strip lists them) */}

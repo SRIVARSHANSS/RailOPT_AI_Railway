@@ -140,7 +140,7 @@ function Comparison({ result }: { result: WhatIfResult }) {
     <motion.section variants={fadeUp} initial="hidden" animate="show" className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <HypotheticalBadge />
-        <SignalBadge tone="info">SIMULATED</SignalBadge>
+        <SignalBadge tone="info">{result.data_label}</SignalBadge>
         <p className="text-sm text-ink">{result.note} Clock {result.at}.</p>
       </div>
       <div className="grid gap-5 lg:grid-cols-2">

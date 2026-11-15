@@ -398,3 +398,53 @@ changed and were never trained on real data.
     Comparison vs B0: paired bootstrap CI of the MAE difference (model - carry); "better"
     only when the whole CI is below 0. A train-clustered bootstrap of the same difference is
     reported as a check (rows of one train are correlated).
+
+## REAL data Step 3: real-day replay (DG -> MDU)
+
+64. **Headway CALIBRATED to 0 min** on the real corridor (`app/services/realdata/calibrate.py`,
+    `backend/data/real/dg_mdu/calibration.json`). Headway 0 still enforces ONE train per block
+    section (absolute block): a train may enter a section only after the train ahead has cleared
+    the next station. Evidence: of the 75 recorded section pairs where both timestamps are
+    recorded, none overlap; the smallest gaps are 0, 4 and 7 min, so 0 is the largest headway all
+    of them respect (4 if the single gap-0 pair is set aside). The evidence is thin (75 pairs, mostly
+    DG-ABI and ABI-KQN). Every optimizer run on a replay is repeated with headway 4 and the
+    recommendation and ranking are reported side by side.
+65. **Loops ASSUMED** (not public): DG 4, ABI 1, KQN 2, VDP 1, SDN 2, SER 1, KON 0, MDU 4. Rule
+    (simulator, optimizer, safety check): when a train arrives at an intermediate station at most
+    `loops` other trains may be standing there, so a train can be overtaken only where a loop is
+    free and never at KON. Stations of the SIMULATED corridor have no loops value: the rule does
+    not apply there and every simulated result is unchanged.
+66. **Priorities ASSUMED** on the real corridor: PREMIUM (Vande Bharat, Tejas) 1, SUPERFAST 2,
+    EXPRESS 3; objective weight = 4 - priority (3/2/1), the same mapping the simulated types
+    already had (EXPRESS 1 -> 3, PASSENGER 2 -> 2, FREIGHT 3 -> 1). Labelled ASSUMED in the API and UI.
+67. **Replay day** = every train whose DG date is that date; minutes from that date's midnight
+    (may pass 24:00). Recorded times are kept; other stations get the scheduled time plus the delay
+    interpolated on km between recorded neighbours (INTERPOLATED). The 39 flagged MDU arrivals
+    (Step 1) are not used; a recorded time implying a run faster than the ASSUMED minimum running
+    time from the previous recorded station is treated as unreliable and interpolated (4 times in
+    the month).
+68. **Repair of interpolated paths**: where two interpolated paths cross inside a single-track
+    block, the overtaken train waits at the last loop station before the crossing until the other
+    train has cleared the next block; where a train would enter a block before the leader cleared
+    it, it waits at the block entrance (or the leader runs that block faster). Recorded times never
+    change. The day's timetable (ESTIMATED passing times) is repaired the same way. 16 of 32 days
+    then replay exactly through the simulator; on the others some recorded pairs stay unresolved
+    (listed per day; e.g. two recorded DG departures inside one block's running time) and history
+    is kept as recorded. Demo day 2024-09-12 (Thursday, 22 trains) replays exactly and contains the
+    recorded overtake of 16343 by 22627.
+69. **Hypothetical events on a replay**: movement before the first event (or accepted plan) stays
+    exactly as recorded (trips entered before it are fixed); after it, trains are simulated using
+    their recorded (or interpolated) running and dwell times as the unimpeded times, so recorded
+    slack is kept; trains enter DG at their recorded times. Labelled "HYPOTHETICAL on a real
+    recorded day".
+70. **Knowledge on a replay**: detection and re-planning at clock `at` see the movement up to `at`,
+    then the (repaired) timetable with each train's current delay carried forward; before DG the
+    last recorded upstream delay is ASSUMED known. Strategy delays on a replay are minutes added to
+    that expected movement, not delays against the timetable. Conflicts resting on an interpolated
+    or ESTIMATED time are shown as uncertain, not as alerts. The SIMULATED-trained ML models are
+    not applied to real data.
+71. **Correction found while building Step 3**: train 20627 ("Ms Ncj Vb Express") is a Vande
+    Bharat and is now typed PREMIUM (it was SUPERFAST). Step 2 was re-run with the same
+    pre-registered design: main XGBoost MAE 4.18 vs carry 4.94 (difference -0.76, 95% CI
+    [-1.53, -0.04]; train-clustered [-1.61, +0.18]); before the fix -0.74 [-1.50, -0.02] and
+    [-1.60, +0.18]. The conclusion is unchanged.

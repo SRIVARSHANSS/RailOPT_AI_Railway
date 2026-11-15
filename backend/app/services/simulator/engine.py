@@ -218,6 +218,12 @@ def simulate(
         time a track frees, the highest-priority waiting train enters first.
     A held train never books a slot before its hold ends, in either mode: it
     requests the section when the hold expires.
+
+    Stations with `loops` (REAL corridor; None = not modelled): a train may only arrive at an
+    intermediate station when the other trains standing there at its arrival leave it a free
+    line, i.e. at most `loops` others (main line + loops). So a train can only pass a standing
+    train where a loop is free, never where there is none. A train that would arrive at a full
+    station waits at the previous station (re-tries every minute).
     """
     if dispatch not in ("fcfs", "priority"):
         raise ValueError(f"Unknown dispatch {dispatch!r}")
@@ -251,11 +257,50 @@ def simulate(
         ready = _apply_station_delay(stops[0].sched_dep, train_id, stops[0].station, disruptions, result)
         heapq.heappush(queue, (ready, net.trains[train_id].priority, train_id, 0, ready, None))
 
+    loops = {code: st.loops for code, st in net.stations.items() if st.loops is not None}
+    standing: dict[str, dict[str, list]] = {code: {} for code in loops}   # station -> train -> [arr, dep|None]
+    pending: dict[str, tuple[int, int]] = {}                              # train -> (ready, stop index) of its next request
+
+    def est_departure(other: str, station: str) -> int:
+        """Earliest departure of a train standing at `station` whose departure is not booked yet."""
+        ready, j = pending[other]
+        st = net.schedules[other]
+        s2 = _choose_section(net, other, st[j].station, st[j + 1].station, route_overrides)
+        return max(ready, holds.get((other, s2.section_id), ready), min(track_free_at[s2.section_id]))
+
     while queue:
         now, prio, train_id, i, ready, run = heapq.heappop(queue)
         stops = net.schedules[train_id]
         here, nxt = stops[i], stops[i + 1]
         sec = _choose_section(net, train_id, here.station, nxt.station, route_overrides)
+
+        frozen = net.frozen.get((train_id, sec.section_id))
+        if frozen is not None:
+            # REAL replay history: the trip as recorded (a stoppage on it still applies)
+            entry, run = frozen[0], frozen[1] - frozen[0]
+            track = min(range(sec.tracks), key=lambda k: track_free_at[sec.section_id][k])
+            stopped = _stoppage_minutes(train_id, sec, entry, entry + run, disruptions, result)
+            exit_time = entry + run + stopped
+            track_free_at[sec.section_id][track] = max(track_free_at[sec.section_id][track],
+                                                       exit_time + sec.min_headway_min)
+            result.occupancies.append(Occupancy(train_id, sec.section_id, entry, entry, exit_time, stopped))
+            calls[train_id][i].dep = entry
+            calls[train_id][i + 1].arr = exit_time
+            if here.station in loops and train_id in standing[here.station]:
+                standing[here.station][train_id][1] = entry
+            if nxt.station in loops and i + 1 < len(stops) - 1:
+                standing[nxt.station][train_id] = [exit_time, None]
+            if i + 1 < len(stops) - 1:
+                next_ready = next_departure(nxt, exit_time)
+                nf = net.frozen.get((train_id, _choose_section(net, train_id, nxt.station, stops[i + 2].station,
+                                                                route_overrides).section_id))
+                if nf is not None:
+                    next_ready = nf[0]
+                else:
+                    next_ready = _apply_station_delay(next_ready, train_id, nxt.station, disruptions, result)
+                pending[train_id] = (next_ready, i + 1)
+                heapq.heappush(queue, (next_ready, prio, train_id, i + 1, next_ready, None))
+            continue
 
         if run is None:              # drawn once per trip, even if the request is deferred
             run = _running_time(net, sec, here, nxt)
@@ -272,6 +317,27 @@ def simulate(
             # blocked: wait at the signal without booking; retry when it can enter
             heapq.heappush(queue, (entry, prio, train_id, i, ready, run))
             continue
+        if here.station in loops and train_id in standing[here.station]:
+            # leaving ahead of trains that arrived earlier and are still here = overtaking them:
+            # each needs a loop. Undecided departures count, so they book first at a tie.
+            my_arr = standing[here.station][train_id][0]
+            overtaken = sum(1 for other, (arr, dep) in standing[here.station].items()
+                            if other != train_id and arr < my_arr and (dep is None or dep > entry))
+            if overtaken > loops[here.station]:
+                heapq.heappush(queue, (now + 1, prio, train_id, i, ready, run))
+                continue
+        if nxt.station in loops and i + 1 < len(stops) - 1:
+            arrive = entry + run
+            others = 0
+            for other, (_arr, dep) in standing[nxt.station].items():
+                if other == train_id:
+                    continue
+                if (dep if dep is not None else est_departure(other, nxt.station)) > arrive:
+                    others += 1
+            if others > loops[nxt.station]:
+                # no free line at the next station when it would arrive: wait here, re-try next minute
+                heapq.heappush(queue, (now + 1, prio, train_id, i, ready, run))
+                continue
         stopped = _stoppage_minutes(train_id, sec, entry, entry + run, disruptions, result,
                                     shift_if_missed=rng is not None)
         exit_time = entry + run + stopped
@@ -280,12 +346,17 @@ def simulate(
         result.occupancies.append(Occupancy(train_id, sec.section_id, ready, entry, exit_time, stopped))
         calls[train_id][i].dep = entry
         calls[train_id][i + 1].arr = exit_time
+        if here.station in loops and train_id in standing[here.station]:
+            standing[here.station][train_id][1] = entry
+        if nxt.station in loops and i + 1 < len(stops) - 1:
+            standing[nxt.station][train_id] = [exit_time, None]
 
         if i + 1 < len(stops) - 1:
             next_ready = next_departure(nxt, exit_time)
             if rng is not None:
                 next_ready += variability.dwell_overrun_minutes(rng, nxt)
             next_ready = _apply_station_delay(next_ready, train_id, nxt.station, disruptions, result)
+            pending[train_id] = (next_ready, i + 1)
             heapq.heappush(queue, (next_ready, prio, train_id, i + 1, next_ready, None))
 
     for train_id in net.schedules:

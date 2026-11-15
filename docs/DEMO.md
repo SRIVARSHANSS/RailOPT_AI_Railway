@@ -149,3 +149,36 @@ Numbers below are from the simulator replay (tests/test_phase6.py prints them).
     - If either page shows **Outdated - rerun**, a result file or model changed since the run:
       run the command it names (from `backend/`) before presenting.
 
+
+## Act 3: Real day replay - Dindigul to Madurai, Thursday 12 Sept 2024
+
+REAL recorded running times (RSTGCN dataset, Sept 2024, CC BY-SA 4.0; docs/DATA_SOURCES.md).
+The top badge turns green "Real data"; once an event is added it turns violet "Hypothetical".
+Numbers quoted below come from the API on our run; read them from the screen, not from here.
+
+20. **Load the day.** *Disruptions* -> *Scenario* -> *Real day replay*: keep **2024-09-12 Thu -
+    22 trains (demo day)** and click *Load real day*. The clock jumps to **08:30**.
+21. **The console.** *Traffic console*: title "Dindigul - Madurai (DG -> MDU)", the green banner
+    reads **"REAL RECORDED MOVEMENTS - 2024-09-12 - RSTGCN Sept 2024 (CC BY-SA 4.0)"**. Say: trains
+    move by their recorded times; between recorded stations positions are interpolated (dashed ring,
+    "(interpolated)" in the train list). Live alerts: no alert; a grey line lists possible clashes
+    that rest on interpolated times (uncertain, not alerts).
+22. **Play at 60x and point out the real overtake.** 16343 Amritha left DG at 08:15, 22627 at 08:38;
+    22627 reached Madurai at 09:33, 16343 at 10:00. Where it was overtaken is not recorded: the
+    replay places 16343's wait at the KQN loop (interpolated). Talking point: a train can only be
+    overtaken where a loop is free - at Koodal Nagar (no loop, ASSUMED) it never happens.
+23. **Inject a hypothetical stoppage.** Pause, set the clock to **08:53** (scrubber). *Disruptions*
+    -> preset card "Real day replay (hypothetical event)": **22627 stops in ABI-KQN at 08:53 for
+    25 min** -> *Inject event*. The badge turns violet: "HYPOTHETICAL on a real recorded day".
+24. **HOLD vs RESEQUENCE.** *Strategy comparison* -> *Run optimizer at 08:53*. Point out:
+    - only Hold and Resequence are offered; "Not offered: Reroute, Combined - no alternate line";
+    - priorities are ASSUMED (premium 1, superfast 2, express 3);
+    - on our run Hold matches no re-planning (weighted 128): 16343 waits at KQN for 22627;
+      Resequence (recommended, 120) lets 16343 go on and be overtaken at the VDP loop instead;
+    - the headway note: the same recommendation and ranking with a 4 min headway, where Resequence
+      only ties no re-planning (156 vs 156) - the gain depends on the calibrated headway.
+25. **Accept and read the label aloud.** *Accept plan*. Back on the console the banner says
+    "HYPOTHETICAL on a real recorded day: recorded until 08:53, simulated after it". Read it aloud:
+    *"Everything before 08:53 is what really happened on 12 September 2024; everything after is a
+    hypothetical simulation of a stoppage that did not happen. RailOpt AI advises; it controls
+    nothing."* The *Timeline* shows the same label and the before / after plan lines.

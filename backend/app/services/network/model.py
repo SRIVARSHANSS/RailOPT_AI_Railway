@@ -15,6 +15,7 @@ from pathlib import Path
 import networkx as nx
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+REAL_DATA_DIR = DEFAULT_DATA_DIR / "real" / "dg_mdu"     # REAL data, kept apart (docs/DATA_SOURCES.md)
 
 
 def parse_time(value: str | None) -> int | None:
@@ -26,7 +27,7 @@ def parse_time(value: str | None) -> int | None:
 
 
 def format_time(minutes: int | None) -> str:
-    """Minutes after midnight -> 'HH:MM'."""
+    """Minutes after midnight -> 'HH:MM' (a real replay day may run past 24:00, e.g. '24:35')."""
     if minutes is None:
         return "--:--"
     return f"{minutes // 60:02d}:{minutes % 60:02d}"
@@ -39,6 +40,7 @@ class Station:
     km_from_start: float
     platforms: int
     is_junction: bool
+    loops: int | None = None   # loop lines (REAL corridor, ASSUMED); None = not modelled (SIMULATED)
 
 
 @dataclass(frozen=True)
@@ -82,6 +84,10 @@ class RailNetwork:
     trains: dict[str, Train]
     schedules: dict[str, list[StopTime]]
     graph: nx.MultiDiGraph = field(repr=False)
+    # REAL replay: trips already run before `frozen_before`, as {(train_id, section_id): (entry, exit)}.
+    # The simulator takes them as recorded (history), safety checks look only at later trips.
+    frozen: dict[tuple[str, str], tuple[int, int]] = field(default_factory=dict, repr=False)
+    frozen_before: int | None = None
 
     def sections_between(self, a: str, b: str) -> list[Section]:
         """All sections from station a to station b (primary first)."""
@@ -113,10 +119,21 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 TIMETABLES = {
     "reference": ("trains.csv", "schedule.csv"),                    # T101/T202/T303 scenario
     "full_day": ("trains_full_day.csv", "schedule_full_day.csv"),   # 12 trains, 06:00-14:00
+    "dg_mdu": ("trains.csv", "schedule.csv"),                       # REAL DG -> MDU timetable (own folder)
 }
+REAL_TIMETABLES = {"dg_mdu"}
+
+
+def _day_time(value: str | None, day: str | None) -> int | None:
+    t = parse_time(value)
+    if t is None:
+        return None
+    return t + 1440 * int(day or 0)
 
 
 def load_network(data_dir: str | Path = DEFAULT_DATA_DIR, timetable: str = "reference") -> RailNetwork:
+    if timetable in REAL_TIMETABLES and Path(data_dir) == DEFAULT_DATA_DIR:
+        data_dir = REAL_DATA_DIR
     data_dir = Path(data_dir)
     if timetable not in TIMETABLES:
         raise ValueError(f"Unknown timetable {timetable!r}; choose from {sorted(TIMETABLES)}")
@@ -129,6 +146,7 @@ def load_network(data_dir: str | Path = DEFAULT_DATA_DIR, timetable: str = "refe
             km_from_start=float(r["km_from_start"]),
             platforms=int(r["platforms"]),
             is_junction=r["is_junction"].strip().lower() == "yes",
+            loops=int(r["loops"]) if (r.get("loops") or "").strip() else None,
         )
         for r in _read_csv(data_dir / "stations.csv")
     }
@@ -165,15 +183,19 @@ def load_network(data_dir: str | Path = DEFAULT_DATA_DIR, timetable: str = "refe
             StopTime(
                 station=r["station_code"],
                 seq=int(r["stop_seq"]),
-                sched_arr=parse_time(r["sched_arr"]),
-                sched_dep=parse_time(r["sched_dep"]),
+                sched_arr=_day_time(r["sched_arr"], r.get("arr_day")),
+                sched_dep=_day_time(r["sched_dep"], r.get("dep_day")),
             )
         )
     for stops in schedules.values():
         stops.sort(key=lambda s: s.seq)
 
-    _validate(stations, sections, trains, schedules)
+    return build_network(stations, sections, trains, schedules)
 
+
+def build_network(stations, sections, trains, schedules) -> RailNetwork:
+    """Validate and assemble a network (also used for REAL replay days)."""
+    _validate(stations, sections, trains, schedules)
     graph = nx.MultiDiGraph()
     for st in stations.values():
         graph.add_node(st.code, name=st.name, platforms=st.platforms, km=st.km_from_start)

@@ -1,10 +1,12 @@
-// Shapes of the RailOpt API responses (backend/app/schemas/api.py). All SIMULATED.
-type Labelled = { data_label: 'SIMULATED' }
+// Shapes of the RailOpt API responses (backend/app/schemas/api.py).
+// data_label: SIMULATED (sample corridor), REAL (recorded day, unchanged), or HYPOTHETICAL on top of it.
+export type DataLabel = 'SIMULATED' | 'REAL' | 'HYPOTHETICAL on a real recorded day'
+type Labelled = { data_label: DataLabel }
 
-export type Timetable = 'reference' | 'full_day'
+export type Timetable = 'reference' | 'full_day' | 'dg_mdu'
 export type EventType = 'STOPPAGE' | 'DELAY' | 'TRACK_UNAVAILABLE' | 'PLATFORM_UNAVAILABLE'
 
-export type Station = { code: string; name: string; km: number; platforms: number; is_junction: boolean }
+export type Station = { code: string; name: string; km: number; platforms: number; is_junction: boolean; loops?: number | null }
 export type Section = {
   section_id: string; from_station: string; to_station: string; length_km: number
   tracks: number; min_run_min: number; min_headway_min: number; status: string
@@ -19,9 +21,19 @@ export type ScenarioEvent = {
 }
 export type DecisionLogEntry = { recommendation_id: string; decision: 'accept' | 'reject'; strategy: string; at: number; logged_at_utc: string }
 export type PlanStatus = { applied: string | null; stale: boolean; new_events: string[]; basis_at: number | null }
+export type ReplayInfo = {
+  date: string; weekday: string; header: string; source: string; window_start: number; window_end: number
+  trains: number; divergence: string | null
+  recorded_overtakes: { overtaking: string; overtaken: string; dg_departures: string[]; mdu_arrivals: string[] }[]
+  placed_waits: { train_id: string; kind: string; station: string; wait_min: number; by?: string }[]
+  unreliable: { train_id: string; station: string; reason: string }[]
+  unresolved: string[]; flagged_mdu: string[]; notes: string[]
+}
 export type Scenario = Labelled & {
   scenario_version: string
   timetable: Timetable
+  mode: 'live' | 'replay'
+  replay: ReplayInfo | null
   events: ScenarioEvent[]
   applied_recommendation: string | null
   plan: PlanStatus
@@ -35,6 +47,7 @@ export type TrainState = {
   train_id: string; train_type: string; priority: number; status: TrainStatus
   location: string; progress: number | null; next_station: string | null; current_delay_min: number
   stopped: boolean
+  interpolated?: boolean
 }
 export type Kpis = { active_trains: number; delayed_trains: number; conflicts: number; avg_delay_min: number }
 export type StateAt = Labelled & { scenario_version: string; at: string; known_events: string[]; trains: TrainState[]; kpis: Kpis; plan: PlanStatus }
@@ -46,6 +59,7 @@ export type Conflict = {
   conflict_type: 'OVERLAP' | 'HEADWAY' | 'CLOSURE'; window_start: string; window_end: string
   minutes_short: number; time_to_conflict_min: number; severity: 'CRITICAL' | 'WARNING'
   event_id: string | null; prediction: Prediction | null
+  certainty?: 'FIRM' | 'ESTIMATED'
 }
 export type WatchItem = Prediction & {
   train_id: string; section_id: string; time_to_section_min: number
@@ -67,7 +81,16 @@ export type Recommendation = {
   recommendation_id: string; strategy: string; status: string; actions: string[]
   weighted_delay: number; total_delay: number; delays: Record<string, number>; explanation: Explanation
 }
-export type OptimizeResult = Labelled & { scenario_version: string; at: string; known_events: string[]; results: StrategyRow[]; recommendation: Recommendation | null; replanning_from: string | null }
+export type Unavailable = { name: string; reason: string }
+export type Sensitivity = {
+  headway_min: number; alt_headway_min: number; recommended: string | null; alt_recommended: string | null
+  ranking: string[]; alt_ranking: string[]; alt_weighted_delay: Record<string, number | null>; changed: boolean
+}
+export type OptimizeResult = Labelled & {
+  scenario_version: string; at: string; known_events: string[]; results: StrategyRow[]
+  recommendation: Recommendation | null; replanning_from: string | null
+  unavailable?: Unavailable[]; sensitivity?: Sensitivity | null; notes?: string[]
+}
 
 export type WhatIfRecommendation = Omit<Recommendation, 'recommendation_id'>
 export type WhatIfSide = {
@@ -88,6 +111,7 @@ export type TimelineRow = {
   stops: { start_min: number; end_min: number }[]
   delay_min: number | null
   alternate: boolean
+  interpolated?: boolean
 }
 export type ClosureBlock = {
   event_id: string; section_id: string; from_km: number; to_km: number

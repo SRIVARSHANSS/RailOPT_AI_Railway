@@ -21,11 +21,19 @@ export function AlertsFeed({ conflicts, loading, plan }: { conflicts: ConflictsA
   const { highlight, setHighlight, optimize, decided } = useConsole()
   const navigate = useNavigate()
   const alerts = buildAlerts(conflicts, optimize, decided, plan)
+  const uncertain = (conflicts?.conflicts ?? []).filter((k) => k.certainty === 'ESTIMATED')
+  const uncertainNote = uncertain.length > 0 && (
+    <p className="mt-3 text-sm text-ink-dim">
+      {uncertain.length} possible clash{uncertain.length === 1 ? '' : 'es'} rest on interpolated or estimated times
+      (uncertain, not alerts): {uncertain.slice(0, 4).map((k) => `${k.later_train} on ${k.section_id}`).join(', ')}{uncertain.length > 4 ? ', ...' : ''}.
+    </p>
+  )
 
   if (!loading && alerts.length === 0) {
-    return <EmptyState icon={<CircleCheck className="h-7 w-7" />} title="No alerts">No conflict is known at this time.</EmptyState>
+    return <><EmptyState icon={<CircleCheck className="h-7 w-7" />} title="No alerts">No conflict is known at this time.</EmptyState>{uncertainNote}</>
   }
   return (
+    <>
     <ul className="space-y-2.5" aria-label="Live alerts">
       <AnimatePresence initial={false}>
         {alerts.map((a) => {
@@ -58,5 +66,7 @@ export function AlertsFeed({ conflicts, loading, plan }: { conflicts: ConflictsA
         })}
       </AnimatePresence>
     </ul>
+    {uncertainNote}
+    </>
   )
 }

@@ -14,8 +14,8 @@ import { CorridorMap } from '../features/console/CorridorMap'
 import { KpiStrip } from '../features/console/KpiStrip'
 import { buildGeometry } from '../features/console/geometry'
 import { staggerContainer } from '../lib/motion'
-import { fmt, toMin } from '../lib/time'
-import { DEMO_START, minuteMs, useConsole, useSim } from '../store/sim'
+import { fmt } from '../lib/time'
+import { DEMO_START, minuteMs, REPLAY_DEMO_START, useConsole, useSim } from '../store/sim'
 
 
 const statusText: Record<TrainState['status'], string> = {
@@ -29,8 +29,9 @@ const statusText: Record<TrainState['status'], string> = {
 export function Console() {
   const scenario = useScenario()
   const timetable = scenario.data?.timetable ?? 'reference'
+  const replay = scenario.data?.mode === 'replay' ? scenario.data.replay : null
   const network = useNetwork(scenario.data ? timetable : undefined)
-  const { minute, playing, speed, minuteStartedAt, setRange } = useSim()
+  const { minute, playing, speed, minuteStartedAt } = useSim()
   const { highlight, setHighlight } = useConsole()
 
   const now = useStateAt(minute)
@@ -40,12 +41,7 @@ export function Console() {
 
   const geo = useMemo(() => (network.data ? buildGeometry(network.data) : null), [network.data])
 
-  // scrubber range: timetable first departure - 10 to last arrival + 10 (display only)
-  useEffect(() => {
-    if (!network.data) return
-    const times = network.data.schedule.flatMap((s) => [s.sched_dep, s.sched_arr]).filter(Boolean).map((t) => toMin(t as string))
-    setRange([Math.min(...times) - 10, Math.max(...times) + 10])
-  }, [network.data, setRange])
+  // scrubber range: set app-wide by useClockRange (AppShell)
 
   // KPI history for sparklines: the last 30 polled minutes, restarted on a backwards jump
   const [history, setHistory] = useState<{ m: number; k: Kpis }[]>([])
@@ -66,15 +62,25 @@ export function Console() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-[0.2em] text-signal-cyan">Traffic console</p>
-          <h1 className="text-3xl font-bold xl:text-4xl">Corridor A - B - C - D</h1>
+          <h1 className="text-3xl font-bold xl:text-4xl">{replay ? 'Dindigul - Madurai (DG -> MDU)' : 'Corridor A - B - C - D'}</h1>
         </div>
         <div className="flex items-center gap-2 text-sm text-ink-muted">
-          <SignalBadge tone="info">Timetable: {timetable === 'full_day' ? 'full day (12 trains)' : 'reference (3 trains)'}</SignalBadge>
+          <SignalBadge tone="info">Timetable: {replay ? `real, ${replay.trains} trains on ${replay.date}` : timetable === 'full_day' ? 'full day (12 trains)' : 'reference (3 trains)'}</SignalBadge>
           {now.data && <SignalBadge tone="info">Known events: {now.data.known_events.length ? now.data.known_events.join(', ') : 'none'}</SignalBadge>}
         </div>
       </div>
 
-      <ClockBar resetTo={DEMO_START} />
+      {replay && (
+        <div role="note" className={`glass flex flex-wrap items-center gap-3 px-5 py-3 ${scenario.data?.data_label === 'REAL' ? 'border border-signal-green/40' : 'border border-signal-violet/40'}`}>
+          <span className={`font-mono text-sm font-semibold uppercase tracking-wider ${scenario.data?.data_label === 'REAL' ? 'text-signal-green' : 'text-signal-violet'}`}>{replay.header}</span>
+          {scenario.data?.data_label !== 'REAL' && (
+            <span className="text-sm text-ink">HYPOTHETICAL on a real recorded day: recorded until {replay.divergence ?? 'the first event'}, simulated after it.</span>
+          )}
+          <span className="text-sm text-ink-muted">Positions between recorded stations are interpolated (dashed ring).</span>
+        </div>
+      )}
+
+      <ClockBar resetTo={replay ? REPLAY_DEMO_START : DEMO_START} />
 
       {now.data?.plan.stale && (
         <motion.div role="status" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
@@ -124,6 +130,7 @@ export function Console() {
                       <TrainChip id={t.train_id} type={t.train_type} />
                       <span className="text-sm text-ink-muted">
                         {t.stopped ? 'stopped in' : statusText[t.status]} {t.status === 'in_section' ? t.location : `at ${t.location}`}
+                        {t.interpolated && <span className="ml-1 text-ink-dim">(interpolated)</span>}
                       </span>
                       <span className={t.current_delay_min > 0 ? 'font-mono text-sm font-semibold text-signal-red' : 'font-mono text-sm text-signal-green'}>
                         {t.current_delay_min > 0 ? `+${t.current_delay_min} min` : 'on time'}

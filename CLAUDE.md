@@ -102,7 +102,18 @@ Rail OPT/  (project root)
   predictions_real.csv} (committed; card generated from the JSON). Split by DG date, train-mean
   feature from training dates only; carry-the-DG-delay is the baseline to beat. The SIMULATED
   Phase 4 models are not trained on real data.
-- 103 tests passing.
+- Real-day replay (Step 3): POST /api/scenario/reset {timetable:"dg_mdu", mode:"replay", date}
+  (demo day 2024-09-12; GET /api/replay/days). app/services/realdata/replay.py builds the day:
+  `timetable` (real, repaired), `movement` (recorded + INTERPOLATED, replays exactly on 16/32 days),
+  `forecast(at)` = what is known at `at` (detection + optimizer use it, never later recorded times).
+  Hypothetical events: history before the first event/plan is frozen (RailNetwork.frozen), after it
+  simulated. data_label per response: SIMULATED | REAL | "HYPOTHETICAL on a real recorded day".
+  Real corridor: headway CALIBRATED 0 (one train per block; calibrate.py), loops ASSUMED per station
+  (no overtaking without a free loop: simulator, CP-SAT, find_violations), priorities ASSUMED
+  PREMIUM 1 / SUPERFAST 2 / EXPRESS 3, weights = 4 - priority. Only HOLD and RESEQUENCE (no
+  alternate line); every replay optimize also reports the headway-4 sensitivity. Simulated stations
+  have loops = None: nothing changes there. ML models are not applied to real data.
+- 115 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -152,4 +163,4 @@ Rail OPT/  (project root)
 - [~] Real data phase, Dindigul -> Madurai: [x] Step 1 corridor, timetable, extract, audit
   (backend/data/real/dg_mdu/audit.md)  [x] Step 2 real delay model validation
   (ml/reports/real/model_card_real.md)
-  [ ] Step 3 real-day replay mode
+  [x] Step 3 real-day replay mode (Act 3 in docs/DEMO.md)

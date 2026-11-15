@@ -39,6 +39,7 @@ def test_train_type_rules():
     assert C.train_type(6011, "Tbm-ncj Sf Tod Special") == "SPECIAL"
     assert C.train_type(12637, "Pandian Sf Express") == "SUPERFAST"
     assert C.train_type(20665, "Ten Vandebharat") == "PREMIUM"
+    assert C.train_type(20627, "Ms Ncj Vb Express") == "PREMIUM"
     assert C.train_type(16127, "Ms Guruvayur Express") == "EXPRESS"
 
 
@@ -97,7 +98,11 @@ def test_extract_is_labelled_real_and_kept_apart_from_simulated():
     assert len(load_network().trains) == 3                                  # simulated reference untouched
     assert (REAL.parent / "LICENSE-DATA").exists()
     st = pd.read_csv(REAL / "stations.csv")
-    assert set(st.platforms_source) == {"ASSUMED"} and set(pd.read_csv(REAL / "sections.csv").run_headway_source) == {"ASSUMED"}
+    sec = pd.read_csv(REAL / "sections.csv")
+    assert set(st.platforms_source) == {"ASSUMED"} and set(st.loops_source) == {"ASSUMED"}
+    assert set(sec.min_run_source) == {"ASSUMED"} and set(sec.headway_source) == {"CALIBRATED"}
+    assert (sec.min_headway_min == C.CALIBRATED_HEADWAY_MIN).all() and (sec.tracks == 1).all()
+    assert set(pd.read_csv(REAL / "trains.csv").priority_source) == {"ASSUMED"}
 
 
 def test_schedule_is_complete_monotonic_and_sourced():

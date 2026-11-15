@@ -115,7 +115,7 @@ function LiveSession() {
         <h2 className="text-lg font-semibold">Live session</h2>
         <span className="text-sm text-ink-muted">
           current scenario at <span className="font-mono text-ink">{fmt(minute)}</span>
-          {scenario.data && <> · {scenario.data.timetable === 'full_day' ? 'full day' : 'reference'} timetable · {scenario.data.events.length} events
+          {scenario.data && <> · {scenario.data.timetable === 'dg_mdu' ? 'real day replay' : scenario.data.timetable === 'full_day' ? 'full day' : 'reference'} timetable · {scenario.data.events.length} events
             {scenario.data.applied_recommendation ? ` · plan ${scenario.data.applied_recommendation} accepted` : ' · no plan accepted'}</>}
         </span>
       </div>

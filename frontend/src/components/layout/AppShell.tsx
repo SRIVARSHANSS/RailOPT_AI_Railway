@@ -5,14 +5,14 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
-import { useScenarioVersionGuard } from '../../api/hooks'
+import { useClockRange, useScenarioVersionGuard } from '../../api/hooks'
 import { api, type Health } from '../../lib/api'
 import { cn } from '../../lib/cn'
 import { duration, page, spring } from '../../lib/motion'
 import { fmt } from '../../lib/time'
 import { ROLE_LABEL, useSession } from '../../store/session'
 import { useSim } from '../../store/sim'
-import { SimulatedBadge } from '../ui/Badges'
+import { DataBadge } from '../ui/Badges'
 import { Tooltip } from '../ui/Tooltip'
 import { ClockDriver } from './ClockDriver'
 
@@ -52,6 +52,7 @@ export function AppShell() {
   const wide = useWide()
   const collapsed = useSession((s) => s.sidebarCollapsed) || !wide
   useScenarioVersionGuard()
+  useClockRange()
   return (
     <div className="flex min-h-screen">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:rounded-lg focus:bg-canvas-2 focus:px-4 focus:py-2">
@@ -153,8 +154,8 @@ function TopBar() {
       </Tooltip>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        <span className="hidden lg:inline-flex"><SimulatedBadge /></span>
-        <span className="lg:hidden"><SimulatedBadge compact /></span>
+        <span className="hidden lg:inline-flex"><DataBadge label={health.data?.data_label} /></span>
+        <span className="lg:hidden"><DataBadge label={health.data?.data_label} compact /></span>
         {role && (
           <span className="hidden rounded-full border border-signal-violet/40 bg-signal-violet/10 px-3 py-1 sm:inline text-xs font-semibold uppercase tracking-wider text-signal-violet">
             {ROLE_LABEL[role]}
