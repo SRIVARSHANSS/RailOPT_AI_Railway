@@ -21,6 +21,7 @@ pytestmark = pytest.mark.real_auth
 PUBLIC = "PUBLIC"
 ANY = "ANY_SIGNED_IN"
 READ, CONTROL, WHATIF, ADMIN = set(auth.READ), set(auth.CONTROL), set(auth.WHATIF), set(auth.ADMIN_ONLY)
+ALERTS, REPORTS = set(auth.ALERTS), set(auth.REPORTS)
 # every API route and who may call it (docs/ASSUMPTIONS.md 80)
 MATRIX = {
     ("GET", "/api/health"): PUBLIC,
@@ -50,6 +51,14 @@ MATRIX = {
     ("PUT", "/api/admin/network/custom/{kind}"): ADMIN,
     ("POST", "/api/admin/network/custom/{kind}/import"): ADMIN,
     ("POST", "/api/admin/network/custom/reset"): ADMIN,
+    ("GET", "/api/admin/audit.csv"): ADMIN,
+    ("GET", "/api/alerts"): ALERTS,
+    ("POST", "/api/alerts/ack"): CONTROL,
+    ("GET", "/api/reports"): READ,
+    ("GET", "/api/reports/scenario.pdf"): READ,
+    ("GET", "/api/reports/scenario.csv"): READ,
+    ("GET", "/api/reports/evaluation.pdf"): REPORTS,
+    ("GET", "/api/reports/model.pdf"): REPORTS,
 }
 PATH_VALUES = {"{rec_id}": "R99", "{user_id}": "999999", "{name}": "reference", "{kind}": "stations"}
 ROLES = ("ADMIN", "CONTROLLER", "ANALYST")

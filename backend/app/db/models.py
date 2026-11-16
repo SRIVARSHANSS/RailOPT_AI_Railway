@@ -69,6 +69,7 @@ class Event(Base):
     location: Mapped[str] = mapped_column(String(40))
     start_min: Mapped[int] = mapped_column(Integer)
     duration_min: Mapped[int] = mapped_column(Integer)
+    posted_at_min: Mapped[int | None] = mapped_column(Integer, nullable=True)   # sim clock when posted
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { CircleSlash, Route as RouteIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useConflictsAt, useNetwork, useTimeline } from '../api/hooks'
 import { SignalBadge } from '../components/ui/Badges'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -24,7 +25,10 @@ export function Timeline() {
   const minute = useSim((s) => s.minute)
   const conflicts = useConflictsAt(minute)
   const [mode, setMode] = useState<Mode>('actual')
-  const [selected, setSelected] = useState<string | null>(null)
+  // "Show on timeline" from Conflicts and Alerts: /timeline?train=T202&section=S_BC selects the train
+  const [params] = useSearchParams()
+  const [selected, setSelected] = useState<string | null>(params.get('train'))
+  const linkedSection = params.get('section')
 
   const hasPlan = Boolean(tl.data?.before_plan)
   useEffect(() => { if (!hasPlan && mode === 'plan') setMode('actual') }, [hasPlan, mode])
@@ -86,6 +90,7 @@ export function Timeline() {
                 <span className="text-xs uppercase tracking-wider text-ink-muted">{trainTypes[id]?.toLowerCase()}</span>
               </button>
             ))}
+            {linkedSection && selected && <span className="text-sm text-ink-muted">From Conflicts and alerts: {selected} on {linkedSection}</span>}
             {selected && <button onClick={() => setSelected(null)} className="text-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline">Show all (Esc)</button>}
           </div>
         )}

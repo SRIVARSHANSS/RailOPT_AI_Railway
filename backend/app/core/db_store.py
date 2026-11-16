@@ -68,14 +68,17 @@ class DbScenarioStore(ScenarioStore):
             from app.services.realdata.replay import get_day
             day = get_day(row.replay_date)
         self._row_id = row.id
+        self.run_ref = f"db-{row.id}"
         self.timetable, self.mode, self.replay_date, self._day = row.timetable, row.mode, row.replay_date, day
         self.boot_id, self.revision = row.boot_id, row.revision
         self.applied_recommendation, self.plan_basis_at = row.applied_recommendation, row.plan_basis_at
         self.plan_basis_events = list(row.plan_basis_events or [])
         self.holds, self.route_overrides = _unpairs(row.holds), _unpairs(row.route_overrides)
         self.previous_holds, self.previous_overrides = _unpairs(row.previous_holds), _unpairs(row.previous_overrides)
+        rows = list(db.scalars(select(m.Event).where(m.Event.scenario_id == row.id).order_by(m.Event.id)))
         self.events = [Disruption(e.event_id, e.event_type, e.train_id, e.location, e.start_min, e.duration_min)
-                       for e in db.scalars(select(m.Event).where(m.Event.scenario_id == row.id).order_by(m.Event.id))]
+                       for e in rows]
+        self.posted_at = {e.event_id: e.posted_at_min for e in rows if e.posted_at_min is not None}
         self.recommendations = {}
         for r in db.scalars(select(m.Recommendation).where(m.Recommendation.scenario_id == row.id)
                             .order_by(m.Recommendation.id)):
@@ -103,6 +106,7 @@ class DbScenarioStore(ScenarioStore):
             db.add(row)
             db.flush()
             self._row_id = row.id
+            self.run_ref = f"db-{row.id}"
 
     def _save_row(self, db) -> None:
         db.execute(update(m.Scenario).where(m.Scenario.id == self._row_id).values(**self._state()))
@@ -113,13 +117,15 @@ class DbScenarioStore(ScenarioStore):
             super().reset(timetable, mode, date, actor=actor)
             self._new_row(actor)
 
-    def add_event(self, event_type, train_id, location, start, duration, prefix="E", actor=None):
+    def add_event(self, event_type, train_id, location, start, duration, prefix="E", actor=None, posted_at=None):
         with self._lock:
-            event = super().add_event(event_type, train_id, location, start, duration, prefix, actor=actor)
+            event = super().add_event(event_type, train_id, location, start, duration, prefix, actor=actor,
+                                      posted_at=posted_at)
             with self._sf() as db, db.begin():
                 db.add(m.Event(scenario_id=self._row_id, event_id=event.event_id, event_type=event.event_type,
                                train_id=event.train_id, location=event.location, start_min=event.start,
-                               duration_min=event.duration, created_by=(actor or {}).get("id")))
+                               duration_min=event.duration, posted_at_min=posted_at,
+                               created_by=(actor or {}).get("id")))
                 self._save_row(db)
             return event
 

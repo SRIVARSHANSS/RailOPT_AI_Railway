@@ -21,7 +21,9 @@ and is not connected to Indian Railways systems. All results are simulated.
 - [x] FastAPI layer (thin: all logic in app/services)
 - [x] Phase 8: PostgreSQL persistence (scenario survives an API restart), Alembic migrations,
   JWT auth in httpOnly cookies with roles ADMIN / CONTROLLER / ANALYST, login rate limiting,
-  audit log, User Management and Network and Train Management pages (11 of the 12 planned pages)
+  audit log, User Management and Network and Train Management pages
+- [x] Conflicts and Alerts page (full lists, alert history with causes, acknowledge) and Reports page
+  (scenario PDF + CSV, evaluation PDF, model PDF, audit log CSV): all 12 planned pages exist
 - [x] Phase 9 part 1: design system "Midnight Signal", app shell, cinematic login (`frontend/`)
 - [x] Phase 9 part 2: Traffic Console (live corridor map), Disruption Panel, Strategy Comparison
   - step-by-step demo with talking points: `docs/DEMO.md`
@@ -49,7 +51,7 @@ and is not connected to Indian Railways systems. All results are simulated.
   `RAILOPT_BOOT=simulated` to start on the SIMULATED sample corridor.
 - Explainable recommendations (Phase 7): template sentences from the API's own numbers, with
   "Why not the others?", constraints, assumptions, confidence and a plain-text copy. No LLM.
-- 228 passing tests (+1 optional PostgreSQL migration test). Remaining phases: see `CLAUDE.md`
+- 251 passing tests (+1 optional PostgreSQL migration test). Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -58,7 +60,10 @@ cd backend
 py -3.12 -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
+pip install -r requirements-dev.txt     # tests only: pypdf (reads the generated PDF reports)
 ```
+
+PDF reports use reportlab with the DejaVu Sans font that ships with matplotlib (no extra font install).
 
 ### Database and first admin (Phase 8)
 
@@ -134,7 +139,9 @@ backend/
   app/services/live.py      train states, conflicts + ML, recommendation, timeline (plain Python)
   app/services/explainer/   template explanations (drivers, recommendation card), no LLM
   app/services/netadmin.py  network management: validation, CSV import, custom corridor
-  app/api/, app/schemas/    FastAPI routes (routes, auth_routes, admin_routes) and Pydantic models
+  app/services/alerts.py    Conflicts and Alerts: current lists, alert history with causes
+  app/services/reports/     PDF / CSV reports (reportlab, DejaVu Sans), charts from API payloads
+  app/api/, app/schemas/    FastAPI routes (routes, auth, admin, alerts, reports) and Pydantic models
   app/core/                 store.py (scenario), db_store.py (persisted), auth.py, security.py, config.py
   app/db/, alembic/         SQLAlchemy models, sessions; migrations
   app/cli.py                create-admin / create-user / list-users
@@ -152,6 +159,12 @@ docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
 | POST | `/api/auth/login`, `/refresh`, `/logout`; GET `/api/auth/me` | sessions (httpOnly cookies) |
 | GET/POST/PATCH | `/api/admin/users`, `/api/admin/users/{id}`, `/api/admin/users/{id}/password` | ADMIN: users |
 | GET | `/api/admin/audit` | ADMIN: audit log (filters, paging) |
+| GET | `/api/admin/audit.csv` | ADMIN: audit log export (same filters) |
+| GET | `/api/alerts?at=HH:MM` | CONTROLLER, ANALYST: conflicts, uncertain clashes, ML watchlist, closures + alert history |
+| POST | `/api/alerts/ack` | CONTROLLER: acknowledge an alert (audit log) |
+| GET | `/api/reports` | which reports can be exported now (freshness of the results) |
+| GET | `/api/reports/scenario.pdf`, `/scenario.csv` `?at=HH:MM` | every role: scenario report |
+| GET | `/api/reports/evaluation.pdf`, `/model.pdf` | ADMIN, ANALYST: results reports (409 when outdated) |
 | GET/PUT/POST | `/api/admin/network/{name}`, `/api/admin/network/custom/{table}` (+ `/import`, `/reset`) | ADMIN: corridors, edit / CSV import of the custom one |
 | GET | `/api/network?timetable=reference\|full_day` | stations, sections, trains, schedule |
 | POST | `/api/scenario/reset` | start a fresh scenario on a timetable |

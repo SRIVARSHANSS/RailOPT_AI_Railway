@@ -22,6 +22,8 @@ const ModelInsights = lazy(() => import('./pages/ModelInsights').then((m) => ({ 
 const Timeline = lazy(() => import('./pages/Timeline').then((m) => ({ default: m.Timeline })))
 const DesignSystem = lazy(() => import('./pages/DesignSystem').then((m) => ({ default: m.DesignSystem })))
 const Users = lazy(() => import('./pages/Users').then((m) => ({ default: m.Users })))
+const Alerts = lazy(() => import('./pages/Alerts').then((m) => ({ default: m.Alerts })))
+const Reports = lazy(() => import('./pages/Reports').then((m) => ({ default: m.Reports })))
 const NetworkAdmin = lazy(() => import('./pages/NetworkAdmin').then((m) => ({ default: m.NetworkAdmin })))
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 10_000, refetchOnWindowFocus: false } } })
@@ -63,6 +65,8 @@ export default function App() {
                   <Route path="/strategies" element={<Strategies />} />
                   <Route path="/whatif" element={<WhatIf />} />
                   <Route path="/timeline" element={<Timeline />} />
+                  <Route path="/alerts" element={<RequireRole action="alerts"><Alerts /></RequireRole>} />
+                  <Route path="/reports" element={<Reports />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/model" element={<ModelInsights />} />
                   <Route path="/design" element={<DesignSystem />} />

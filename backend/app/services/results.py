@@ -115,11 +115,24 @@ def ml_conclusion(summary: dict) -> dict | None:
             "significantly_worse": worse, "reference": "DYNAMIC"}
 
 
+def limits(summary: dict) -> list[str]:
+    """The Limits box (Analytics page and evaluation report); the one number is from the summary."""
+    return [
+        f"Simulated: one sample corridor ({summary['scenarios']['trains']} trains), synthetic disruptions and "
+        "assumed variability. Nothing here measures real railway operations.",
+        "Robustness replays keep each plan frozen; in use RailOpt would re-plan again as actual times drift.",
+        "Waits include planned holds: a held train counts as waiting.",
+        "Priority dispatch only differs from first come, first served when two trains wait for the same "
+        "section at once.",
+        "RailOpt advises a human controller; it controls no trains or signals.",
+    ]
+
+
 def evaluation_view(eval_dir: Path = EVAL_DIR, model_dir: Path = MODEL_DIR) -> dict:
     summary_path, csv_path = eval_dir / "eval_summary.json", eval_dir / "eval_results.csv"
     if not summary_path.exists():
         return {"status": "missing", "reasons": ["eval_summary.json not found"], "command": EVAL_COMMAND,
-                "summary": None, "distribution": None, "conclusion": None, "solver_totals": None}
+                "summary": None, "distribution": None, "conclusion": None, "solver_totals": None, "limits": []}
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     reasons = []
     prov = summary.get("provenance")
@@ -144,7 +157,7 @@ def evaluation_view(eval_dir: Path = EVAL_DIR, model_dir: Path = MODEL_DIR) -> d
 
     return {"status": "outdated" if reasons else "ok", "reasons": reasons, "command": EVAL_COMMAND,
             "summary": summary, "distribution": reduction_distribution(rows, methods) if rows else None,
-            "conclusion": ml_conclusion(summary),
+            "conclusion": ml_conclusion(summary), "limits": limits(summary),
             "solver_totals": {"phase10": total([m for m in PHASE10 if m in solver]),
                               "variants_10b": total([m for m in PREREGISTERED_10B if m in solver])}}
 

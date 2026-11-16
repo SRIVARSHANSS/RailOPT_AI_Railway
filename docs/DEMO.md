@@ -235,3 +235,27 @@ Numbers quoted below come from the API on our run; read them from the screen, no
    type an invalid value (e.g. a negative km) and *Save*: the API lists the problem by row and
    column and saves nothing. *Import CSV* works the same way per table. A valid custom corridor
    can be run with Disruptions -> Reset -> *Custom* (SIMULATED; the ML models are not applied to it).
+3. **Audit log export.** *Reports* -> *Audit log CSV* (optionally one action, e.g. DECISION): every
+   row with user, time and IP. Exports are themselves logged (REPORT_EXPORTED).
+
+## Optional: Conflicts and Alerts, Reports (after Act 1 or Act 2)
+
+1. **Conflicts and alerts** (controller). Open *Conflicts & alerts* with the clock after the
+   accepted plan (e.g. 10:30). The tiles count rule-based conflicts, uncertain clashes (real days
+   only), the ML watchlist and closures at the clock; click a tile to filter, or filter by
+   severity, type, train, section, or search a train number.
+   - *History*: the T202 overlap on S_BC **appeared at 10:03** ("E1 (STOPPAGE, T101) became
+     known") and **cleared at 10:05** ("plan R1 (REROUTE) accepted by" the controller). Talking
+     point: the backend re-runs the same detector minute by minute with what was known then; the
+     UI types nothing.
+   - *Show on map* opens the console with S_BC highlighted; *Show on timeline* selects the train.
+   - *Acknowledge* an alert: it stays visible, dimmed, with who acknowledged it; the analyst sees
+     the button disabled ("Needs the Controller role"). The audit log has ALERT_ACKNOWLEDGED.
+2. **Reports** (controller: scenario report; analyst or admin: all).
+   - *Scenario report PDF / CSV* at the clock: label, version, sim time, who generated it and when;
+     events, conflicts, alert history, every recommendation with its full explanation, decisions
+     with who took them, per-train delays, the time-distance chart. Every page footer carries the
+     data label (REAL / HYPOTHETICAL on a real recorded day in Act 3).
+   - *Evaluation PDF* (analyst): the Analytics numbers, charts, ML-variants conclusion and limits.
+     If the result files changed, the button is disabled and the page says "Outdated - rerun ...".
+   - *Model PDF*: the synthetic model card (footer SIMULATED) and the real-data card (footer REAL).

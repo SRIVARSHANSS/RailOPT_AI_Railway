@@ -2,12 +2,14 @@
 // same rules on every request (backend app/core/auth.py, tests/test_auth.py permission matrix).
 import { ROLE_LABEL, useSession, type Role } from '../store/session'
 
-export type Action = 'control' | 'whatif' | 'admin'
+export type Action = 'control' | 'whatif' | 'admin' | 'alerts' | 'reports'
 
 const ALLOWED: Record<Action, Role[]> = {
   control: ['CONTROLLER'], // events, optimize, accept / reject, scenario reset
   whatif: ['CONTROLLER', 'ANALYST'],
   admin: ['ADMIN'], // users, audit log, network management
+  alerts: ['CONTROLLER', 'ANALYST'], // Conflicts and Alerts page (acknowledge: control)
+  reports: ['ADMIN', 'ANALYST'], // evaluation and model reports (the scenario report: every role)
 }
 
 export function can(role: Role | undefined, action: Action): boolean {

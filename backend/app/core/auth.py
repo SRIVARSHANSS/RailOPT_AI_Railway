@@ -30,6 +30,8 @@ READ = (ADMIN, CONTROLLER, ANALYST)
 CONTROL = (CONTROLLER,)
 WHATIF = (CONTROLLER, ANALYST)
 ADMIN_ONLY = (ADMIN,)
+ALERTS = (CONTROLLER, ANALYST)          # Conflicts and Alerts page (acknowledge: CONTROL)
+REPORTS = (ADMIN, ANALYST)             # evaluation / model reports (scenario report: READ)
 
 
 def actor(user) -> dict:

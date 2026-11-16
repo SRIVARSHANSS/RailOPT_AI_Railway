@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  BarChart3, BrainCircuit, ChevronsLeft, ChevronsRight, Clock, FlaskConical, LogOut, MonitorPlay, Network, Palette, Route, Scale,
+  BarChart3, BellRing, BrainCircuit, ChevronsLeft, ChevronsRight, Clock, FileText, FlaskConical, LogOut, MonitorPlay, Network, Palette, Route, Scale,
   TrainFront, UsersRound, Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -25,8 +25,10 @@ const NAV: { to: string; label: string; icon: typeof MonitorPlay; needs?: Action
   { to: '/strategies', label: 'Strategies', icon: Scale },
   { to: '/whatif', label: 'What-if studio', icon: FlaskConical },
   { to: '/timeline', label: 'Timeline', icon: Route },
+  { to: '/alerts', label: 'Conflicts & alerts', icon: BellRing, needs: 'alerts' },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/model', label: 'Model insights', icon: BrainCircuit },
+  { to: '/reports', label: 'Reports', icon: FileText },
   { to: '/admin/users', label: 'Users', icon: UsersRound, needs: 'admin' },
   { to: '/admin/network', label: 'Network', icon: Network, needs: 'admin' },
   { to: '/design', label: 'Design system', icon: Palette },

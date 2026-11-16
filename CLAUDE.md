@@ -136,7 +136,19 @@ Rail OPT/  (project root)
   app/services/netadmin.py (custom corridor in the DB, seeded from full_day; reference/full_day CSVs
   stay read-only). Frontend: lib/api.ts sends cookies and refreshes once on 401; lib/permissions.ts
   `useCan(action)` + Button `lockedReason` disable what a role cannot do (the API enforces it anyway).
-- 228 tests passing (+1 optional postgres test).
+- Pages 5 and 11 (ASSUMPTIONS.md 87-93): app/services/alerts.py (current lists + history: detection re-run
+  every sim minute from the first departure with the knowledge of that minute; planned events known
+  from `posted_at`, the clock the UI sends with POST /api/events, stored in events.posted_at_min,
+  migration 0002; ML re-scored every 5 min and at each event/decision). app/api/alerts_routes.py:
+  GET /api/alerts (CONTROLLER, ANALYST; not ADMIN), POST /api/alerts/ack (CONTROLLER) = an
+  ALERT_ACKNOWLEDGED audit row keyed by store.run_ref (no table). Reports: app/services/reports/
+  (pdf.py: reportlab + matplotlib's DejaVu Sans for ALL text, incl. table and bullet fonts; footer =
+  data label per page, LabelMark switches it; charts.py; scenario.py calls the route functions so
+  numbers equal the API; results_pdf.py raises Outdated -> 409 unless results and model cards are
+  fresh). app/api/report_routes.py (scenario READ; evaluation/model REPORTS = ADMIN + ANALYST); audit
+  CSV in admin_routes. Every export logs REPORT_EXPORTED. pypdf is test-only
+  (backend/requirements-dev.txt). CORS exposes Content-Disposition for downloads.
+- 251 tests passing (+1 optional postgres test).
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -173,13 +185,14 @@ Rail OPT/  (project root)
 - [x] Phase 6: what-if (POST /api/whatif, What-If Studio) + re-optimization on top of an accepted plan
 - [x] Phase 7: explainable recommendations (template text only; ASSUMPTIONS.md 72-79)
 - [x] Phase 8: PostgreSQL persistence, JWT auth (roles, rate limit, audit log), admin pages
-- [~] Phase 9: React frontend, 12 planned pages (project build guide): 11 of 12 exist (one partial); demo: docs/DEMO.md
+- [x] Phase 9: React frontend, 12 planned pages (project build guide): 12 of 12 exist; demo: docs/DEMO.md
   - [x] 1 Login  - [x] 2 Traffic Console  - [x] 3 Time-Distance Chart (/timeline)
-  - [x] 4 Disruption Panel  - [~] 5 Conflicts and Alerts (partial: lives in the console alert feed,
-    no page of its own)  - [x] 6 Strategy Comparison  - [x] 7 What-If Studio
+  - [x] 4 Disruption Panel  - [x] 5 Conflicts and Alerts (/alerts: lists, history, acknowledge)
+  - [x] 6 Strategy Comparison  - [x] 7 What-If Studio
   - [x] 8 Analytics (/analytics)  - [x] 9 Model Insights (/model: ML metrics vs baselines, SHAP drivers)
   - [x] 10 Network and Train Management (/admin/network: custom corridor CRUD, CSV import, REAL read-only)
-  - [ ] 11 Reports (CSV/PDF export)  - [x] 12 User Management (/admin/users: users, roles, audit log)
+  - [x] 11 Reports (/reports: scenario PDF + CSV, evaluation PDF, model PDF, audit CSV)
+  - [x] 12 User Management (/admin/users: users, roles, audit log)
   - The Design system gallery (/design) is a dev page, not one of the 12.
 - [x] Phase 10: evaluation on 200 SIMULATED scenarios (backend/eval; results: eval/reports/eval_report.md)
 - [ ] Phase 11: Docker, README, demo script

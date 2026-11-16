@@ -136,6 +136,34 @@ def audit_log(action: str | None = None, email: str | None = None,
                       "action": r.action, "detail": r.detail, "ip": r.ip} for r in rows]}
 
 
+@router.get("/audit.csv")
+def audit_csv(request: Request, action: str | None = None, email: str | None = None,
+              db: Session = Depends(get_db), admin=Depends(require(*ADMIN_ONLY))):
+    """The audit log (same filters as /audit, every matching row, newest first) as CSV."""
+    import csv
+    import io
+    import json
+
+    from fastapi.responses import Response
+    q = select(m.AuditLog)
+    if action:
+        q = q.where(m.AuditLog.action == action)
+    if email:
+        q = q.where(m.AuditLog.email.ilike(f"%{email.strip()}%"))
+    rows = db.scalars(q.order_by(m.AuditLog.at.desc(), m.AuditLog.id.desc())).all()
+    buf = io.StringIO()
+    buf.write("﻿")                          # BOM: spreadsheet programs then read UTF-8
+    w = csv.writer(buf, lineterminator="\n")
+    w.writerow(["id", "at_utc", "user_id", "email", "action", "ip", "detail"])
+    for r in rows:
+        w.writerow([r.id, r.at.isoformat(timespec="seconds"), r.user_id or "", r.email or "", r.action, r.ip or "",
+                    json.dumps(r.detail or {}, sort_keys=True)])
+    audit(db, "REPORT_EXPORTED", user=admin, request=request,
+          detail={"report": "audit.csv", "action": action, "email": email, "rows": len(rows)})
+    return Response(buf.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="railopt_audit_log.csv"'})
+
+
 # ---- network and train management ------------------------------------------------------------
 class TableRows(BaseModel):
     rows: list[dict[str, str | int | float | None]] = Field(max_length=netadmin.MAX_ROWS)

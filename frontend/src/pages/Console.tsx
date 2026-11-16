@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, CircleSlash, RefreshCcw, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { useConflictsAt, useNetwork, useScenario, useStateAt } from '../api/hooks'
 import type { Kpis, TrainState } from '../api/types'
@@ -33,6 +33,15 @@ export function Console() {
   const network = useNetwork(scenario.data ? timetable : undefined)
   const { minute, playing, speed, minuteStartedAt } = useSim()
   const { highlight, setHighlight } = useConsole()
+  // "Show on map" from Conflicts and Alerts: /console?section=S_BC&trains=T101,T202 highlights it once
+  const [params, setParams] = useSearchParams()
+  useEffect(() => {
+    const section = params.get('section')
+    if (!section) return
+    const trains = (params.get('trains') ?? '').split(',').filter(Boolean)
+    setHighlight({ section_id: section, trains, key: `link-${section}-${trains.join('-')}` })
+    setParams({}, { replace: true })
+  }, [params, setParams, setHighlight])
 
   const now = useStateAt(minute)
   const nextQ = useStateAt(minute + 1, playing)

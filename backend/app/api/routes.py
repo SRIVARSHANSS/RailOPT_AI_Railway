@@ -199,7 +199,7 @@ def add_event(req: EventRequest, request: Request, store: ScenarioStore = Depend
     _validate_event(net, req)
     _check_closure(store, req)
     event = store.add_event(req.event_type, req.train_id, req.location, parse_time(req.start_time), req.duration_min,
-                            actor=actor(user))
+                            actor=actor(user), posted_at=parse_time(req.at) if req.at else None)
     audit(db, "EVENT_ADDED", user=user, request=request,
           detail={"event_id": event.event_id, "event_type": event.event_type, "train_id": event.train_id,
                   "location": event.location, "start": req.start_time, "duration_min": event.duration,

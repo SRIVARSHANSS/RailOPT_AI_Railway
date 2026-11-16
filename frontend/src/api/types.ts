@@ -184,6 +184,7 @@ export type Evaluation = Labelled & {
   distribution: Record<EvalSettingName, { edges: number[]; methods: Record<string, DistMethod> }> | null
   conclusion: Conclusion | null
   solver_totals: { phase10: SolverTotal; variants_10b: SolverTotal } | null
+  limits: string[] // the Limits box, built by the API from the summary (same text as the PDF report)
 }
 
 export type RegScores = { mae: number; rmse: number; r2: number }
@@ -217,4 +218,33 @@ export type ModelResults = Labelled & {
     conclusion: Conclusion | null
     settings: Record<EvalSettingName, { variants_vs_dynamic: Record<string, Record<string, Paired>>; methods: Record<string, Desc> }>
   } | null
+}
+
+// ---- Conflicts and Alerts (GET /api/alerts) ----------------------------------------------------
+export type AlertCategory = 'CONFLICT' | 'UNCERTAIN' | 'ML_WATCH' | 'CLOSURE'
+export type Acknowledged = { by: string | null; at_utc: string; sim_at: string | null } | null
+export type AlertRow = {
+  key: string; category: AlertCategory; severity: 'CRITICAL' | 'WARNING' | 'UNCERTAIN' | 'WATCH' | 'INFO'
+  status: 'ACTIVE' | 'REDUCED' | 'RESOLVED' | 'UPCOMING'; conflict_type: string | null; section_id: string
+  trains: string[]; title: string; explanation: string; drivers: Driver[]
+  window_start: string | null; window_end: string | null; minutes_short: number | null
+  time_to_conflict_min: number | null; event_id: string | null
+  prediction: { conflict_probability: number; threshold: number } | null
+  plan_wait_min?: number | null; baseline_wait_min?: number | null
+  acknowledged: Acknowledged
+}
+export type AlertCause = { kind: 'EVENT' | 'DECISION' | 'TIME' | 'FORECAST' | 'START'; ids: string[]; text: string }
+export type AlertEpisode = {
+  key: string; category: AlertCategory; severity: AlertRow['severity']; title: string; section_id: string; trains: string[]
+  appeared: string; appeared_cause: AlertCause; cleared: string | null; cleared_cause: AlertCause | null
+  active: boolean; acknowledged: Acknowledged
+}
+export type AlertsAt = {
+  data_label: string; scenario_version: string; at: string; current: AlertRow[]; history: AlertEpisode[]
+  ml_note: string | null; counts: Record<AlertCategory, number>; posting_clock_missing: string[]
+}
+export type ReportStatus = {
+  data_label: string; scenario_version: string
+  evaluation: { status: 'ok' | 'outdated' | 'missing'; reasons: string[]; command: string }
+  model: { status: 'ok' | 'outdated' | 'missing'; reasons: string[]; command: string }
 }

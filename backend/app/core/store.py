@@ -72,6 +72,10 @@ class ScenarioStore:
     _nets: dict[str, RailNetwork] = field(default_factory=dict, repr=False)
     # builds the admin-edited "custom" SIMULATED corridor (set where a database exists)
     custom_loader: object | None = field(default=None, repr=False)
+    # clock (minutes) at which each event was posted, when the client sent it (alert history)
+    posted_at: dict[str, int] = field(default_factory=dict)
+    # identifies this scenario run (a reset starts a new one); DbScenarioStore uses its row id
+    run_ref: str = field(default_factory=lambda: "mem-" + uuid.uuid4().hex[:8])
 
     # ---- network ---------------------------------------------------------------
     def network(self, timetable: str | None = None) -> RailNetwork:
@@ -126,6 +130,8 @@ class ScenarioStore:
             self._day = day
             self.timetable = timetable
             self.events.clear()
+            self.posted_at.clear()
+            self.run_ref = "mem-" + uuid.uuid4().hex[:8]
             self.holds.clear()
             self.route_overrides.clear()
             self.applied_recommendation = None
@@ -138,11 +144,14 @@ class ScenarioStore:
             self.revision += 1
 
     def add_event(self, event_type: str, train_id: str | None, location: str,
-                  start: int, duration: int, prefix: str = "E", actor: dict | None = None) -> Disruption:
+                  start: int, duration: int, prefix: str = "E", actor: dict | None = None,
+                  posted_at: int | None = None) -> Disruption:
         with self._lock:
             n = sum(1 for e in self.events if e.event_id.startswith(prefix)) + 1
             event = Disruption(f"{prefix}{n}", event_type, train_id, location, start, duration)
             self.events.append(event)
+            if posted_at is not None:
+                self.posted_at[event.event_id] = posted_at
             self.revision += 1
             return event
 

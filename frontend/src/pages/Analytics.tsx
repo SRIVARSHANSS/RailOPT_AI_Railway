@@ -94,7 +94,7 @@ export function Analytics() {
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
               <SolverPanel s={s} totals={ev.data.solver_totals} />
-              <LimitsPanel s={s} />
+              <LimitsPanel limits={ev.data?.limits ?? []} />
             </div>
           </>
         )}
@@ -239,14 +239,7 @@ function SolverPanel({ s, totals }: { s: EvalSummary; totals: { phase10: { solve
   )
 }
 
-function LimitsPanel({ s }: { s: EvalSummary }) {
-  const limits = [
-    `Simulated: one sample corridor (${s.scenarios.trains} trains), synthetic disruptions and assumed variability. Nothing here measures real railway operations.`,
-    `Robustness replays keep each plan frozen; in use RailOpt would re-plan again as actual times drift.`,
-    'Waits include planned holds: a held train counts as waiting.',
-    'Priority dispatch only differs from first come, first served when two trains wait for the same section at once.',
-    'RailOpt advises a human controller; it controls no trains or signals.',
-  ]
+function LimitsPanel({ limits }: { limits: string[] }) {
   return (
     <Panel className="border border-signal-amber/25">
       <PanelTitle hint="read before quoting a number">

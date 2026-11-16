@@ -35,6 +35,8 @@ class EventRequest(BaseModel):
     location: str = Field(description="section_id (STOPPAGE, TRACK_UNAVAILABLE) or station code (DELAY)")
     start_time: str = Field(pattern=HHMM, examples=["10:03"])
     duration_min: int = Field(ge=1, le=600)
+    at: str | None = Field(default=None, pattern=HHMM, examples=["10:05"],
+                           description="sim clock when the event is posted (used for the alert history)")
 
 
 class OptimizeRequest(BaseModel):
@@ -439,6 +441,7 @@ class EvaluationOut(Labelled):
     distribution: dict[str, Any] | None = Field(description="per-scenario reduction vs no re-planning, summarised from eval_results.csv")
     conclusion: dict[str, Any] | None = Field(description="plain ML-integration finding, derived from the summary")
     solver_totals: dict[str, Any] | None
+    limits: list[str] = Field(default_factory=list, description="the Limits box, built from the summary")
 
 
 class ModelOut(Labelled):

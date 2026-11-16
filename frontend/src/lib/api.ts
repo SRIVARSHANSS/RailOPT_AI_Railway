@@ -58,3 +58,26 @@ export type NetworkSummary = {
   sections: { section_id: string; tracks: number; status: string }[]
   trains: { train_id: string; train_type: string; priority: number }[]
 }
+
+/** Download a file the API generates (reports). Same cookies and one refresh on 401 as api();
+ *  an error body (JSON) becomes an ApiError so the page can show the API's message. */
+export async function apiDownload(path: string, fallbackName: string, retried = false): Promise<string> {
+  const res = await fetch(`${API_URL}${path}`, { credentials: 'include' })
+  if (res.status === 401) {
+    if (!retried && (await refreshSession())) return apiDownload(path, fallbackName, true)
+    useSession.getState().signedOut(true)
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new ApiError(res.status, message(res.status, body), body)
+  }
+  const disp = res.headers.get('content-disposition') ?? ''
+  const name = /filename="([^"]+)"/.exec(disp)?.[1] ?? fallbackName
+  const url = URL.createObjectURL(await res.blob())
+  const a = Object.assign(document.createElement('a'), { href: url, download: name })
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return name
+}

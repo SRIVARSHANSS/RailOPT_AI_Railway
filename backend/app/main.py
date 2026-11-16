@@ -20,6 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.admin_routes import router as admin_router
+from app.api.alerts_routes import router as alerts_router
+from app.api.report_routes import router as report_router
 from app.api.auth_routes import router as auth_router
 from app.api.routes import router
 
@@ -49,10 +51,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type"],
+    expose_headers=["Content-Disposition"],     # report downloads keep the file name the API gives
 )
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(router)
+app.include_router(alerts_router)
+app.include_router(report_router)
 
 
 @app.exception_handler(HTTPException)

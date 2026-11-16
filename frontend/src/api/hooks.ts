@@ -95,7 +95,8 @@ export type NewEvent = { event_type: EventType; train_id: string | null; locatio
 export function useAddEvent() {
   const invalidate = useInvalidateScenario()
   return useMutation({
-    mutationFn: (ev: NewEvent) => api<{ event: { event_id: string; known_from: string } }>('/api/events', { method: 'POST', body: JSON.stringify(ev) }),
+    // `at` = the sim clock when posted: the alert history counts a planned closure as known from then
+    mutationFn: (ev: NewEvent) => api<{ event: { event_id: string; known_from: string } }>('/api/events', { method: 'POST', body: JSON.stringify({ ...ev, at: fmt(useSim.getState().minute) }) }),
     onSuccess: invalidate,
   })
 }

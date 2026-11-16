@@ -1,0 +1,2 @@
+# Test-only dependencies (pip install -r requirements.txt -r requirements-dev.txt)
+pypdf>=4.0               # tests extract text from the generated PDF reports

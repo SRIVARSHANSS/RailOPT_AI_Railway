@@ -125,6 +125,17 @@ def _migrate_up_down(url: str) -> None:
     command.downgrade(cfg, "base")
 
 
+def test_posting_clock_and_run_survive_restart(db_url):
+    """Alert history needs the clock an event was posted at; acknowledgements need the run id."""
+    s = open_store(db_url)
+    s.add_event("TRACK_UNAVAILABLE", None, "S_CD", parse_time("11:00"), 20, posted_at=parse_time("10:10"))
+    s.add_event("STOPPAGE", "T101", "S_BC", parse_time("10:03"), 15)
+    again = open_store(db_url)
+    assert again.posted_at == {"E1": parse_time("10:10")} and again.run_ref == s.run_ref
+    again.reset("reference")
+    assert again.run_ref != s.run_ref and again.posted_at == {}
+
+
 def test_migrations_up_and_down_sqlite(tmp_path):
     _migrate_up_down(f"sqlite:///{(tmp_path / 'mig.sqlite3').as_posix()}")
 
