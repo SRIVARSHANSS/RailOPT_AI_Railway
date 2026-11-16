@@ -33,6 +33,7 @@ from app.services.simulator import Disruption, SimResult, simulate
 log = logging.getLogger("railopt.decisions")
 
 PLANNED_EVENT_TYPES = {"TRACK_UNAVAILABLE"}      # known from the moment they are posted
+CUSTOM_TIMETABLE = "custom"                        # admin-edited SIMULATED corridor (Phase 8)
 
 
 @dataclass
@@ -69,6 +70,8 @@ class ScenarioStore:
     revision: int = 0
     _lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
     _nets: dict[str, RailNetwork] = field(default_factory=dict, repr=False)
+    # builds the admin-edited "custom" SIMULATED corridor (set where a database exists)
+    custom_loader: object | None = field(default=None, repr=False)
 
     # ---- network ---------------------------------------------------------------
     def network(self, timetable: str | None = None) -> RailNetwork:
@@ -76,8 +79,17 @@ class ScenarioStore:
         if self.is_replay and name == self.timetable:
             return self._day.movement
         if name not in self._nets:
-            self._nets[name] = load_network(timetable=name)
+            if name == CUSTOM_TIMETABLE:
+                if self.custom_loader is None:
+                    raise ValueError("the 'custom' corridor needs the database (admin network page)")
+                self._nets[name] = self.custom_loader()
+            else:
+                self._nets[name] = load_network(timetable=name)
         return self._nets[name]
+
+    def forget_network(self, name: str) -> None:
+        """Drop a cached network (after the admin edits the custom corridor)."""
+        self._nets.pop(name, None)
 
     # ---- scenario ----------------------------------------------------------------
     @property
@@ -99,7 +111,7 @@ class ScenarioStore:
         from app.services.realdata.replay import HYPOTHETICAL_LABEL, REAL_LABEL
         return HYPOTHETICAL_LABEL if (decision or self.events or self.holds) else REAL_LABEL
 
-    def reset(self, timetable: str, mode: str = "live", date: str | None = None) -> None:
+    def reset(self, timetable: str, mode: str = "live", date: str | None = None, actor: dict | None = None) -> None:
         day = None
         if timetable in REAL_TIMETABLES or mode == "replay":
             if timetable not in REAL_TIMETABLES or mode != "replay" or not date:
@@ -126,7 +138,7 @@ class ScenarioStore:
             self.revision += 1
 
     def add_event(self, event_type: str, train_id: str | None, location: str,
-                  start: int, duration: int, prefix: str = "E") -> Disruption:
+                  start: int, duration: int, prefix: str = "E", actor: dict | None = None) -> Disruption:
         with self._lock:
             n = sum(1 for e in self.events if e.event_id.startswith(prefix)) + 1
             event = Disruption(f"{prefix}{n}", event_type, train_id, location, start, duration)
@@ -196,15 +208,19 @@ class ScenarioStore:
                                  self.decision_log))
 
     # ---- recommendations -----------------------------------------------------------
+    def save_payload(self, rec_id: str) -> None:
+        """The recommendation's payload was completed after it was stored (persisted stores save it)."""
+
     def add_recommendation(self, at: int, strategy: str, holds: dict, route_overrides: dict,
-                           payload: dict, known_event_ids: list[str] | None = None) -> Recommendation:
+                           payload: dict, known_event_ids: list[str] | None = None,
+                           actor: dict | None = None) -> Recommendation:
         with self._lock:
             rec = Recommendation(f"R{len(self.recommendations) + 1}", at, strategy, dict(holds),
                                  dict(route_overrides), payload, known_event_ids=list(known_event_ids or []))
             self.recommendations[rec.rec_id] = rec
             return rec
 
-    def decide(self, rec_id: str, decision: str) -> Recommendation:
+    def decide(self, rec_id: str, decision: str, actor: dict | None = None) -> Recommendation:
         with self._lock:
             rec = self.recommendations.get(rec_id)
             if rec is None:
@@ -222,7 +238,8 @@ class ScenarioStore:
                 self.plan_basis_events = list(rec.known_event_ids)
             entry = {"recommendation_id": rec_id, "decision": decision, "strategy": rec.strategy,
                      "at": rec.at, "replaces": replaces,
-                     "logged_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+                     "logged_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     "decided_by": (actor or {}).get("email")}
             self.decision_log.append(entry)
             self.revision += 1
             log.info("recommendation %s (%s) %sed", rec_id, rec.strategy, decision)
@@ -249,9 +266,17 @@ def boot_store() -> ScenarioStore:
     return store
 
 
-_store = boot_store()
+_store: ScenarioStore | None = None
+_store_lock = threading.Lock()
 
 
 def get_store() -> ScenarioStore:
-    """FastAPI dependency; tests override it with a fresh store."""
+    """FastAPI dependency: the database-backed scenario (created on first use, so importing the
+    app never touches a database). Tests override it with a fresh in-memory store."""
+    global _store
+    if _store is None:
+        with _store_lock:
+            if _store is None:
+                from app.core.db_store import open_db_store
+                _store = open_db_store()
     return _store

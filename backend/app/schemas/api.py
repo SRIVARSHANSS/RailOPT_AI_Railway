@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 # a REAL replay day can run past midnight ('24:35' = 00:35 the next day), up to 47:59
 HHMM = r"^([0-3]\d|4[0-7]):[0-5]\d$"
 DATE = r"^\d{4}-\d{2}-\d{2}$"
-Timetable = Literal["reference", "full_day", "dg_mdu"]
+Timetable = Literal["reference", "full_day", "dg_mdu", "custom"]   # custom = admin-edited SIMULATED corridor
 DataLabel = Literal["SIMULATED", "REAL", "HYPOTHETICAL on a real recorded day"]
 EventType = Literal["STOPPAGE", "DELAY", "TRACK_UNAVAILABLE", "PLATFORM_UNAVAILABLE"]
 

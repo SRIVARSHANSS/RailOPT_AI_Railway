@@ -17,6 +17,7 @@ import { duration, ease, fadeUp, staggerContainer } from '../lib/motion'
 import { fmt } from '../lib/time'
 import { useConsole, useSim } from '../store/sim'
 import { toast } from '../store/toast'
+import { useCan } from '../lib/permissions'
 import { RecommendationExplanation } from '../features/strategies/RecommendationExplanation'
 
 const LABEL: Record<string, string> = {
@@ -32,6 +33,7 @@ export function Strategies() {
   const minute = useSim((s) => s.minute)
   const { optimize, setOptimize } = useConsole()
   const run = useOptimize()
+  const ctl = useCan('control')
   const [error, setError] = useState<string | null>(null)
 
   const go = () => {
@@ -57,7 +59,7 @@ export function Strategies() {
             {optimize && <> Last run at <span className="font-mono text-ink">{optimize.at}</span>, known events: {optimize.known_events.join(', ') || 'none'}.</>}
           </p>
         </div>
-        <Button variant="primary" size="lg" icon={<Sparkles className="h-5 w-5" aria-hidden />} loading={run.isPending} onClick={go}>
+        <Button variant="primary" size="lg" icon={<Sparkles className="h-5 w-5" aria-hidden />} loading={run.isPending} onClick={go} lockedReason={ctl.reason}>
           Run optimizer at {fmt(minute)}
         </Button>
       </div>
@@ -69,7 +71,7 @@ export function Strategies() {
       ) : !optimize ? (
         <Panel>
           <EmptyState icon={<Scale className="h-7 w-7" />} title="No comparison yet"
-            action={<Button variant="primary" onClick={go} loading={run.isPending}>Run optimizer at {fmt(minute)}</Button>}>
+            action={<Button variant="primary" onClick={go} loading={run.isPending} lockedReason={ctl.reason}>Run optimizer at {fmt(minute)}</Button>}>
             The optimizer compares hold, reroute, resequence and combined plans against no re-planning and priority dispatch,
             using only the events known at the sim time.
           </EmptyState>
@@ -203,6 +205,7 @@ function Metric({ label, value, decimals = 0, strong }: { label: string; value: 
 
 function RecommendationCard({ rec, base }: { rec: Recommendation; base: StrategyRow }) {
   const decide = useDecide()
+  const ctl = useCan('control')
   const navigate = useNavigate()
   const { decided, markDecided } = useConsole()
   const [burst, setBurst] = useState(0)
@@ -260,13 +263,13 @@ function RecommendationCard({ rec, base }: { rec: Recommendation; base: Strategy
 
       <div className="mt-6 flex flex-wrap gap-3">
         <span className="relative">
-          <Button variant="primary" size="lg" icon={<Check className="h-5 w-5" aria-hidden />} onClick={() => choose('accept')}
+          <Button variant="primary" size="lg" icon={<Check className="h-5 w-5" aria-hidden />} onClick={() => choose('accept')} lockedReason={state ? undefined : ctl.reason}
             loading={decide.isPending && decide.variables?.decision === 'accept'} success={state === 'accept'} disabled={Boolean(state)}>
             {state === 'accept' ? 'Plan applied' : 'Accept plan'}
           </Button>
           <ParticleBurst run={burst} />
         </span>
-        <Button variant="ghost" size="lg" icon={<X className="h-5 w-5" aria-hidden />} onClick={() => choose('reject')}
+        <Button variant="ghost" size="lg" icon={<X className="h-5 w-5" aria-hidden />} onClick={() => choose('reject')} lockedReason={state ? undefined : ctl.reason}
           loading={decide.isPending && decide.variables?.decision === 'reject'} disabled={Boolean(state)}>
           Reject
         </Button>

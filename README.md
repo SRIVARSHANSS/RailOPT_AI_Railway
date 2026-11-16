@@ -18,7 +18,10 @@ and is not connected to Indian Railways systems. All results are simulated.
   (results: `backend/ml/reports/model_card.md`, all on SIMULATED data)
 - [x] Phase 5: CP-SAT re-planning (hold, reroute, resequence, combined) vs no-re-planning and
   priority-dispatch baselines; every plan is replayed through the simulator
-- [x] Thin FastAPI layer for the T101 demo (in-memory scenario; Postgres + auth in Phase 8)
+- [x] FastAPI layer (thin: all logic in app/services)
+- [x] Phase 8: PostgreSQL persistence (scenario survives an API restart), Alembic migrations,
+  JWT auth in httpOnly cookies with roles ADMIN / CONTROLLER / ANALYST, login rate limiting,
+  audit log, User Management and Network and Train Management pages (11 of the 12 planned pages)
 - [x] Phase 9 part 1: design system "Midnight Signal", app shell, cinematic login (`frontend/`)
 - [x] Phase 9 part 2: Traffic Console (live corridor map), Disruption Panel, Strategy Comparison
   - step-by-step demo with talking points: `docs/DEMO.md`
@@ -46,7 +49,7 @@ and is not connected to Indian Railways systems. All results are simulated.
   `RAILOPT_BOOT=simulated` to start on the SIMULATED sample corridor.
 - Explainable recommendations (Phase 7): template sentences from the API's own numbers, with
   "Why not the others?", constraints, assumptions, confidence and a plain-text copy. No LLM.
-- 170 passing tests. Remaining phases: see `CLAUDE.md`
+- 228 passing tests (+1 optional PostgreSQL migration test). Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 
@@ -57,6 +60,34 @@ py -3.12 -m venv .venv
 pip install -r requirements.txt
 ```
 
+### Database and first admin (Phase 8)
+
+PostgreSQL 15 (local service). Create a role and two databases once, in `psql` as `postgres`
+(`\password` sets the password at a hidden prompt, so it never appears on a command line):
+
+```sql
+CREATE ROLE railopt LOGIN;
+\password railopt
+CREATE DATABASE railopt OWNER railopt;
+CREATE DATABASE railopt_test OWNER railopt;   -- throwaway, for the optional migration test
+```
+
+Copy `backend/.env.example` to `backend/.env` (gitignored) and fill in `DATABASE_URL` and a long
+random `JWT_SECRET`. Then, from `backend/`:
+
+```powershell
+python -m alembic upgrade head                                   # create / update the tables
+python -m app.cli create-admin --email you@example.org --name "Your Name"   # password at a hidden prompt
+python -m app.cli create-user --email ctl@example.org --name "Controller" --role CONTROLLER
+python -m app.cli list-users
+```
+
+Signing in sets two httpOnly, SameSite=Lax cookies (access 15 min, refresh 8 h). **Served over
+HTTPS, set `COOKIE_SECURE=true`** so the cookies carry the Secure flag; plain `http://localhost`
+development leaves it off. Five failed sign-ins for one email within 15 min lock that email for
+15 min (HTTP 429, logged). Without `DATABASE_URL` the API uses a local SQLite file
+(`backend/data/railopt-dev.sqlite3`, gitignored) and logs a warning.
+
 ## Run
 
 ```powershell
@@ -66,6 +97,7 @@ python -m app.services.simulator.run_demo   # T101 scenario, before and after
 python -m app.services.conflicts.run_demo   # predicted conflicts + knock-on delays
 python -m app.services.optimizer.run_demo   # strategy comparison for the T101 scenario
 uvicorn app.main:app                        # API on http://127.0.0.1:8000, docs at /docs (demos: no --reload)
+python -m pytest -q -m postgres            # optional: migrations on PostgreSQL (needs TEST_DATABASE_URL)
 python -m app.services.datagen.generate --runs 3000 --seed 42   # SIMULATED training rows -> data/generated/
 python -m ml.train                          # models -> ml/models/, reports -> ml/reports/ (~3 min)
 python -m eval.run_eval --scenarios 200 --seed 2026   # Phase 10 evaluation -> eval/reports/
@@ -100,18 +132,27 @@ backend/
   app/services/predictor/   loads the models; predict(features) with top SHAP drivers
   app/services/optimizer/   CP-SAT strategies + baselines, scored by simulator replay
   app/services/live.py      train states, conflicts + ML, recommendation, timeline (plain Python)
-  app/api/, app/schemas/    FastAPI routes and Pydantic models; app/main.py; app/core/store.py
+  app/services/explainer/   template explanations (drivers, recommendation card), no LLM
+  app/services/netadmin.py  network management: validation, CSV import, custom corridor
+  app/api/, app/schemas/    FastAPI routes (routes, auth_routes, admin_routes) and Pydantic models
+  app/core/                 store.py (scenario), db_store.py (persisted), auth.py, security.py, config.py
+  app/db/, alembic/         SQLAlchemy models, sessions; migrations
+  app/cli.py                create-admin / create-user / list-users
   ml/                       split, preprocessing, training, SHAP; reports/ holds metrics + model card
   data/                     corridor CSVs (reference + full-day timetable), T101 event file
   tests/                    pytest suite
 docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
 ```
 
-## API (first UI slice)
+## API
 
 | Method | Path | What it does |
 | --- | --- | --- |
-| GET | `/api/health` | liveness |
+| GET | `/api/health` | liveness (public) |
+| POST | `/api/auth/login`, `/refresh`, `/logout`; GET `/api/auth/me` | sessions (httpOnly cookies) |
+| GET/POST/PATCH | `/api/admin/users`, `/api/admin/users/{id}`, `/api/admin/users/{id}/password` | ADMIN: users |
+| GET | `/api/admin/audit` | ADMIN: audit log (filters, paging) |
+| GET/PUT/POST | `/api/admin/network/{name}`, `/api/admin/network/custom/{table}` (+ `/import`, `/reset`) | ADMIN: corridors, edit / CSV import of the custom one |
 | GET | `/api/network?timetable=reference\|full_day` | stations, sections, trains, schedule |
 | POST | `/api/scenario/reset` | start a fresh scenario on a timetable |
 | GET | `/api/scenario` | posted events, accepted plan, decision log |
@@ -127,4 +168,10 @@ docs/ASSUMPTIONS.md         corridor, timetable and modelling assumptions
 
 Detection, prediction and re-planning only see events known at `at`. A
 stoppage or delay is known once it starts; planned closures are known as soon
-as they are posted. All responses are labelled `"data_label": "SIMULATED"`.
+as they are posted. Every response carries its data label (SIMULATED, REAL or HYPOTHETICAL on a
+real recorded day).
+
+Roles (enforced on every route; `backend/tests/test_auth.py` checks every route for every role):
+**ADMIN** users, audit log, network management; **CONTROLLER** events, optimize, accept / reject,
+scenario reset, what-if; **ANALYST** read everything, what-if. All three can read every view.
+Not signed in: 401; wrong role: 403 with the role that is needed.

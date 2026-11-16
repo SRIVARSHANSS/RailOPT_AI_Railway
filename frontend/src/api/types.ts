@@ -3,7 +3,7 @@
 export type DataLabel = 'SIMULATED' | 'REAL' | 'HYPOTHETICAL on a real recorded day'
 type Labelled = { data_label: DataLabel }
 
-export type Timetable = 'reference' | 'full_day' | 'dg_mdu'
+export type Timetable = 'reference' | 'full_day' | 'dg_mdu' | 'custom'
 export type EventType = 'STOPPAGE' | 'DELAY' | 'TRACK_UNAVAILABLE' | 'PLATFORM_UNAVAILABLE'
 
 export type Station = { code: string; name: string; km: number; platforms: number; is_junction: boolean; loops?: number | null }

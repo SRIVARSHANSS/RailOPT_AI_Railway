@@ -481,3 +481,40 @@ changed and were never trained on real data.
     tie) or reverses at headway 4, with both weighted delays.
 79. **section_id driver** names the section and its track count from the network data ("it uses
     S_BC, a single-track section"); the count is carried in the driver's `context`.
+
+## Phase 8: persistence, authentication and administration
+
+80. **Roles.** ADMIN: users, audit log, network management (and every read view). CONTROLLER:
+    events, optimize, accept / reject, scenario reset, what-if (and every read view). ANALYST:
+    every read view and what-if. Admin is kept apart from controlling (separation of duties);
+    `tests/test_auth.py` checks every API route for every role and for a signed-out caller.
+81. **Sessions.** An access JWT (15 min) and a refresh JWT (8 h, path /api/auth), HS256, in
+    httpOnly SameSite=Lax cookies (Secure when `COOKIE_SECURE=true`, required over HTTPS). Each user
+    has a token_version carried in the tokens; logout, a role change, deactivation and a password
+    reset bump it, which ends every session of that user at once.
+82. **Passwords.** bcrypt (cost 12), 10 characters to 72 bytes (bcrypt reads at most 72 bytes;
+    longer ones are refused, not truncated). No password is stored in the repository: the first
+    admin comes from `python -m app.cli create-admin` (hidden prompt) or from
+    RAILOPT_ADMIN_EMAIL / RAILOPT_ADMIN_PASSWORD in the gitignored `.env`. An unknown email is
+    checked against a dummy hash, so it takes as long as a wrong password.
+83. **Login rate limiting.** After 5 failed sign-ins for the same email within 15 minutes,
+    further attempts for that email are refused for 15 minutes after the 5th failure (HTTP 429
+    with Retry-After, logged as LOGIN_RATE_LIMITED). Refused attempts do not extend the lockout;
+    failures before the last successful sign-in do not count. Counted from the audit log.
+84. **Audit log.** Every sign-in (and failure, lockout, sign-out), event, scenario reset, decision,
+    user change, password reset and network edit / import (accepted or rejected) is logged with
+    the acting user, time (UTC), IP and a detail record. `email` is the acting user's.
+85. **Persistence.** The current scenario (events, recommendations with their full payload,
+    decisions with the deciding user, accepted plan) is written to the database after every
+    change and reloaded when the API starts; computation stays in memory. A reset starts a new
+    scenario row and keeps the old one (history). scenario_version keeps its boot id across an
+    API restart, so the version only changes on reset, event and decision: a restart restores
+    the same state, so results cached for that version stay valid.
+86. **Network management.** reference and full_day stay as the committed CSVs (read-only: tests,
+    demo numbers and the evaluation depend on them). The editable corridor is `custom`, stored in
+    the database and seeded from full_day. Edits and CSV imports replace one table and are
+    validated with the other three (codes, numbers and ranges, one direction with increasing km,
+    open section between consecutive stops, timetabled run >= minimum running time, priority
+    matching the train type, the simulator accepts the corridor): all rows or none are saved,
+    with errors per row and column. The custom corridor cannot be edited while the running
+    scenario uses it. The ML models are not applied to it (trained on full_day only).

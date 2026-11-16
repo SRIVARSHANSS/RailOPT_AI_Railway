@@ -4,9 +4,12 @@ Data label per response: SIMULATED (sample corridor), REAL (a recorded day, unch
 "HYPOTHETICAL on a real recorded day" (anything simulated or decided on top of a replay)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy.orm import Session
 
-from app.core.store import PLANNED_EVENT_TYPES, ScenarioStore, get_store
+from app.core.auth import CONTROL, READ, WHATIF, actor, audit, require
+from app.core.store import CUSTOM_TIMETABLE, PLANNED_EVENT_TYPES, ScenarioStore, get_store
+from app.db.session import get_db
 from app.schemas.api import (
     HHMM,
     ConflictsOut,
@@ -62,6 +65,17 @@ def _stations(net: RailNetwork) -> list[dict]:
 REAL_ML_NOTE = ("The ML models were trained on the SIMULATED sample corridor only and are not applied to "
                 "REAL data (see the real-data model card for delay prediction on this corridor).")
 SENSITIVITY_HEADWAY = 4
+CUSTOM_ML_NOTE = ("The ML models were trained on the SIMULATED full_day timetable of the sample corridor and are "
+                  "not applied to the admin-edited custom corridor.")
+
+
+def _ml_off(store: ScenarioStore) -> str | None:
+    """Why the ML models are not applied to this scenario (None = they are)."""
+    if store.is_replay:
+        return REAL_ML_NOTE
+    if store.timetable == CUSTOM_TIMETABLE:
+        return CUSTOM_ML_NOTE
+    return None
 
 
 def _estimated(store: ScenarioStore):
@@ -117,14 +131,14 @@ def health(store: ScenarioStore = Depends(get_store)):
 
 
 @router.get("/replay/days")
-def replay_days():
+def replay_days(_user=Depends(require(*READ))):
     """REAL recorded days of the DG -> MDU corridor and whether each replays exactly."""
     from app.services.realdata.replay import DEMO_DAY, day_checks
     return {"data_label": "REAL", "demo_day": DEMO_DAY, "days": day_checks()}
 
 
 @router.get("/network", response_model=NetworkOut)
-def network(timetable: Timetable = "reference", store: ScenarioStore = Depends(get_store)):
+def network(timetable: Timetable = "reference", store: ScenarioStore = Depends(get_store), _user=Depends(require(*READ))):
     if store.is_replay and timetable == store.timetable:
         net = store.day.timetable                     # the recorded day's trains, real timetable
     else:
@@ -144,17 +158,20 @@ def network(timetable: Timetable = "reference", store: ScenarioStore = Depends(g
 
 
 @router.post("/scenario/reset", response_model=ScenarioOut)
-def reset(req: ResetRequest, store: ScenarioStore = Depends(get_store)):
+def reset(req: ResetRequest, request: Request, store: ScenarioStore = Depends(get_store),
+          db: Session = Depends(get_db), user=Depends(require(*CONTROL))):
     try:
-        store.reset(req.timetable, req.mode, req.date)
+        store.reset(req.timetable, req.mode, req.date, actor=actor(user))
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
-    return scenario(at=None, store=store)
+    audit(db, "SCENARIO_RESET", user=user, request=request,
+          detail={"timetable": req.timetable, "mode": req.mode, "date": req.date, "version": store.version})
+    return scenario(at=None, store=store, _user=user)
 
 
 @router.get("/scenario", response_model=ScenarioOut)
 def scenario(at: str | None = Query(None, pattern=HHMM, description="clock for the stale-plan check; omit = all posted events"),
-             store: ScenarioStore = Depends(get_store)):
+             store: ScenarioStore = Depends(get_store), _user=Depends(require(*READ))):
     replay_info = None
     if store.is_replay:
         from app.services.realdata.replay import info
@@ -176,16 +193,22 @@ def scenario(at: str | None = Query(None, pattern=HHMM, description="clock for t
 
 
 @router.post("/events", response_model=EventCreated, status_code=201)
-def add_event(req: EventRequest, store: ScenarioStore = Depends(get_store)):
+def add_event(req: EventRequest, request: Request, store: ScenarioStore = Depends(get_store),
+              db: Session = Depends(get_db), user=Depends(require(*CONTROL))):
     net = store.network()
     _validate_event(net, req)
     _check_closure(store, req)
-    event = store.add_event(req.event_type, req.train_id, req.location, parse_time(req.start_time), req.duration_min)
+    event = store.add_event(req.event_type, req.train_id, req.location, parse_time(req.start_time), req.duration_min,
+                            actor=actor(user))
+    audit(db, "EVENT_ADDED", user=user, request=request,
+          detail={"event_id": event.event_id, "event_type": event.event_type, "train_id": event.train_id,
+                  "location": event.location, "start": req.start_time, "duration_min": event.duration,
+                  "version": store.version})
     return EventCreated(data_label=store.label(), event=_event_out(event), events=[_event_out(e) for e in store.events])
 
 
 @router.get("/state", response_model=StateOut)
-def state(at: str = AtQuery, store: ScenarioStore = Depends(get_store)):
+def state(at: str = AtQuery, store: ScenarioStore = Depends(get_store), _user=Depends(require(*READ))):
     t = _clock(at)
     known = store.known_events(t)
     est = _estimated(store)
@@ -203,20 +226,21 @@ def state(at: str = AtQuery, store: ScenarioStore = Depends(get_store)):
 
 @router.get("/conflicts", response_model=ConflictsOut)
 def conflicts(at: str = AtQuery, store: ScenarioStore = Depends(get_store),
-              predictor=Depends(get_predictor_or_none)):
+              predictor=Depends(get_predictor_or_none), _user=Depends(require(*READ))):
     t = _clock(at)
     net = store.planning_network(t)
     known = store.known_events(t)
-    view = live.conflicts_view(net, t, known, None if store.is_replay else predictor, store.route_overrides,
+    off = _ml_off(store)
+    view = live.conflicts_view(net, t, known, None if off else predictor, store.route_overrides,
                                store.holds, store.previous_overrides, store.previous_holds,
-                               _estimated(store), REAL_ML_NOTE if store.is_replay else None)
+                               _estimated(store), off)
     return ConflictsOut(data_label=store.label(), at=at, known_events=[e.event_id for e in known],
                         conflicts=view["conflicts"],
                         ml_watchlist=view["ml_watchlist"], ml_note=view["ml_note"])
 
 
 @router.post("/optimize", response_model=OptimizeOut)
-def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
+def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store), user=Depends(require(*CONTROL))):
     t = _clock(req.at)
     net = store.planning_network(t)
     version = store.version
@@ -248,10 +272,11 @@ def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
         holds, overrides = rec.pop("_holds"), rec.pop("_route_overrides")
         expl = explainer.with_sensitivity(rec["explanation"], rec["status"], rec["strategy"], sensitivity)
         stored = store.add_recommendation(t, rec["strategy"], holds, overrides, rec,
-                                          known_event_ids=[e.event_id for e in known])
+                                          known_event_ids=[e.event_id for e in known], actor=actor(user))
         expl["plain_text"] = explainer.plain_text(
             expl, title=f"RailOpt AI recommendation {stored.rec_id}: {rec['strategy']}",
             data_label=label, scenario_version=version, at=req.at)
+        store.save_payload(stored.rec_id)
         rec_out = {"recommendation_id": stored.rec_id, **rec}
     return OptimizeOut(data_label=label, scenario_version=version, at=req.at,
                        known_events=[e.event_id for e in known],
@@ -262,7 +287,7 @@ def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
 
 @router.post("/whatif", response_model=WhatIfOut)
 def whatif(req: WhatIfRequest, store: ScenarioStore = Depends(get_store),
-           predictor=Depends(get_predictor_or_none)):
+           predictor=Depends(get_predictor_or_none), _user=Depends(require(*WHATIF))):
     """HYPOTHETICAL: apply events to a COPY of the scenario (events + accepted plan) and
     compare it with the current one. The live store is never touched."""
     t, net = _clock(req.at), store.network()
@@ -280,9 +305,9 @@ def whatif(req: WhatIfRequest, store: ScenarioStore = Depends(get_store),
 
     def side(scn: ScenarioStore, known: list) -> dict:
         pnet = scn.planning_network(t)
-        cv = live.conflicts_view(pnet, t, known, None if scn.is_replay else predictor, scn.route_overrides,
-                                 scn.holds, scn.previous_overrides, scn.previous_holds, est,
-                                 REAL_ML_NOTE if scn.is_replay else None)
+        off = _ml_off(scn)
+        cv = live.conflicts_view(pnet, t, known, None if off else predictor, scn.route_overrides,
+                                 scn.holds, scn.previous_overrides, scn.previous_holds, est, off)
         ov = live.optimize_view(pnet, t, known, scn.holds, scn.route_overrides)
         rec = ov["recommendation"]
         if rec is not None:
@@ -298,20 +323,24 @@ def whatif(req: WhatIfRequest, store: ScenarioStore = Depends(get_store),
 
 
 @router.post("/recommendation/{rec_id}/decision", response_model=DecisionOut)
-def decide(rec_id: str, req: DecisionRequest, store: ScenarioStore = Depends(get_store)):
+def decide(rec_id: str, req: DecisionRequest, request: Request, store: ScenarioStore = Depends(get_store),
+           db: Session = Depends(get_db), user=Depends(require(*CONTROL))):
     try:
-        store.decide(rec_id, req.decision)
+        rec = store.decide(rec_id, req.decision, actor=actor(user))
     except KeyError:
         raise HTTPException(status_code=404, detail=f"unknown recommendation {rec_id}")
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+    audit(db, "DECISION", user=user, request=request,
+          detail={"recommendation_id": rec_id, "decision": req.decision, "strategy": rec.strategy,
+                  "version": store.version})
     return DecisionOut(data_label=store.label(decision=True), scenario_version=store.version,
                        recommendation_id=rec_id, decision=req.decision,
                        applied_recommendation=store.applied_recommendation, decision_log=store.decision_log)
 
 
 @router.get("/timeline", response_model=TimelineOut)
-def timeline(store: ScenarioStore = Depends(get_store)):
+def timeline(store: ScenarioStore = Depends(get_store), _user=Depends(require(*READ))):
     """Time-distance data. `actual` = every posted event + the accepted plan (what happens);
     `before_plan` = the same events under the plan the accepted one replaced (none if it replaced
     nothing); null while no plan is accepted."""
@@ -340,12 +369,12 @@ def timeline(store: ScenarioStore = Depends(get_store)):
 
 
 @router.get("/evaluation", response_model=EvaluationOut)
-def evaluation():
+def evaluation(_user=Depends(require(*READ))):
     """Stored Phase 10/10b evaluation (eval/reports), hash-checked. Nothing is recomputed."""
     return EvaluationOut(**results.evaluation_view())
 
 
 @router.get("/model", response_model=ModelOut)
-def model():
+def model(_user=Depends(require(*READ))):
     """Stored ML metrics and SHAP importance (ml/reports), hash-checked against the model files."""
     return ModelOut(**results.model_view())

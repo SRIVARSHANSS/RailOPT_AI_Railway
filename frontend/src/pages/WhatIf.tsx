@@ -10,6 +10,7 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { Panel, PanelTitle } from '../components/ui/Panel'
 import { SkeletonRows } from '../components/ui/Skeleton'
 import { EventFields } from '../features/events/EventFields'
+import { useCan } from '../lib/permissions'
 import { ApiError } from '../lib/api'
 import { cn } from '../lib/cn'
 import { duration, ease, fadeUp, staggerContainer } from '../lib/motion'
@@ -37,6 +38,7 @@ export function WhatIf() {
   const network = useNetwork(scenario.data?.timetable)
   const minute = useSim((s) => s.minute)
   const run = useWhatIf()
+  const may = useCan('whatif')
   const [events, setEvents] = useState<NewEvent[]>([])
   const [result, setResult] = useState<WhatIfResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -77,7 +79,7 @@ export function WhatIf() {
         <Panel>
           <PanelTitle hint={`${events.length} / ${MAX_EVENTS}`}>Hypothetical event</PanelTitle>
           <EventFields network={network.data} idPrefix="whatif" submitLabel="Add to what-if" doneLabel="Added"
-            disabled={events.length >= MAX_EVENTS}
+            disabled={events.length >= MAX_EVENTS} lockedReason={may.reason}
             onSubmit={async (ev) => {
               if (events.length >= MAX_EVENTS) return `At most ${MAX_EVENTS} hypothetical events.`
               setEvents((xs) => [...xs, ev])
@@ -120,7 +122,7 @@ export function WhatIf() {
           </AnimatePresence>
           <div className="mt-5">
             <Button variant="primary" size="lg" icon={<Play className="h-5 w-5" aria-hidden />} onClick={go}
-              loading={run.isPending} disabled={events.length === 0}>
+              loading={run.isPending} disabled={events.length === 0} lockedReason={may.reason}>
               Run what-if at {fmt(minute)}
             </Button>
           </div>

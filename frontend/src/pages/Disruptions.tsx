@@ -15,6 +15,7 @@ import { ApiError } from '../lib/api'
 import { cn } from '../lib/cn'
 import { ease, fadeUp, staggerContainer } from '../lib/motion'
 import { EventFields } from '../features/events/EventFields'
+import { useCan } from '../lib/permissions'
 import { inputCls } from '../features/events/inputCls'
 import { fmt } from '../lib/time'
 import { DEMO_START, REPLAY_DEMO_DAY, REPLAY_DEMO_START, useConsole, useSim } from '../store/sim'
@@ -64,6 +65,7 @@ export function Disruptions() {
 
 // ---- one-click preset --------------------------------------------------------------------
 function PresetCard({ scenario }: { scenario: Scenario | undefined }) {
+  const ctl = useCan('control')
   const add = useAddEvent()
   const reduce = useReducedMotion()
   const [fired, setFired] = useState(0)
@@ -109,7 +111,7 @@ function PresetCard({ scenario }: { scenario: Scenario | undefined }) {
           )}
           {!real && <MiniCorridor fired={fired} />}
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button variant="danger" size="lg" icon={<Zap className="h-5 w-5" aria-hidden />} onClick={inject}
+            <Button variant="danger" size="lg" icon={<Zap className="h-5 w-5" aria-hidden />} onClick={inject} lockedReason={ctl.reason}
               loading={add.isPending} disabled={exists || !scenario}>
               {exists ? 'Already injected' : 'Inject event'}
             </Button>
@@ -142,6 +144,7 @@ function MiniCorridor({ fired }: { fired: number }) {
 
 // ---- custom event form (shared fields with the What-If Studio) -----------------------------------
 function EventForm({ network }: { network: Network | undefined }) {
+  const ctl = useCan('control')
   const add = useAddEvent()
   const post = async (ev: NewEvent): Promise<string | null> => {
     try {
@@ -156,13 +159,16 @@ function EventForm({ network }: { network: Network | undefined }) {
   return (
     <Panel>
       <PanelTitle hint="validated by the API">Custom event</PanelTitle>
-      <EventFields network={network} onSubmit={post} submitLabel="Add event" doneLabel="Added" idPrefix="live" />
+      <EventFields network={network} onSubmit={post} submitLabel="Add event" doneLabel="Added" idPrefix="live" lockedReason={ctl.reason} />
     </Panel>
   )
 }
 
 // ---- reset ----------------------------------------------------------------------------------------
+const TIMETABLE_LABEL: Record<string, string> = { reference: 'Reference', full_day: 'Full-day', custom: 'Custom (admin-edited)', dg_mdu: 'Real day' }
+
 function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
+  const ctl = useCan('control')
   const reset = useResetScenario()
   const { setMinute, setPlaying, setRange } = useSim()
   const clearConsole = useConsole((s) => s.clear)
@@ -207,16 +213,16 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
       onSuccess: () => {
         clearSession()
         setOpen(false)
-        toast({ tone: 'success', title: 'Scenario reset', description: `${choice === 'full_day' ? 'Full-day' : 'Reference'} timetable, no events, clock at 09:55.` })
+        toast({ tone: 'success', title: 'Scenario reset', description: `${TIMETABLE_LABEL[choice]} timetable, no events, clock at 09:55.` })
       },
     })
 
   return (
     <Panel>
-      <PanelTitle hint={timetable ? `current: ${timetable === 'dg_mdu' ? 'real day replay' : timetable === 'full_day' ? 'full day' : 'reference'}` : undefined}>Scenario</PanelTitle>
+      <PanelTitle hint={timetable ? `current: ${TIMETABLE_LABEL[timetable]?.toLowerCase() ?? timetable}` : undefined}>Scenario</PanelTitle>
       <p className="text-ink-muted">Start over: clears events, the accepted plan and the decision log.</p>
       <div className="mt-4">
-        <Button variant="primary" size="lg" icon={<Sparkles className="h-5 w-5" aria-hidden />} onClick={demoReset}
+        <Button variant="primary" size="lg" icon={<Sparkles className="h-5 w-5" aria-hidden />} onClick={demoReset} lockedReason={ctl.reason}
           loading={reset.isPending && !open} success={demoDone}>
           {demoDone ? 'Ready at 09:55' : 'Demo reset'}
         </Button>
@@ -226,8 +232,9 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
         <select value={choice} onChange={(e) => setChoice(e.target.value as Timetable)} aria-label="Timetable" className={cn(inputCls, 'w-auto')}>
           <option value="reference">Reference (3 trains)</option>
           <option value="full_day">Full day (12 trains)</option>
+          <option value="custom">Custom - admin-edited (SIMULATED)</option>
         </select>
-        <Button icon={<RotateCcw className="h-4 w-4" aria-hidden />} onClick={() => setOpen(true)}>Reset scenario</Button>
+        <Button icon={<RotateCcw className="h-4 w-4" aria-hidden />} onClick={() => setOpen(true)} lockedReason={ctl.reason}>Reset scenario</Button>
       </div>
       <div className="mt-5 border-t border-line/10 pt-5">
         <p className="font-semibold">Real day replay - Dindigul to Madurai</p>
@@ -240,7 +247,7 @@ function ScenarioControls({ timetable }: { timetable: Timetable | undefined }) {
               </option>
             ))}
           </select>
-          <Button icon={<RotateCcw className="h-4 w-4" aria-hidden />} onClick={loadReal} loading={reset.isPending && !open}>Load real day</Button>
+          <Button icon={<RotateCcw className="h-4 w-4" aria-hidden />} onClick={loadReal} loading={reset.isPending && !open} lockedReason={ctl.reason}>Load real day</Button>
         </div>
       </div>
       <Dialog open={open} onOpenChange={setOpen} title="Reset the scenario?" description="Events, the accepted plan and the decision log are cleared. This cannot be undone.">

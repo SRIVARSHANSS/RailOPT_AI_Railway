@@ -28,3 +28,6 @@ Thumbs.db
 
 # Real data: raw downloads (licence: see docs/DATA_SOURCES.md)
 backend/data/real/raw/
+
+# local development database (Phase 8)
+*.sqlite3

@@ -27,12 +27,13 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 
 /** Event form shared by Disruptions (posts to the scenario) and What-If (adds to a hypothesis).
  *  `onSubmit` resolves to an error message to show inline (e.g. the API's 422), or null. */
-export function EventFields({ network, onSubmit, submitLabel, doneLabel, disabled, idPrefix }: {
+export function EventFields({ network, onSubmit, submitLabel, doneLabel, disabled, idPrefix, lockedReason }: {
   network: Network | undefined
   onSubmit: (ev: NewEvent) => Promise<string | null>
   submitLabel: string
   doneLabel: string
   disabled?: boolean
+  lockedReason?: string
   idPrefix: string
 }) {
   const [type, setType] = useState<EventType>('STOPPAGE')
@@ -96,7 +97,7 @@ export function EventFields({ network, onSubmit, submitLabel, doneLabel, disable
                     className="mb-3 rounded-xl border border-signal-red/40 bg-signal-red/10 px-3 py-2 text-sm text-signal-red">{error}</motion.p>
                 )}
               </AnimatePresence>
-              <Button type="submit" variant="primary" loading={busy} success={ok} disabled={disabled}>{ok ? doneLabel : submitLabel}</Button>
+              <Button type="submit" variant="primary" loading={busy} success={ok} disabled={disabled} lockedReason={lockedReason}>{ok ? doneLabel : submitLabel}</Button>
             </div>
           </motion.form>
         </TabPanel>

@@ -20,4 +20,5 @@ sqlalchemy>=2.0
 alembic>=1.13
 psycopg[binary]>=3.1
 python-jose[cryptography]>=3.3
-passlib[bcrypt]>=1.7
+bcrypt>=4.1              # used directly (passlib 1.7 does not work with bcrypt 5)
+python-dotenv>=1.0       # reads backend/.env

@@ -13,6 +13,8 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 
   loading?: boolean
   success?: boolean
   icon?: ReactNode
+  /** Role gate: when set, the button is disabled and this says why (tooltip + screen readers). */
+  lockedReason?: string
 }
 
 const variants: Record<Variant, string> = {
@@ -32,7 +34,17 @@ const sizes: Record<Size, string> = {
 
 type Ripple = { id: number; x: number; y: number; size: number }
 
-export function Button({ variant = 'secondary', size = 'md', loading, success, icon, className, children, onClick, disabled, ...rest }: Props) {
+export function Button({ lockedReason, ...props }: Props) {
+  if (!lockedReason) return <ButtonInner {...props} />
+  // a disabled button gets no hover events: the wrapper carries the tooltip
+  return (
+    <span className="inline-flex" title={lockedReason}>
+      <ButtonInner {...props} disabled aria-description={lockedReason} />
+    </span>
+  )
+}
+
+function ButtonInner({ variant = 'secondary', size = 'md', loading, success, icon, className, children, onClick, disabled, ...rest }: Omit<Props, 'lockedReason'>) {
   const reduce = useReducedMotion()
   const [ripples, setRipples] = useState<Ripple[]>([])
   const busy = loading || success

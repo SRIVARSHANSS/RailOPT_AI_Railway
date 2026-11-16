@@ -67,8 +67,9 @@ Rail OPT/  (project root)
   pre-registered in docs/ASSUMPTIONS.md 43-46 and run in the same evaluation; report every result.
 - Optimizer demo: `python -m app.services.optimizer.run_demo`. Call a plan optimal only when the
   CP-SAT status is OPTIMAL; strategy D is named COMBINED for that reason. All metrics come from the replay.
-- API (thin layer, Phase 8 adds Postgres + JWT): from backend/ `uvicorn app.main:app` (dev: --reload), docs at
-  http://127.0.0.1:8000/docs. Scenario state is in memory behind `app/core/store.py::ScenarioStore`;
+- API (thin layer): from backend/ `uvicorn app.main:app` (dev: --reload), docs at
+  http://127.0.0.1:8000/docs. Scenario state: computed in memory by `app/core/store.py::ScenarioStore`,
+  persisted by `app/core/db_store.py::DbScenarioStore` (written after every change, reloaded on start);
   view logic in `app/services/live.py`. Knowledge is time-aware: STOPPAGE/DELAY known only when
   at >= start, TRACK_UNAVAILABLE known once posted; movement (/state, /timeline) uses all events.
   Every response carries data_label = SIMULATED.
@@ -83,7 +84,8 @@ Rail OPT/  (project root)
   A TRACK_UNAVAILABLE that would start while a train is inside the section is rejected (422 with
   the clear time). For demos run the API without --reload (the Windows watcher can stall).
 - scenario_version ('<boot id>-<revision>', in /scenario, /state, /optimize, /decision) changes on every
-  API start, reset, event and decision. The frontend caches the optimizer result with it and drops the
+  reset, event and decision. The boot id is stored with the scenario, so an API restart keeps the
+  version (the restored state is the same; ASSUMPTIONS.md 85). The frontend caches the optimizer result with it and drops the
   cache (and the recommendation alert) when the server reports another version; the tab's own
   decision adopts the new version (useScenarioVersionGuard in api/hooks.ts, /scenario polled every 5 s).
 - Results pages (read-only): GET /api/evaluation (eval/reports, hash-checked against the results CSV and
@@ -120,7 +122,21 @@ Rail OPT/  (project root)
   recommend, Counterfactual, Expected impact + per train, Why not the others?, Constraints
   respected, Assumptions, Confidence, plain_text for "Copy explanation"). Every number in a sentence
   must come from the same payload (tests/test_explainer.py); "optimal" only for OPTIMAL.
-- 170 tests passing.
+- Phase 8 (ASSUMPTIONS.md 80-86): PostgreSQL 15 local service; DATABASE_URL and JWT_SECRET in the
+  gitignored backend/.env (template backend/.env.example; no passwords in the repo). From backend/:
+  `python -m alembic upgrade head` (never create_all outside tests), `python -m app.cli create-admin
+  --email ...` / `create-user --role ...` / `list-users` (hidden password prompt). Models app/db/models.py,
+  migrations alembic/versions (models == migrations is tested). Auth app/core/auth.py (roles READ /
+  CONTROL / WHATIF / ADMIN_ONLY, `require(...)` on EVERY route; a new route must be added to the MATRIX
+  in tests/test_auth.py), security.py (bcrypt directly, not passlib; JWT via python-jose), cookies
+  httpOnly SameSite=Lax (COOKIE_SECURE=true over HTTPS), login lockout 5 failures / 15 min -> 429.
+  Audit log via `audit(db, ACTION, user=...)`. Tests: conftest.py gives every test an in-memory SQLite
+  DB and a CONTROLLER stand-in user; mark `real_auth` to use real cookies; `-m postgres` +
+  TEST_DATABASE_URL runs migrations on a throwaway Postgres DB. Admin: app/api/admin_routes.py,
+  app/services/netadmin.py (custom corridor in the DB, seeded from full_day; reference/full_day CSVs
+  stay read-only). Frontend: lib/api.ts sends cookies and refreshes once on 401; lib/permissions.ts
+  `useCan(action)` + Button `lockedReason` disable what a role cannot do (the API enforces it anyway).
+- 228 tests passing (+1 optional postgres test).
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -156,14 +172,14 @@ Rail OPT/  (project root)
 - [x] Phase 5: CP-SAT optimizer + baselines (app/services/optimizer; strategies replayed through the simulator)
 - [x] Phase 6: what-if (POST /api/whatif, What-If Studio) + re-optimization on top of an accepted plan
 - [x] Phase 7: explainable recommendations (template text only; ASSUMPTIONS.md 72-79)
-- [ ] Phase 8: FastAPI + PostgreSQL + auth
-- [~] Phase 9: React frontend, 12 planned pages (project build guide): 9 of 12 exist (one partial); demo: docs/DEMO.md
+- [x] Phase 8: PostgreSQL persistence, JWT auth (roles, rate limit, audit log), admin pages
+- [~] Phase 9: React frontend, 12 planned pages (project build guide): 11 of 12 exist (one partial); demo: docs/DEMO.md
   - [x] 1 Login  - [x] 2 Traffic Console  - [x] 3 Time-Distance Chart (/timeline)
   - [x] 4 Disruption Panel  - [~] 5 Conflicts and Alerts (partial: lives in the console alert feed,
     no page of its own)  - [x] 6 Strategy Comparison  - [x] 7 What-If Studio
   - [x] 8 Analytics (/analytics)  - [x] 9 Model Insights (/model: ML metrics vs baselines, SHAP drivers)
-  - [ ] 10 Network and Train Management (admin CRUD, CSV import)  - [ ] 11 Reports (CSV/PDF export)
-  - [ ] 12 User Management (admin)
+  - [x] 10 Network and Train Management (/admin/network: custom corridor CRUD, CSV import, REAL read-only)
+  - [ ] 11 Reports (CSV/PDF export)  - [x] 12 User Management (/admin/users: users, roles, audit log)
   - The Design system gallery (/design) is a dev page, not one of the 12.
 - [x] Phase 10: evaluation on 200 SIMULATED scenarios (backend/eval; results: eval/reports/eval_report.md)
 - [ ] Phase 11: Docker, README, demo script

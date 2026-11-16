@@ -23,10 +23,27 @@ cd frontend
 npm run dev
 ```
 
-Open **http://localhost:5173** (exactly this address: the API allows it for CORS).
+Open **http://localhost:5173** (exactly this address: the API allows it for CORS, with cookies).
+
+### Before presenting: demo users (once)
+
+The database must be migrated (`python -m alembic upgrade head`, README). Create one user per role
+from `backend/`; each command asks for the password at a hidden prompt (at least 10 characters):
+
+```powershell
+python -m app.cli create-admin --email admin@demo.local --name "Demo Admin"
+python -m app.cli create-user --email controller@demo.local --name "Demo Controller" --role CONTROLLER
+python -m app.cli create-user --email analyst@demo.local --name "Demo Analyst" --role ANALYST
+python -m app.cli list-users
+```
+
+Keep the passwords somewhere private (never in the repository or on a slide). Five wrong
+passwords for one email within 15 minutes lock it for 15 minutes, so type carefully on stage;
+an admin can reset a password on *Users*.
 
 Notes before presenting:
-- The API keeps the scenario in memory: restarting it clears events and decisions.
+- The scenario is stored in PostgreSQL: restarting the API keeps events, the accepted plan and the
+  decision log (and the scenario version). **Demo reset** starts a clean scenario.
 - The sim clock, its speed and the last optimizer result are kept in the browser tab
   (sessionStorage): a page refresh keeps them; the clock always comes back paused.
   The optimizer result is tied to the API's scenario version: after an API restart, a reset or
@@ -38,8 +55,10 @@ Notes before presenting:
 
 ## Steps
 
-1. **Login.** Pick *Controller*, then *Enter control room*. Point out the
-   "demo login - real auth in Phase 8" line and the permanent SIMULATED badge.
+1. **Login.** Sign in as the **controller** demo user. Point out the user and the *Controller*
+   role in the top bar and the permanent data badge. Talking point: an analyst sees the same
+   screens but the optimizer and accept buttons are disabled ("Needs the Controller role"); the API
+   refuses those calls too (403), and every sign-in and every decision is in the audit log.
 2. **Reset.** Open *Disruptions* and click **Demo reset**. The clock goes to **09:55**.
 3. **Console at 09:55.** Open *Traffic console*. T101 is at B, T202 runs on the
    double-track A-B, T303 has not started. KPIs: 0 conflicts.
@@ -203,3 +222,16 @@ Numbers quoted below come from the API on our run; read them from the screen, no
     *"Everything before 08:53 is what really happened on 12 September 2024; everything after is a
     hypothetical simulation of a stoppage that did not happen. RailOpt AI advises; it controls
     nothing."* The *Timeline* shows the same label and the before / after plan lines.
+
+## Optional: administration (sign in as the admin demo user)
+
+1. **Users.** *Users* lists the three demo users with their role, status and last sign-in. Change
+   the analyst's role and back; show that the change ends that user's open session. Open the
+   **audit log**: the controller's LOGIN, EVENT_ADDED, SCENARIO_RESET and DECISION entries from
+   the acts above, each with the user and the time. Filter it by action (e.g. DECISION).
+2. **Network.** *Network* shows four corridors. *Reference* and *Full day* are read-only (the
+   tests, the demo numbers and the evaluation depend on those files). *Real DG-MDU* is read-only
+   with its sources and licence (DERIVED / ASSUMED / CALIBRATED columns). *Custom* is editable:
+   type an invalid value (e.g. a negative km) and *Save*: the API lists the problem by row and
+   column and saves nothing. *Import CSV* works the same way per table. A valid custom corridor
+   can be run with Disruptions -> Reset -> *Custom* (SIMULATED; the ML models are not applied to it).

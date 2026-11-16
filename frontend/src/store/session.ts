@@ -1,20 +1,25 @@
-// Demo session (real auth arrives in Phase 8). Persisted per browser when storage works.
+// Signed-in user (Phase 8). The session itself lives in httpOnly cookies set by the API; this
+// store only mirrors GET /api/auth/me for the UI. The role is never trusted from storage: the API
+// checks it on every request. Only the sidebar preference is persisted.
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-export type Role = 'controller' | 'analyst' | 'admin'
+export type Role = 'ADMIN' | 'CONTROLLER' | 'ANALYST'
+export type User = { id: number | null; email: string; display_name: string; role: Role }
 
 export const ROLE_LABEL: Record<Role, string> = {
-  controller: 'Controller',
-  analyst: 'Analyst',
-  admin: 'Admin',
+  CONTROLLER: 'Controller',
+  ANALYST: 'Analyst',
+  ADMIN: 'Admin',
 }
 
 type SessionState = {
-  role: Role | null
+  user: User | null
+  status: 'unknown' | 'signed-in' | 'signed-out'
+  expired: boolean // the session ended by itself (not a sign-out)
   sidebarCollapsed: boolean
-  signIn: (role: Role) => void
-  signOut: () => void
+  setUser: (u: User) => void
+  signedOut: (expired?: boolean) => void
   toggleSidebar: () => void
 }
 
@@ -38,12 +43,14 @@ const safeStorage = createJSONStorage(() => {
 export const useSession = create<SessionState>()(
   persist(
     (set) => ({
-      role: null,
+      user: null,
+      status: 'unknown',
+      expired: false,
       sidebarCollapsed: false,
-      signIn: (role) => set({ role }),
-      signOut: () => set({ role: null }),
+      setUser: (user) => set({ user, status: 'signed-in', expired: false }),
+      signedOut: (expired = false) => set({ user: null, status: 'signed-out', expired }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
     }),
-    { name: 'railopt-session', storage: safeStorage },
+    { name: 'railopt-session', storage: safeStorage, partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed }) },
   ),
 )

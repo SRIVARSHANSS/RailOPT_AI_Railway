@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  BarChart3, BrainCircuit, ChevronsLeft, ChevronsRight, Clock, FlaskConical, LogOut, MonitorPlay, Palette, Route, Scale, TrainFront, Zap,
+  BarChart3, BrainCircuit, ChevronsLeft, ChevronsRight, Clock, FlaskConical, LogOut, MonitorPlay, Network, Palette, Route, Scale,
+  TrainFront, UsersRound, Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
+import { useLogout } from '../../api/auth'
 import { useClockRange, useScenarioVersionGuard } from '../../api/hooks'
 import { api, type Health } from '../../lib/api'
 import { cn } from '../../lib/cn'
+import { can, type Action } from '../../lib/permissions'
 import { duration, page, spring } from '../../lib/motion'
 import { fmt } from '../../lib/time'
 import { ROLE_LABEL, useSession } from '../../store/session'
@@ -16,7 +19,7 @@ import { DataBadge } from '../ui/Badges'
 import { Tooltip } from '../ui/Tooltip'
 import { ClockDriver } from './ClockDriver'
 
-const NAV = [
+const NAV: { to: string; label: string; icon: typeof MonitorPlay; needs?: Action }[] = [
   { to: '/console', label: 'Traffic console', icon: MonitorPlay },
   { to: '/disruptions', label: 'Disruptions', icon: Zap },
   { to: '/strategies', label: 'Strategies', icon: Scale },
@@ -24,6 +27,8 @@ const NAV = [
   { to: '/timeline', label: 'Timeline', icon: Route },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/model', label: 'Model insights', icon: BrainCircuit },
+  { to: '/admin/users', label: 'Users', icon: UsersRound, needs: 'admin' },
+  { to: '/admin/network', label: 'Network', icon: Network, needs: 'admin' },
   { to: '/design', label: 'Design system', icon: Palette },
 ]
 
@@ -76,6 +81,7 @@ export function AppShell() {
 
 function Sidebar({ collapsed, canExpand }: { collapsed: boolean; canExpand: boolean }) {
   const toggle = useSession((s) => s.toggleSidebar)
+  const role = useSession((s) => s.user?.role)
   const { pathname } = useLocation()
   return (
     <aside className={cn('sticky top-0 flex h-screen shrink-0 flex-col border-r border-line/10 bg-canvas-0/60 backdrop-blur-xl',
@@ -91,7 +97,7 @@ function Sidebar({ collapsed, canExpand }: { collapsed: boolean; canExpand: bool
       </div>
 
       <nav aria-label="Main" className="mt-4 flex-1 space-y-1 px-3">
-        {NAV.map(({ to, label, icon: Icon }) => {
+        {NAV.filter((n) => !n.needs || can(role, n.needs)).map(({ to, label, icon: Icon }) => {
           const active = pathname.startsWith(to)
           const link = (
             <NavLink key={to} to={to} aria-label={collapsed ? label : undefined}
@@ -123,7 +129,8 @@ function Sidebar({ collapsed, canExpand }: { collapsed: boolean; canExpand: bool
 }
 
 function TopBar() {
-  const { role, signOut } = useSession()
+  const user = useSession((s) => s.user)
+  const logout = useLogout()
   const simClock = fmt(useSim((s) => s.minute))
   const playing = useSim((s) => s.playing)
   const navigate = useNavigate()
@@ -156,13 +163,17 @@ function TopBar() {
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
         <span className="hidden lg:inline-flex"><DataBadge label={health.data?.data_label} /></span>
         <span className="lg:hidden"><DataBadge label={health.data?.data_label} compact /></span>
-        {role && (
-          <span className="hidden rounded-full border border-signal-violet/40 bg-signal-violet/10 px-3 py-1 sm:inline text-xs font-semibold uppercase tracking-wider text-signal-violet">
-            {ROLE_LABEL[role]}
+        {user && (
+          <span className="hidden items-center gap-2 sm:inline-flex" aria-label={`Signed in as ${user.display_name}, ${ROLE_LABEL[user.role]}`}>
+            <span className="hidden max-w-[12rem] truncate text-sm text-ink xl:inline" title={user.email}>{user.display_name}</span>
+            <span className="rounded-full border border-signal-violet/40 bg-signal-violet/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-signal-violet">
+              {ROLE_LABEL[user.role]}
+            </span>
           </span>
         )}
-        <Tooltip content="Sign out (demo)">
-          <button aria-label="Sign out" onClick={() => { signOut(); navigate('/login') }}
+        <Tooltip content={user ? `Sign out ${user.email}` : 'Sign out'}>
+          <button aria-label="Sign out" disabled={logout.isPending}
+            onClick={() => logout.mutate(undefined, { onSettled: () => navigate('/login') })}
             className="rounded-xl p-2 text-ink-muted hover:bg-white/5 hover:text-ink">
             <LogOut className="h-5 w-5" aria-hidden />
           </button>
