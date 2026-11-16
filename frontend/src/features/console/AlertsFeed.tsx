@@ -3,6 +3,7 @@ import { BrainCircuit, CircleCheck, ShieldAlert, Sparkles, TrendingDown, Triangl
 import { useNavigate } from 'react-router-dom'
 import type { ConflictsAt, PlanStatus } from '../../api/types'
 import { buildAlerts } from './alerts'
+import { DriverList } from './DriverList'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { cn } from '../../lib/cn'
 import { duration, ease } from '../../lib/motion'
@@ -59,6 +60,7 @@ export function AlertsFeed({ conflicts, loading, plan }: { conflicts: ConflictsA
                   <span className={cn('block font-semibold', s.text)}>{a.title}</span>
                   {a.struck && <span className="mt-0.5 block text-sm text-signal-green line-through decoration-2"><span className="sr-only">Resolved: </span>{a.struck}</span>}
                   <span className="mt-0.5 block text-sm text-ink">{a.detail}</span>
+                  {a.drivers && a.drivers.length > 0 && a.level !== 'RESOLVED' && <DriverList drivers={a.drivers} />}
                 </span>
               </button>
             </motion.li>

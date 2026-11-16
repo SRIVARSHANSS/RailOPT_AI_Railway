@@ -448,3 +448,32 @@ changed and were never trained on real data.
     pre-registered design: main XGBoost MAE 4.18 vs carry 4.94 (difference -0.76, 95% CI
     [-1.53, -0.04]; train-clustered [-1.61, +0.18]); before the fix -0.74 [-1.50, -0.02] and
     [-1.60, +0.18]. The conclusion is unchanged.
+
+## Phase 7: explainable recommendations (template rules)
+
+72. **No LLM, no hand-typed numbers.** Every sentence is a template in
+    `app/services/explainer/` filled only from values in the same API payload (strategy rows,
+    the structured fields next to each sentence, the network the run used). `tests/test_explainer.py`
+    checks that every number and HH:MM in every generated sentence appears in that payload.
+73. **ML drivers explain the model's score, not a cause.** Each top SHAP driver becomes
+    "Model risk raised by: ..." / "Model risk lowered by: ..." from a feature-to-text table
+    (one template per model feature; the feature VALUE is put in words, the SHAP number never is).
+    Driver sentences never say "because". The Reason line comes from the rule-based detector (a
+    real interval clash) and may say "because". On REAL replay days the ML models are off and
+    the model note says so; no drivers are shown.
+74. **Reason** = the conflict the plan answers: CRITICAL before WARNING, then the soonest.
+75. **Why not the others?** One line per other row (baselines included) from its own metrics:
+    weighted delay and the difference to the recommended one; on a tie, the action count or the
+    fixed tie order HOLD, REROUTE, RESEQUENCE, COMBINED (the order the recommendation uses);
+    no plan found -> the CP-SAT status; strategies not offered -> the reason.
+76. **Constraints respected** is listed only when the replay of the recommended plan has 0
+    violations of `find_violations` (headway, capacity, minimum running time, closures, no early
+    departure; plus loops on the REAL corridor). Otherwise the card says how many it breaks.
+77. **Assumptions this depends on** lists the values read from the network, each with its item
+    number here: SIMULATED - headway per section (1), priority weights (24), minimum running
+    time (3); REAL - headway CALIBRATED (64), loops (65), priorities (66), minimum running time
+    (50), knowledge from the forecast (70).
+78. **Confidence**: the word "optimal" appears only when CP-SAT returned OPTIMAL ("optimal for
+    that strategy's model", item 26); any other status reads "a valid plan, not proven to be
+    the best within the solver's time limit". On REAL replay days it adds the headway-4
+    sensitivity result: same recommendation (and ranking) or what differs.

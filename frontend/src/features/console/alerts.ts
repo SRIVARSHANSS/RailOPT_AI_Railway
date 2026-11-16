@@ -1,4 +1,4 @@
-import type { ConflictsAt, OptimizeResult, PlanStatus } from '../../api/types'
+import type { ConflictsAt, Driver, OptimizeResult, PlanStatus } from '../../api/types'
 
 export type Alert = {
   key: string
@@ -8,6 +8,7 @@ export type Alert = {
   section_id: string | null
   trains: string[]
   struck?: string // the risk text shown struck through (resolved items)
+  drivers?: Driver[] // the model's top SHAP drivers, API text (explain the score, not a cause)
 }
 
 /** Alerts built only from API fields: detector conflicts, ML watchlist, last optimizer run. */
@@ -41,6 +42,7 @@ export function buildAlerts(c: ConflictsAt | undefined, opt: OptimizeResult | nu
         : `Planned entry ${k.window_start}, ${k.earlier_train} holds it until ${k.window_end} (${k.minutes_short} min short, in ${k.time_to_conflict_min} min)` +
           (k.prediction ? ` - model ${Math.round(k.prediction.conflict_probability * 100)}%` : ''),
       section_id: k.section_id, trains: [k.earlier_train, k.later_train].filter(Boolean) as string[],
+      drivers: k.prediction?.top_drivers,
     })
   }
   for (const w of c?.ml_watchlist ?? []) {
@@ -52,6 +54,7 @@ export function buildAlerts(c: ConflictsAt | undefined, opt: OptimizeResult | nu
         detail: `AI watch: ${w.train_id} on ${w.section_id}, model ${w.conflict_probability.toFixed(2)}. In the accepted plan's replay ` +
           `${w.train_id} waits ${w.plan_wait_min} min before this trip, ${w.baseline_wait_min} under the plan it replaced.`,
         section_id: w.section_id, trains: [w.train_id],
+        drivers: w.top_drivers,
       })
       continue
     }
@@ -61,9 +64,9 @@ export function buildAlerts(c: ConflictsAt | undefined, opt: OptimizeResult | nu
       struck: w.resolved_by_plan ? `AI watch: ${w.train_id} on ${w.section_id}, model ${w.conflict_probability.toFixed(2)}` : undefined,
       detail: w.resolved_by_plan
         ? `In the accepted plan's replay ${w.train_id} waits ${w.plan_wait_min ?? 0} min before this trip.`
-        : `The rules miss it; the model flags ${w.conflict_probability.toFixed(2)} (threshold ${w.threshold.toFixed(2)}).` +
-          (w.top_drivers[0] ? ` Top driver: ${w.top_drivers[0].feature} ${w.top_drivers[0].direction} the risk.` : ''),
+        : `The rules miss it; the model flags ${w.conflict_probability.toFixed(2)} (threshold ${w.threshold.toFixed(2)}).`,
       section_id: w.section_id, trains: [w.train_id],
+      drivers: w.top_drivers,
     })
   }
   return out

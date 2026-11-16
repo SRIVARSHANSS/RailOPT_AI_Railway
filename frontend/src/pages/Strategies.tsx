@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Check, CircleSlash, Gauge, Lightbulb, Scale, Sparkles, Undo2, X } from 'lucide-react'
+import { ArrowRight, Check, CircleSlash, Scale, Sparkles, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDecide, useOptimize } from '../api/hooks'
@@ -17,6 +17,7 @@ import { duration, ease, fadeUp, staggerContainer } from '../lib/motion'
 import { fmt } from '../lib/time'
 import { useConsole, useSim } from '../store/sim'
 import { toast } from '../store/toast'
+import { RecommendationExplanation } from '../features/strategies/RecommendationExplanation'
 
 const LABEL: Record<string, string> = {
   NO_REPLANNING: 'No re-planning',
@@ -254,13 +255,8 @@ function RecommendationCard({ rec, base }: { rec: Recommendation; base: Strategy
         </p>
       </div>
 
-      {/* explanation: the API's own sentences */}
-      <div className="mt-6 grid gap-3 lg:grid-cols-3">
-        <Explain icon={<Lightbulb className="h-4 w-4" />} title="Why" text={rec.explanation.reason} />
-        <Explain icon={<Undo2 className="h-4 w-4" />} title="If we do nothing" text={rec.explanation.counterfactual} />
-        <Explain icon={<Gauge className="h-4 w-4" />} title="Expected impact" text={rec.explanation.expected_impact} />
-      </div>
-      <p className="mt-3 text-sm text-ink-muted">{rec.explanation.solver} {rec.explanation.note}</p>
+      {/* explanation: every sentence is the API's own template text (Phase 7) */}
+      <RecommendationExplanation e={rec.explanation} />
 
       <div className="mt-6 flex flex-wrap gap-3">
         <span className="relative">
@@ -279,11 +275,4 @@ function RecommendationCard({ rec, base }: { rec: Recommendation; base: Strategy
   )
 }
 
-function Explain({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
-  return (
-    <div className="rounded-xl border border-line/15 bg-canvas-0/40 p-4">
-      <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-signal-cyan">{icon}{title}</p>
-      <p className="mt-2 text-ink">{text}</p>
-    </div>
-  )
-}
+

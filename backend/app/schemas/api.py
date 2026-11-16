@@ -187,6 +187,9 @@ class Driver(BaseModel):
     value: Any
     shap: float
     direction: Literal["raises", "lowers"]
+    text: str = Field("", description="plain words for the feature value (template, Phase 7)")
+    sentence: str = Field("", description="'Model risk raised by: ...' / 'Model risk lowered by: ...' - "
+                                          "explains the model's score, not a physical cause")
 
 
 class Prediction(BaseModel):
@@ -249,14 +252,73 @@ class StrategyRow(BaseModel):
     actions: list[str]
 
 
+class ConflictRef(BaseModel):
+    conflict_id: str
+    section_id: str
+    earlier_train: str | None
+    later_train: str
+    conflict_type: str
+    window_start: str
+    window_end: str
+    minutes_short: int
+    time_to_conflict_min: int
+    severity: str
+    event_id: str | None
+
+
+class PerTrain(BaseModel):
+    train_id: str
+    without_min: int
+    with_min: int
+    change_min: int
+    text: str
+
+
+class WhyNot(BaseModel):
+    name: str
+    kind: Literal["baseline", "strategy", "unavailable"]
+    status: str
+    weighted_delay: int | None
+    total_delay: int | None
+    diff_weighted: int | None = Field(description="its weighted delay minus the recommended one")
+    actions_count: int | None
+    best_actions_count: int | None
+    violations: int | None
+    text: str
+
+
+class Constraints(BaseModel):
+    respected: bool
+    violations: int
+    summary: str
+    items: list[str]
+
+
+class AssumptionUsed(BaseModel):
+    name: str
+    label: Literal["ASSUMED", "CALIBRATED"]
+    item: int = Field(description="item number in docs/ASSUMPTIONS.md")
+    value: Any
+    text: str
+
+
 class Explanation(BaseModel):
-    reason: str
+    """Phase 7: every sentence is a template filled from numbers in this payload (no LLM)."""
+    reason: str = Field(description="rule-based detector: the interval clash")
+    conflict: ConflictRef | None = None
+    recommend: str = ""
     counterfactual: str
     expected_impact: str
+    per_train: list[PerTrain] = Field(default_factory=list)
+    why_not: list[WhyNot] = Field(default_factory=list)
+    constraints: Constraints | None = None
+    assumptions: list[AssumptionUsed] = Field(default_factory=list)
     solver: str
+    confidence: str = Field("", description="CP-SAT status (+ headway sensitivity on REAL replay days)")
     delta_total_delay_min: int
     delta_weighted_delay: int
     note: str
+    plain_text: str | None = Field(None, description="whole explanation as plain text (Copy explanation)")
 
 
 class RecommendationBase(BaseModel):

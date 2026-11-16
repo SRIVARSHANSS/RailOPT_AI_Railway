@@ -52,7 +52,8 @@ export type TrainState = {
 export type Kpis = { active_trains: number; delayed_trains: number; conflicts: number; avg_delay_min: number }
 export type StateAt = Labelled & { scenario_version: string; at: string; known_events: string[]; trains: TrainState[]; kpis: Kpis; plan: PlanStatus }
 
-export type Driver = { feature: string; value: unknown; shap: number; direction: 'raises' | 'lowers' }
+// text / sentence: API templates explaining the MODEL'S score ('Model risk raised by: ...'), not a cause
+export type Driver = { feature: string; value: unknown; shap: number; direction: 'raises' | 'lowers'; text: string; sentence: string }
 export type Prediction = { conflict_probability: number; flagged: boolean; threshold: number; top_drivers: Driver[] }
 export type Conflict = {
   conflict_id: string; section_id: string; earlier_train: string | null; later_train: string
@@ -73,8 +74,20 @@ export type StrategyRow = {
   weighted_delay: number | null; total_delay: number | null; delays: Record<string, number>
   throughput_trains_per_hour: number | null; violations: number | null; actions: string[]
 }
+export type WhyNot = {
+  name: string; kind: 'baseline' | 'strategy' | 'unavailable'; status: string; weighted_delay: number | null
+  total_delay: number | null; diff_weighted: number | null; actions_count: number | null
+  best_actions_count: number | null; violations: number | null; text: string
+}
+export type AssumptionUsed = { name: string; label: 'ASSUMED' | 'CALIBRATED'; item: number; value: unknown; text: string }
+/** Phase 7: every sentence is an API template filled from numbers in the same payload (no LLM). */
 export type Explanation = {
-  reason: string; counterfactual: string; expected_impact: string; solver: string
+  reason: string; recommend: string; counterfactual: string; expected_impact: string; solver: string
+  per_train: { train_id: string; without_min: number; with_min: number; change_min: number; text: string }[]
+  why_not: WhyNot[]
+  constraints: { respected: boolean; violations: number; summary: string; items: string[] } | null
+  assumptions: AssumptionUsed[]
+  confidence: string; plain_text: string | null
   delta_total_delay_min: number; delta_weighted_delay: number; note: string
 }
 export type Recommendation = {

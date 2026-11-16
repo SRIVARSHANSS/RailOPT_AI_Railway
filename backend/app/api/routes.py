@@ -29,7 +29,7 @@ from app.schemas.api import (
     Timetable,
     TimelineOut,
 )
-from app.services import live, results
+from app.services import explainer, live, results
 from app.services.conflicts import detect_conflicts, project_plan
 from app.services.network import RailNetwork, format_time, parse_time
 from app.services.simulator import simulate
@@ -243,12 +243,17 @@ def optimize(req: OptimizeRequest, store: ScenarioStore = Depends(get_store)):
                  REAL_ML_NOTE]
     rec_out = None
     rec = view["recommendation"]
+    label = store.label(decision=True)
     if rec is not None:
         holds, overrides = rec.pop("_holds"), rec.pop("_route_overrides")
+        expl = explainer.with_sensitivity(rec["explanation"], rec["status"], rec["strategy"], sensitivity)
         stored = store.add_recommendation(t, rec["strategy"], holds, overrides, rec,
                                           known_event_ids=[e.event_id for e in known])
+        expl["plain_text"] = explainer.plain_text(
+            expl, title=f"RailOpt AI recommendation {stored.rec_id}: {rec['strategy']}",
+            data_label=label, scenario_version=version, at=req.at)
         rec_out = {"recommendation_id": stored.rec_id, **rec}
-    return OptimizeOut(data_label=store.label(decision=True), scenario_version=version, at=req.at,
+    return OptimizeOut(data_label=label, scenario_version=version, at=req.at,
                        known_events=[e.event_id for e in known],
                        results=view["results"], recommendation=rec_out,
                        replanning_from=store.applied_recommendation, unavailable=view["unavailable"],

@@ -63,8 +63,18 @@ Notes before presenting:
      plan through the simulator.
    - **B - Reroute** glows as *Recommended*: "reroute T202 B->C via S_BC_ALT".
      Animated bars: **weighted 88 -> 53**, total 43 -> 19 min.
-   - Read the explanation cards: *Why* (the detected conflict), *If we do nothing*
-     (no re-planning: 88 weighted, T101 15 / T202 15 / T303 13 min), *Expected impact*.
+   - Read the explanation (every sentence is a template filled from the API's numbers, no LLM):
+     *Reason* (the rule-based clash: "T202 ... clashes because T101 holds it until 10:28"),
+     *What we recommend*, *Counterfactual* (no re-planning: 88 weighted, T101 15 / T202 15 /
+     T303 13 min), *Expected impact* (T202 15 -> 4, T303 13 -> 0 min).
+   - **Talking point - read the "Why not the others?" line aloud:** *"HOLD: weighted delay 88,
+     35 more than REROUTE"* - and COMBINED reaches the same 53 but ties go to the simpler strategy.
+     Then *Constraints respected* (the replay has 0 violations), *Assumptions this depends on*
+     (headway per section, priority weights) and *Confidence* (CP-SAT OPTIMAL for the REROUTE model).
+   - *Copy explanation* puts the whole explanation on the clipboard as plain text for a report.
+   - On the console the alerts now list the model's top drivers: "Model risk raised by: it is
+     planned to enter 10 min before the section clears". They explain the model's score, not
+     the cause; the cause is the rule-based Reason line.
 7. **Accept.** Click *Accept plan*: the button turns into a check with a small burst,
    a toast confirms, and the app wipes back to the console.
    - The alternate line is now labelled "planned route for T202" (dashed cyan).
@@ -178,7 +188,13 @@ Numbers quoted below come from the API on our run; read them from the screen, no
     - on our run Hold matches no re-planning (weighted 128): 16343 waits at KQN for 22627;
       Resequence (recommended, 120) lets 16343 go on and be overtaken at the VDP loop instead;
     - the headway note: the same recommendation and ranking with a 4 min headway, where Resequence
-      only ties no re-planning (156 vs 156) - the gain depends on the calibrated headway.
+      only ties no re-planning (156 vs 156) - the gain depends on the calibrated headway;
+    - read "Why not the others?" aloud: *"HOLD: weighted delay 128, 8 more than RESEQUENCE"*, and
+      REROUTE / COMBINED "not offered here" (no alternate line). *Assumptions this depends on*
+      lists headway 0 CALIBRATED, the ASSUMED loops and priorities; *Confidence* ends with "Same
+      recommendation and ranking at headway 4 min as at 0 min";
+    - the console has no model drivers on this day: the ML models are off on REAL data and the
+      model note says so.
 25. **Accept and read the label aloud.** *Accept plan*. Back on the console the banner says
     "HYPOTHETICAL on a real recorded day: recorded until 08:53, simulated after it". Read it aloud:
     *"Everything before 08:53 is what really happened on 12 September 2024; everything after is a

@@ -4,6 +4,7 @@ Plain Python (no FastAPI) so it can be tested directly. All SIMULATED.
 """
 from __future__ import annotations
 
+from app.services import explainer
 from app.services.conflicts import detect_conflicts, project_plan
 from app.services.network import RailNetwork, format_time
 from app.services.optimizer import compare
@@ -131,7 +132,7 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
         _row, p = rows[key]
         return {"conflict_probability": round(p["conflict_probability"], 4),
                 "flagged": bool(p["conflict_predicted"]), "threshold": round(p["threshold"], 4),
-                "top_drivers": p["top_drivers"]}
+                "top_drivers": explainer.describe_all(p["top_drivers"])}
 
     out = []
     for c in conflicts:
@@ -212,7 +213,7 @@ def optimize_view(net: RailNetwork, at: int, known: list[Disruption],
         rec = {"strategy": best.name, "status": best.status, "actions": best.actions,
                "weighted_delay": best.weighted_delay, "total_delay": best.total_delay,
                "delays": best.delays,
-               "explanation": explain(net, best, base, conflicts),
+               "explanation": explainer.explain(net, best, base, results, conflicts, unavailable, known),
                "_holds": best.holds, "_route_overrides": best.route_overrides}
     return {"results": rows, "recommendation": rec, "unavailable": unavailable,
             "ranking": [r.name for r in sorted(candidates, key=lambda r: (r.weighted_delay, len(r.actions),
@@ -225,39 +226,6 @@ def _result_row(r) -> dict:
             "delays": r.delays, "throughput_trains_per_hour": r.throughput,
             "violations": len(r.violations) if r.replay is not None else None,
             "actions": r.actions}
-
-
-def explain(net: RailNetwork, best, base, conflicts) -> dict:
-    """Template explanation built only from computed numbers (Phase 7 enriches it)."""
-    critical = [c for c in conflicts if c.severity == "CRITICAL"] or conflicts
-    if critical:
-        c = critical[0]
-        if c.conflict_type == "CLOSURE":
-            reason = (f"{c.later} is planned to enter {c.section_id} at {format_time(c.window_start)} "
-                      f"while it is closed ({c.event_id}) until {format_time(c.window_end)}.")
-        else:
-            reason = (f"{c.later} is planned to enter {c.section_id} at {format_time(c.window_start)} but "
-                      f"{c.earlier} holds it until {format_time(c.window_end)} ({c.conflict_type}, "
-                      f"{c.minutes_short} min short, {c.severity}, in {c.time_to_conflict} min).")
-    else:
-        reason = "No conflict is detected from the known events at this time."
-    late = ", ".join(f"{t} {d} min" for t, d in base.delays.items() if d) or "no train late"
-    lead = "Keeping the accepted plan" if base.message.startswith("keeps") else "Without re-planning"
-    counterfactual = (f"{lead}: weighted delay {base.weighted_delay}, "
-                      f"total delay {base.total_delay} min ({late}).")
-    d_total = best.total_delay - base.total_delay
-    d_weighted = best.weighted_delay - base.weighted_delay
-    if d_weighted < 0:
-        impact = (f"{best.name}: weighted delay {best.weighted_delay} ({d_weighted:+d}), "
-                  f"total delay {best.total_delay} min ({d_total:+d} min).")
-    else:
-        impact = f"No strategy improves on {lead.lower()} (weighted delay {best.weighted_delay})."
-    solver = (f"CP-SAT status {best.status}: proven optimal for the {best.name} model."
-              if best.status == "OPTIMAL" else
-              f"CP-SAT status {best.status}: feasible, not proven optimal.")
-    return {"reason": reason, "counterfactual": counterfactual, "expected_impact": impact,
-            "solver": solver, "delta_total_delay_min": d_total, "delta_weighted_delay": d_weighted,
-            "note": "Template text from simulated numbers; the controller decides."}
 
 
 # ---------------------------------------------------------------------------

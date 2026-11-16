@@ -115,7 +115,12 @@ Rail OPT/  (project root)
   have loops = None: nothing changes there. ML models are not applied to real data.
 - The API boots on the REAL demo day (dg_mdu replay, 2024-09-12; `boot_store()` in app/core/store.py).
   `RAILOPT_BOOT=simulated` boots on the SIMULATED reference corridor; tests use a fresh ScenarioStore() (reference).
-- 116 tests passing.
+- Phase 7 explainer (app/services/explainer): drivers.py (one template per model feature;
+  "Model risk raised/lowered by: ...", never "because") and recommendation.py (Reason, What we
+  recommend, Counterfactual, Expected impact + per train, Why not the others?, Constraints
+  respected, Assumptions, Confidence, plain_text for "Copy explanation"). Every number in a sentence
+  must come from the same payload (tests/test_explainer.py); "optimal" only for OPTIMAL.
+- 165 tests passing.
 - Frontend (frontend/): npm, Vite + React + TS, Tailwind 3.4, React Router, React Query, Zustand,
   Framer Motion, Radix, lucide-react. `npm run dev` -> http://localhost:5173 (exact origin, CORS).
   Do NOT use the website-builder skill here. Design tokens: src/styles/tokens.css + tailwind.config.ts;
@@ -150,7 +155,7 @@ Rail OPT/  (project root)
 - [x] Phase 4: ML models + baselines (backend/ml, app/services/predictor; see ml/reports/model_card.md)
 - [x] Phase 5: CP-SAT optimizer + baselines (app/services/optimizer; strategies replayed through the simulator)
 - [x] Phase 6: what-if (POST /api/whatif, What-If Studio) + re-optimization on top of an accepted plan
-- [ ] Phase 7: explainer
+- [x] Phase 7: explainable recommendations (template text only; ASSUMPTIONS.md 72-78)
 - [ ] Phase 8: FastAPI + PostgreSQL + auth
 - [~] Phase 9: React frontend, 12 planned pages (project build guide): 9 of 12 exist (one partial); demo: docs/DEMO.md
   - [x] 1 Login  - [x] 2 Traffic Console  - [x] 3 Time-Distance Chart (/timeline)
