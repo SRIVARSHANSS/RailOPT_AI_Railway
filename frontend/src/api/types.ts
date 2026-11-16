@@ -53,7 +53,7 @@ export type Kpis = { active_trains: number; delayed_trains: number; conflicts: n
 export type StateAt = Labelled & { scenario_version: string; at: string; known_events: string[]; trains: TrainState[]; kpis: Kpis; plan: PlanStatus }
 
 // text / sentence: API templates explaining the MODEL'S score ('Model risk raised by: ...'), not a cause
-export type Driver = { feature: string; value: unknown; shap: number; direction: 'raises' | 'lowers'; text: string; sentence: string }
+export type Driver = { feature: string; value: unknown; shap: number; direction: 'raises' | 'lowers'; text: string; sentence: string; context?: Record<string, unknown> }
 export type Prediction = { conflict_probability: number; flagged: boolean; threshold: number; top_drivers: Driver[] }
 export type Conflict = {
   conflict_id: string; section_id: string; earlier_train: string | null; later_train: string

@@ -132,7 +132,7 @@ def conflicts_view(net: RailNetwork, at: int, known: list[Disruption], predictor
         _row, p = rows[key]
         return {"conflict_probability": round(p["conflict_probability"], 4),
                 "flagged": bool(p["conflict_predicted"]), "threshold": round(p["threshold"], 4),
-                "top_drivers": explainer.describe_all(p["top_drivers"])}
+                "top_drivers": explainer.describe_all(p["top_drivers"], net)}
 
     out = []
     for c in conflicts:

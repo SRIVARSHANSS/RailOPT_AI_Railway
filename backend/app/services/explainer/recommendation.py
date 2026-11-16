@@ -179,7 +179,26 @@ def confidence(status: str, name: str, sensitivity: dict | None = None) -> str:
         else:
             text += (f" Differs at headway {alt} min: the recommendation there is {alt_rec or 'none'} "
                      f"instead of {sensitivity.get('recommended')}.")
+        text += gain_at_alt(sensitivity)
     return text
+
+
+def gain_at_alt(sensitivity: dict, baseline: str = "NO_REPLANNING") -> str:
+    """Does the recommended strategy still beat the baseline (no re-planning / keep the plan)
+    at the alternative headway? A same ranking can hide a gain that has shrunk to nothing."""
+    rec = sensitivity.get("recommended")
+    w = sensitivity.get("alt_weighted_delay") or {}
+    mine, base = w.get(rec), w.get(baseline)
+    alt = sensitivity["alt_headway_min"]
+    if rec is None or base is None:
+        return ""
+    if mine is None:
+        return f" At headway {alt} min {rec} finds no plan."
+    if mine == base:
+        return f" At headway {alt} min the gain disappears: {rec} {mine} vs {baseline} {base}."
+    if mine > base:
+        return f" At headway {alt} min the gain reverses: {rec} {mine} vs {baseline} {base}."
+    return f" At headway {alt} min the gain remains: {rec} {mine} vs {baseline} {base}."
 
 
 # ---------------------------------------------------------------------------

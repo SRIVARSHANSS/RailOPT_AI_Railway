@@ -190,6 +190,7 @@ class Driver(BaseModel):
     text: str = Field("", description="plain words for the feature value (template, Phase 7)")
     sentence: str = Field("", description="'Model risk raised by: ...' / 'Model risk lowered by: ...' - "
                                           "explains the model's score, not a physical cause")
+    context: dict[str, Any] = Field(default_factory=dict, description="network values the text uses, e.g. section_tracks")
 
 
 class Prediction(BaseModel):

@@ -476,4 +476,8 @@ changed and were never trained on real data.
 78. **Confidence**: the word "optimal" appears only when CP-SAT returned OPTIMAL ("optimal for
     that strategy's model", item 26); any other status reads "a valid plan, not proven to be
     the best within the solver's time limit". On REAL replay days it adds the headway-4
-    sensitivity result: same recommendation (and ranking) or what differs.
+    sensitivity result: same recommendation (and ranking) or what differs, and whether the
+    recommended strategy's gain over no re-planning / keeping the plan remains, disappears (a
+    tie) or reverses at headway 4, with both weighted delays.
+79. **section_id driver** names the section and its track count from the network data ("it uses
+    S_BC, a single-track section"); the count is carried in the driver's `context`.

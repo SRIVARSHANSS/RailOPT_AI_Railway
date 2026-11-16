@@ -73,7 +73,8 @@ Notes before presenting:
      (headway per section, priority weights) and *Confidence* (CP-SAT OPTIMAL for the REROUTE model).
    - *Copy explanation* puts the whole explanation on the clipboard as plain text for a report.
    - On the console the alerts now list the model's top drivers: "Model risk raised by: it is
-     planned to enter 10 min before the section clears". They explain the model's score, not
+     planned to enter 10 min before the section clears", "it uses S_BC, a single-track
+     section". They explain the model's score, not
      the cause; the cause is the rule-based Reason line.
 7. **Accept.** Click *Accept plan*: the button turns into a check with a small burst,
    a toast confirms, and the app wipes back to the console.
@@ -192,7 +193,9 @@ Numbers quoted below come from the API on our run; read them from the screen, no
     - read "Why not the others?" aloud: *"HOLD: weighted delay 128, 8 more than RESEQUENCE"*, and
       REROUTE / COMBINED "not offered here" (no alternate line). *Assumptions this depends on*
       lists headway 0 CALIBRATED, the ASSUMED loops and priorities; *Confidence* ends with "Same
-      recommendation and ranking at headway 4 min as at 0 min";
+      recommendation and ranking at headway 4 min as at 0 min. At headway 4 min the gain
+      disappears: RESEQUENCE 156 vs NO_REPLANNING 156" - say it plainly: the advantage rests on
+      the calibrated headway;
     - the console has no model drivers on this day: the ML models are off on REAL data and the
       model note says so.
 25. **Accept and read the label aloud.** *Accept plan*. Back on the console the banner says

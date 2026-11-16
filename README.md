@@ -46,7 +46,7 @@ and is not connected to Indian Railways systems. All results are simulated.
   `RAILOPT_BOOT=simulated` to start on the SIMULATED sample corridor.
 - Explainable recommendations (Phase 7): template sentences from the API's own numbers, with
   "Why not the others?", constraints, assumptions, confidence and a plain-text copy. No LLM.
-- 165 passing tests. Remaining phases: see `CLAUDE.md`
+- 170 passing tests. Remaining phases: see `CLAUDE.md`
 
 ## Setup (Windows)
 

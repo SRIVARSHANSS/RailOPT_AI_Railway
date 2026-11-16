@@ -189,3 +189,38 @@ def test_real_day_explanation_is_traceable(client):
     assert {w["name"] for w in expl["why_not"] if w["kind"] == "unavailable"} == {"REROUTE", "COMBINED"}
     c = client.get("/api/conflicts", params={"at": "08:53"}).json()
     assert check_drivers(c) == 0 and "not applied to REAL data" in c["ml_note"]
+
+
+# ---- wording fixes: section driver from the network, headway-4 gain ---------------------------
+def test_section_driver_uses_network_track_count():
+    from app.services.network import load_network
+    net = load_network()
+    for sid, sec in net.sections.items():
+        d = describe({"feature": "section_id", "value": sid, "shap": 0.2, "direction": "raises"}, net)
+        kind = "single-track" if sec.tracks == 1 else f"{sec.tracks}-track"
+        assert d["text"] == f"it uses {sid}, a {kind} section"
+        assert d["context"] == {"section_tracks": sec.tracks}
+        assert_traceable(d["sentence"], d)
+
+
+@pytest.mark.parametrize("mine,base,word", [(156, 156, "disappears"), (160, 156, "reverses"), (150, 156, "remains")])
+def test_gain_at_alternative_headway(mine, base, word):
+    sens = {"headway_min": 0, "alt_headway_min": 4, "recommended": "RESEQUENCE", "alt_recommended": "RESEQUENCE",
+            "changed": False, "alt_ranking": ["RESEQUENCE", "HOLD"],
+            "alt_weighted_delay": {"NO_REPLANNING": base, "RESEQUENCE": mine, "HOLD": 170}}
+    text = confidence("OPTIMAL", "RESEQUENCE", sens)
+    assert f"At headway 4 min the gain {word}: RESEQUENCE {mine} vs NO_REPLANNING {base}." in text
+    assert_traceable(text, sens)
+
+
+@pytest.mark.skipif(not (REAL_DATA_DIR / "records.csv").exists(), reason="REAL extract missing")
+def test_real_day_gain_disappears_at_headway_4(client):
+    """Step 3: on 12 Sept at 08:53 RESEQUENCE only ties doing nothing at headway 4 (156 vs 156)."""
+    client.post("/api/scenario/reset", json={"timetable": "dg_mdu", "mode": "replay", "date": "2024-09-12"})
+    client.post("/api/events", json=STOP_REAL)
+    o = client.post("/api/optimize", json={"at": "08:53"}).json()
+    w = o["sensitivity"]["alt_weighted_delay"]
+    assert o["recommendation"]["strategy"] == "RESEQUENCE"
+    assert w["RESEQUENCE"] == w["NO_REPLANNING"] == 156
+    assert ("At headway 4 min the gain disappears: RESEQUENCE 156 vs NO_REPLANNING 156."
+            in o["recommendation"]["explanation"]["confidence"])
