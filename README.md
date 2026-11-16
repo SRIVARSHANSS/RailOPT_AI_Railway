@@ -53,6 +53,28 @@ and is not connected to Indian Railways systems. All results are simulated.
   "Why not the others?", constraints, assumptions, confidence and a plain-text copy. No LLM.
 - 251 passing tests (+1 optional PostgreSQL migration test). Remaining phases: see `CLAUDE.md`
 
+## Getting started for teammates
+
+After `git clone https://github.com/SRIVARSHANSS/RailOPT_AI_Railway.git`, some files are not in
+the repository on purpose (gitignored). Create or regenerate them yourself:
+
+| Not in the repo | What to do |
+|---|---|
+| `backend/.env` (secrets) | Copy `backend/.env.example` to `backend/.env` and replace every `CHANGE_ME` with your own values (your PostgreSQL password, a new random `JWT_SECRET`). Never commit it. |
+| `backend/.venv/`, `frontend/node_modules/` | Install as in *Setup* below (`pip install -r requirements.txt -r requirements-dev.txt`, `npm install`). |
+| Database tables and users | `python -m alembic upgrade head`, then `python -m app.cli create-admin ...` (see *Database and first admin*). |
+| `backend/data/generated/` (SIMULATED training rows) | From `backend/`: `python -m app.services.datagen.generate --runs 3000 --seed 42` |
+| `backend/ml/models/*.joblib` (trained models) | From `backend/`, after the generator: `python -m ml.train` (~3 min) |
+| `backend/data/real/raw/` (24 MB RSTGCN zip) | Optional: only needed to rebuild the committed REAL extract. Download it as described in `docs/DATA_SOURCES.md`. |
+
+Already committed (no need to regenerate): the REAL extract (`backend/data/real/dg_mdu/`), the model
+reports (`backend/ml/reports/`, `backend/ml/reports/real/`) and the evaluation results
+(`backend/eval/reports/`). These store SHA-256 hashes of the dataset and model files. If your
+regenerated files hash differently, `tests/test_ml.py` fails and the Analytics / Model Insights pages
+and the results reports say "outdated". In that case rerun `python -m ml.train` and
+`python -m eval.run_eval --scenarios 200 --seed 2026` and commit the new reports. Tests that need the
+models or the raw zip are skipped while those files are missing.
+
 ## Setup (Windows)
 
 ```powershell
